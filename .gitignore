@@ -1,0 +1,17 @@
+/backend/data/
+/backend/rag/manuals/
+.env
+__pycache__/
+*.pyc
+.next/
+node_modules/
+*.db
+*.db-wal
+*.db-shm
+.venv/
+.DS_Store
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
