@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import settings
 from backend.db.database import Base, engine
-from backend.routers import crew, health, vessel, maintenance, ai, sync
+from backend.routers import crew, health, vessel, maintenance, ai, sync, setup
 
 # Create tables on startup (Alembic handles migrations in production)
 Base.metadata.create_all(bind=engine)
@@ -28,6 +28,7 @@ app.include_router(vessel.router, prefix="/components", tags=["vessel"])
 app.include_router(maintenance.router, prefix="/maintenance", tags=["maintenance"])
 app.include_router(ai.router, prefix="/ai", tags=["ai"])
 app.include_router(sync.router, prefix="/sync", tags=["sync"])
+app.include_router(setup.router, prefix="/setup", tags=["setup"])
 
 
 @app.get("/", tags=["system"])
