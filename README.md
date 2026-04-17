@@ -74,9 +74,21 @@ Double-click to install. On first launch the in-app setup wizard walks you
 through installing Ollama and downloading the Gemma model (~8 GB, one-time).
 No Terminal, no Git, no Python required.
 
-> **macOS unsigned warning:** if the app is not yet signed with an Apple
-> Developer certificate, right-click the app → *Open* the first time to bypass
-> Gatekeeper.
+> **macOS unsigned builds (beta testers):** the current builds are not signed
+> with an Apple Developer certificate. First-launch workflow on macOS:
+>
+> 1. Drag `Vessel Ops AI.app` from the `.dmg` to `/Applications`.
+> 2. Right-click the app → *Open* → *Open* in the warning dialog.
+>
+> If you instead see *"'Vessel Ops AI' is damaged and can't be opened"*
+> (macOS 13+ quarantine on unsigned apps from the internet), open Terminal
+> and run:
+>
+> ```bash
+> xattr -cr /Applications/Vessel\ Ops\ AI.app
+> ```
+>
+> Then launch normally. This is a one-time step per install.
 
 ---
 
