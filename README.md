@@ -64,15 +64,24 @@ the browser — no installation required.
 Download the latest signed installer for your OS from the
 [Releases page](https://github.com/switzloco/sail_pal/releases/latest):
 
-| OS | File |
-|----|------|
-| macOS (Apple Silicon) | `Vessel.Ops.AI_<version>_aarch64.dmg` |
-| macOS (Intel) | `Vessel.Ops.AI_<version>_x64.dmg` |
-| Windows 10 / 11 | `Vessel.Ops.AI_<version>_x64-setup.exe` |
+| OS | File | Notes |
+|----|------|-------|
+| macOS (Apple Silicon) | `Vessel.Ops.AI_<version>_aarch64.dmg` | Drag to `/Applications` |
+| macOS (Intel) | `Vessel.Ops.AI_<version>_x64.dmg` | Drag to `/Applications` |
+| Windows 10 / 11 — installer | `Vessel.Ops.AI_<version>_x64-setup.exe` | Per-user install, **no admin rights needed** — lives in `%LOCALAPPDATA%` |
+| Windows 10 / 11 — portable | `Vessel-Ops-AI_<version>_x64_portable.exe` | No install at all. Drop anywhere (USB stick, Desktop), double-click to run |
 
 Double-click to install. On first launch the in-app setup wizard walks you
 through installing Ollama and downloading the Gemma model (~8 GB, one-time).
 No Terminal, no Git, no Python required.
+
+> **Using a locked-down work PC?** The installer does not require admin and
+> makes no system-level changes — it installs to your user profile only.
+> If your IT policy blocks installers entirely, use the portable `.exe`
+> instead and run it directly. Ollama itself also installs per-user on
+> Windows. The only network access the app needs is the one-time ~8 GB
+> model download from `huggingface.co` — if your corporate firewall blocks
+> that, download on a home network first.
 
 > **macOS unsigned builds (beta testers):** the current builds are not signed
 > with an Apple Developer certificate. First-launch workflow on macOS:
