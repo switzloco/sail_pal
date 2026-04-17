@@ -46,7 +46,7 @@ export default function VesselPage() {
             {items.map((c) => (
               <Link
                 key={c.component_id}
-                href={`/vessel/${c.component_id}`}
+                href={`/vessel/detail?id=${c.component_id}`}
                 className="flex items-center gap-4 bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow"
               >
                 <Wrench size={18} className="text-slate-400 shrink-0" />

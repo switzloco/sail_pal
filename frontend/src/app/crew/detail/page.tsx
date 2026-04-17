@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, HealthEvent } from "@/lib/types";
@@ -18,18 +20,23 @@ function Row({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default function CrewDetailPage({ params }: { params: { id: string } }) {
+function CrewDetail() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
+
   const { data: member, isLoading } = useQuery({
-    queryKey: ["crew", params.id],
-    queryFn: () => apiFetch<CrewMember>(`/crew/${params.id}`),
+    queryKey: ["crew", id],
+    queryFn: () => apiFetch<CrewMember>(`/crew/${id}`),
+    enabled: !!id,
   });
 
   const { data: history } = useQuery({
-    queryKey: ["crew-health", params.id],
-    queryFn: () => apiFetch<HealthEvent[]>(`/health/crew/${params.id}/history`),
+    queryKey: ["crew-health", id],
+    queryFn: () => apiFetch<HealthEvent[]>(`/health/crew/${id}/history`),
     enabled: !!member,
   });
 
+  if (!id) return <p className="text-red-600">Missing crew id.</p>;
   if (isLoading) return <CardSkeleton />;
   if (!member) return <p className="text-red-600">Crew member not found.</p>;
 
@@ -79,5 +86,13 @@ export default function CrewDetailPage({ params }: { params: { id: string } }) {
         )}
       </div>
     </div>
+  );
+}
+
+export default function CrewDetailPage() {
+  return (
+    <Suspense fallback={<CardSkeleton />}>
+      <CrewDetail />
+    </Suspense>
   );
 }

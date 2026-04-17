@@ -34,7 +34,7 @@ export default function CrewPage() {
           {crew.map((member) => (
             <Link
               key={member.crew_id}
-              href={`/crew/${member.crew_id}`}
+              href={`/crew/detail?id=${member.crew_id}`}
               className="block bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start gap-4">

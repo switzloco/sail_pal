@@ -1,5 +1,7 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { Component } from "@/lib/types";
@@ -17,12 +19,17 @@ function Row({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-export default function ComponentDetailPage({ params }: { params: { id: string } }) {
+function ComponentDetail() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
+
   const { data: component, isLoading } = useQuery({
-    queryKey: ["component", params.id],
-    queryFn: () => apiFetch<Component>(`/components/${params.id}`),
+    queryKey: ["component", id],
+    queryFn: () => apiFetch<Component>(`/components/${id}`),
+    enabled: !!id,
   });
 
+  if (!id) return <p className="text-red-600">Missing component id.</p>;
   if (isLoading) return <CardSkeleton />;
   if (!component) return <p className="text-red-600">Component not found.</p>;
 
@@ -65,5 +72,13 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
         </div>
       )}
     </div>
+  );
+}
+
+export default function ComponentDetailPage() {
+  return (
+    <Suspense fallback={<CardSkeleton />}>
+      <ComponentDetail />
+    </Suspense>
   );
 }

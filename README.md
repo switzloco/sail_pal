@@ -57,7 +57,30 @@ the browser — no installation required.
 
 ---
 
-## Run Locally
+## Install
+
+### For end users — download the app
+
+Download the latest signed installer for your OS from the
+[Releases page](https://github.com/switzloco/sail_pal/releases/latest):
+
+| OS | File |
+|----|------|
+| macOS (Apple Silicon) | `Vessel.Ops.AI_<version>_aarch64.dmg` |
+| macOS (Intel) | `Vessel.Ops.AI_<version>_x64.dmg` |
+| Windows 10 / 11 | `Vessel.Ops.AI_<version>_x64-setup.exe` |
+
+Double-click to install. On first launch the in-app setup wizard walks you
+through installing Ollama and downloading the Gemma model (~8 GB, one-time).
+No Terminal, no Git, no Python required.
+
+> **macOS unsigned warning:** if the app is not yet signed with an Apple
+> Developer certificate, right-click the app → *Open* the first time to bypass
+> Gatekeeper.
+
+---
+
+## Run Locally (developer setup)
 
 ### Prerequisites
 
@@ -92,6 +115,29 @@ That's it. `start.sh` will:
 ollama pull gemma4:12b   # or gemma4:27b on 32GB+ machines
 # Then ./scripts/start.sh as normal
 ```
+
+---
+
+### Building the desktop app locally
+
+Requires **Rust** (`rustup.rs`) and **Node 20+** in addition to the
+Python/Node prereqs above.
+
+```bash
+cd frontend
+npm install
+
+# Dev (hot reload — backend must be running separately via ./scripts/start.sh)
+npm run tauri:dev
+
+# Production installer for the current OS (output under src-tauri/target/release/bundle/)
+npm run tauri:build
+```
+
+The bundled backend is a PyInstaller one-file binary built from
+`backend/pyinstaller.spec` and staged into `src-tauri/binaries/` before the
+Tauri build — the GitHub Actions `release.yml` workflow automates this for
+CI builds on tag push.
 
 ---
 
