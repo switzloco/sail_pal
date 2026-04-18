@@ -58,6 +58,16 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pyinstaller==6.11.*
 
+      - name: Bake cloud preview key into .env
+        if: env.GOOGLE_API_KEY_PREVIEW != ''
+        shell: bash
+        env:
+          GOOGLE_API_KEY_PREVIEW: ${{ secrets.GOOGLE_API_KEY_PREVIEW }}
+        run: |
+          echo "CLOUD_MODE=true" >> .env
+          echo "GOOGLE_API_KEY=${GOOGLE_API_KEY_PREVIEW}" >> .env
+          echo "CLOUD_MODEL=gemma-4-26b-a4b-it" >> .env
+
       - name: Build backend sidecar
         run: pyinstaller backend/pyinstaller.spec --clean --noconfirm
 
