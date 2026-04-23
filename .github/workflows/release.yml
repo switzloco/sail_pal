@@ -12,11 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Apple Silicon only for now — macos-13 (Intel) runners are
+          # currently unavailable on this account (jobs sit in queue for
+          # 24h then time out). Add back the macos-13 leg once the runner
+          # quota is sorted, if any testers are on Intel Macs.
           - os: macos-14
             target: aarch64-apple-darwin
-            sidecar_ext: ""
-          - os: macos-13
-            target: x86_64-apple-darwin
             sidecar_ext: ""
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -59,14 +60,18 @@ jobs:
           pip install pyinstaller==6.11.*
 
       - name: Bake cloud preview key into .env
-        if: env.GOOGLE_API_KEY_PREVIEW != ''
         shell: bash
         env:
           GOOGLE_API_KEY_PREVIEW: ${{ secrets.GOOGLE_API_KEY_PREVIEW }}
         run: |
-          echo "CLOUD_MODE=true" >> .env
-          echo "GOOGLE_API_KEY=${GOOGLE_API_KEY_PREVIEW}" >> .env
-          echo "CLOUD_MODEL=gemma-4-26b-a4b-it" >> .env
+          if [ -n "$GOOGLE_API_KEY_PREVIEW" ]; then
+            echo "CLOUD_MODE=true" >> .env
+            echo "GOOGLE_API_KEY=${GOOGLE_API_KEY_PREVIEW}" >> .env
+            echo "CLOUD_MODEL=gemma-4-26b-a4b-it" >> .env
+            echo "✓ Cloud preview key baked into .env"
+          else
+            echo "⚠ GOOGLE_API_KEY_PREVIEW not set — building without cloud preview key"
+          fi
 
       - name: Build backend sidecar
         run: pyinstaller backend/pyinstaller.spec --clean --noconfirm
