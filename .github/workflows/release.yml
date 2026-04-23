@@ -23,7 +23,6 @@ jobs:
             sidecar_ext: ".exe"
 
     runs-on: ${{ matrix.os }}
-    environment: preview
 
     steps:
       - name: Checkout
