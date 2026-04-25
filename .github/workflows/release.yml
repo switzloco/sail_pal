@@ -91,15 +91,12 @@ jobs:
 
       - name: Build Tauri app
         working-directory: frontend
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # Signing env vars are intentionally omitted while we ship unsigned
+        # beta builds. Setting them to empty strings (which is what
+        # `${{ secrets.X }}` evaluates to when the secret is unset) causes
+        # Tauri to attempt codesign with an empty cert and fail. Re-add
+        # individual vars conditionally if/when we set up Apple Developer
+        # signing.
         run: npm run tauri:build -- --target ${{ matrix.target }}
 
       - name: Stage portable Windows exe
