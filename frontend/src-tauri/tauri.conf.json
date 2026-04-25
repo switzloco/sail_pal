@@ -42,7 +42,6 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "perMachine": false,
         "displayLanguageSelector": false
       }
     }
