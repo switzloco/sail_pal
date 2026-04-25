@@ -3,7 +3,7 @@
 Renders a 1024×1024 master PNG (navy→teal gradient rounded square with a
 stylised ship's helm wheel in warm amber) plus every size Tauri expects,
 including `icon.icns` and multi-size `icon.ico`. Run once; check the output
-into `src-tauri/icons/` until a real designed icon replaces it.
+into `frontend/src-tauri/icons/` until a real designed icon replaces it.
 
     python3 scripts/generate_placeholder_icon.py
 """
@@ -15,7 +15,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "src-tauri" / "icons"
+OUT = ROOT / "frontend" / "src-tauri" / "icons"
 MASTER = 1024
 CORNER = int(MASTER * 0.22)
 

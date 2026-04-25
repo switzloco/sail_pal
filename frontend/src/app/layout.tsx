@@ -3,6 +3,7 @@ import "./globals.css";
 import { QueryProvider } from "@/components/ui/QueryProvider";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
+import { CloudBanner } from "@/components/ui/CloudBanner";
 import { SetupGate } from "@/components/setup/SetupGate";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <SetupGate>
             <OfflineBanner />
+            <CloudBanner />
             <div className="flex min-h-screen">
               <Sidebar />
               <main className="flex-1 p-8 overflow-auto">{children}</main>

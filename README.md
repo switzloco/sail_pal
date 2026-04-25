@@ -151,12 +151,12 @@ npm install
 # Dev (hot reload — backend must be running separately via ./scripts/start.sh)
 npm run tauri:dev
 
-# Production installer for the current OS (output under src-tauri/target/release/bundle/)
+# Production installer for the current OS (output under frontend/src-tauri/target/release/bundle/)
 npm run tauri:build
 ```
 
 The bundled backend is a PyInstaller one-file binary built from
-`backend/pyinstaller.spec` and staged into `src-tauri/binaries/` before the
+`backend/pyinstaller.spec` and staged into `frontend/src-tauri/binaries/` before the
 Tauri build — the GitHub Actions `release.yml` workflow automates this for
 CI builds on tag push.
 

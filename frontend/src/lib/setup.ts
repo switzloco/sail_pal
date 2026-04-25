@@ -6,6 +6,7 @@ export interface SetupStatus {
   model_ready: boolean;
   model_name: string;
   install_url: string;
+  mode: "local" | "cloud";
 }
 
 export async function fetchSetupStatus(): Promise<SetupStatus> {

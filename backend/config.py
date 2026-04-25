@@ -10,6 +10,14 @@ class Settings(BaseSettings):
     model_scale: str = "gemma4:27b"
     cors_origins: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
+    # ── Cloud simulation mode ─────────────────────────────────────────────────
+    # When True, all LLM calls go to Google AI Studio instead of local Ollama.
+    # Useful for testing without the ~8 GB model download.
+    # The Ollama setup wizard is bypassed; a cloud-mode banner appears in the UI.
+    cloud_mode: bool = False
+    google_api_key: str = ""
+    cloud_model: str = "gemma-4-26b-a4b-it"
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):

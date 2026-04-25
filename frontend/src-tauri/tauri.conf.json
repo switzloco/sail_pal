@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "ai.vesselops.app",
   "build": {
-    "beforeDevCommand": "npm --prefix ../frontend run dev -- -p 3000",
+    "beforeDevCommand": "npm run dev -- -p 3000",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "npm --prefix ../frontend run build:tauri",
-    "frontendDist": "../frontend/out"
+    "beforeBuildCommand": "npm run build:tauri",
+    "frontendDist": "../out"
   },
   "app": {
     "windows": [
@@ -42,7 +42,6 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "perMachine": false,
         "displayLanguageSelector": false
       }
     }

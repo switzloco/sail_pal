@@ -12,11 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Apple Silicon only for now — macos-13 (Intel) runners are
+          # currently unavailable on this account (jobs sit in queue for
+          # 24h then time out). Add back the macos-13 leg once the runner
+          # quota is sorted, if any testers are on Intel Macs.
           - os: macos-14
             target: aarch64-apple-darwin
-            sidecar_ext: ""
-          - os: macos-13
-            target: x86_64-apple-darwin
             sidecar_ext: ""
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -49,8 +50,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            src-tauri/target
-          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+            frontend/src-tauri/target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('frontend/src-tauri/Cargo.toml') }}
 
       - name: Install backend deps + PyInstaller
         run: |
@@ -58,15 +59,29 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pyinstaller==6.11.*
 
+      - name: Bake cloud preview key into .env
+        shell: bash
+        env:
+          GOOGLE_API_KEY_PREVIEW: ${{ secrets.GOOGLE_API_KEY_PREVIEW }}
+        run: |
+          if [ -n "$GOOGLE_API_KEY_PREVIEW" ]; then
+            echo "CLOUD_MODE=true" >> .env
+            echo "GOOGLE_API_KEY=${GOOGLE_API_KEY_PREVIEW}" >> .env
+            echo "CLOUD_MODEL=gemma-4-26b-a4b-it" >> .env
+            echo "✓ Cloud preview key baked into .env"
+          else
+            echo "⚠ GOOGLE_API_KEY_PREVIEW not set — building without cloud preview key"
+          fi
+
       - name: Build backend sidecar
         run: pyinstaller backend/pyinstaller.spec --clean --noconfirm
 
       - name: Stage sidecar for Tauri
         shell: bash
         run: |
-          mkdir -p src-tauri/binaries
+          mkdir -p frontend/src-tauri/binaries
           src="dist/vessel-ops-backend${{ matrix.sidecar_ext }}"
-          dst="src-tauri/binaries/vessel-ops-backend-${{ matrix.target }}${{ matrix.sidecar_ext }}"
+          dst="frontend/src-tauri/binaries/vessel-ops-backend-${{ matrix.target }}${{ matrix.sidecar_ext }}"
           cp "$src" "$dst"
           chmod +x "$dst" || true
 
@@ -76,15 +91,12 @@ jobs:
 
       - name: Build Tauri app
         working-directory: frontend
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        # Signing env vars are intentionally omitted while we ship unsigned
+        # beta builds. Setting them to empty strings (which is what
+        # `${{ secrets.X }}` evaluates to when the secret is unset) causes
+        # Tauri to attempt codesign with an empty cert and fail. Re-add
+        # individual vars conditionally if/when we set up Apple Developer
+        # signing.
         run: npm run tauri:build -- --target ${{ matrix.target }}
 
       - name: Stage portable Windows exe
@@ -92,8 +104,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p portable
-          version=$(node -p "require('./src-tauri/tauri.conf.json').version")
-          cp "src-tauri/target/${{ matrix.target }}/release/vessel-ops-ai.exe" \
+          version=$(node -p "require('./frontend/src-tauri/tauri.conf.json').version")
+          cp "frontend/src-tauri/target/${{ matrix.target }}/release/vessel-ops-ai.exe" \
              "portable/Vessel-Ops-AI_${version}_x64_portable.exe"
 
       - name: Upload installers
@@ -101,9 +113,9 @@ jobs:
         with:
           name: vessel-ops-ai-${{ matrix.target }}
           path: |
-            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
-            src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz
-            src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+            frontend/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            frontend/src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz
+            frontend/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
             portable/*.exe
           if-no-files-found: ignore
 

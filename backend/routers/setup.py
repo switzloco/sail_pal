@@ -19,6 +19,7 @@ class SetupStatus(BaseModel):
     model_ready: bool
     model_name: str
     install_url: str = "https://ollama.com/download"
+    mode: str = "local"  # "local" | "cloud"
 
 
 async def _check_ollama_running() -> bool:
@@ -52,6 +53,16 @@ async def _check_model_ready(model_name: str) -> bool:
 
 @router.get("/status", response_model=SetupStatus)
 async def setup_status():
+    if settings.cloud_mode:
+        # Bypass all Ollama checks — app is ready immediately.
+        return SetupStatus(
+            ollama_installed=True,
+            ollama_running=True,
+            model_ready=True,
+            model_name=settings.cloud_model,
+            mode="cloud",
+        )
+
     installed = shutil.which("ollama") is not None
     running = await _check_ollama_running() if installed else False
     model_ready = await _check_model_ready(settings.model_primary) if running else False
@@ -61,6 +72,7 @@ async def setup_status():
         ollama_running=running,
         model_ready=model_ready,
         model_name=settings.model_primary,
+        mode="local",
     )
 
 
