@@ -69,7 +69,7 @@ Download the latest signed installer for your OS from the
 | macOS (Apple Silicon) | `Vessel.Ops.AI_<version>_aarch64.dmg` | Drag to `/Applications` |
 | macOS (Intel) | `Vessel.Ops.AI_<version>_x64.dmg` | Drag to `/Applications` |
 | Windows 10 / 11 — installer | `Vessel.Ops.AI_<version>_x64-setup.exe` | Per-user install, **no admin rights needed** — lives in `%LOCALAPPDATA%` |
-| Windows 10 / 11 — portable | `Vessel-Ops-AI_<version>_x64_portable.exe` | No install at all. Drop anywhere (USB stick, Desktop), double-click to run |
+| Windows 10 / 11 — portable | `Vessel-Ops-AI_<version>_x64_portable.zip` | No install at all. Unzip anywhere (USB stick, Desktop) and double-click `Vessel Ops AI.exe` inside the folder. Keep `vessel-ops-backend.exe` next to it — the launcher spawns it as the local API. |
 
 Double-click to install. On first launch the in-app setup wizard walks you
 through installing Ollama and downloading the Gemma model (~8 GB, one-time).
@@ -77,11 +77,14 @@ No Terminal, no Git, no Python required.
 
 > **Using a locked-down work PC?** The installer does not require admin and
 > makes no system-level changes — it installs to your user profile only.
-> If your IT policy blocks installers entirely, use the portable `.exe`
-> instead and run it directly. Ollama itself also installs per-user on
-> Windows. The only network access the app needs is the one-time ~8 GB
-> model download from `huggingface.co` — if your corporate firewall blocks
-> that, download on a home network first.
+> If your IT policy blocks installers entirely, use the portable `.zip`
+> instead: unzip it (right-click → *Extract All*) and run
+> `Vessel Ops AI.exe` from inside the extracted folder. Don't separate the
+> two `.exe` files — the launcher spawns `vessel-ops-backend.exe` as a
+> sibling process and won't find it otherwise. Ollama itself also installs
+> per-user on Windows. The only network access the app needs is the
+> one-time ~8 GB model download from `huggingface.co` — if your corporate
+> firewall blocks that, download on a home network first.
 
 > **macOS unsigned builds (beta testers):** the current builds are not signed
 > with an Apple Developer certificate. First-launch workflow on macOS:

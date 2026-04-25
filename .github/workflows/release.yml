@@ -99,14 +99,27 @@ jobs:
         # signing.
         run: npm run tauri:build -- --target ${{ matrix.target }}
 
-      - name: Stage portable Windows exe
+      - name: Stage portable Windows zip
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          mkdir -p portable
           version=$(node -p "require('./frontend/src-tauri/tauri.conf.json').version")
+          stage="portable/staging/Vessel-Ops-AI_${version}_x64_portable"
+          mkdir -p "$stage"
+          # The Tauri launcher. Bundled installers rename this to the
+          # productName, but for the portable layout we keep the cargo
+          # output name so the sidecar lookup (which strips the target
+          # triple) resolves to a sibling file.
           cp "frontend/src-tauri/target/${{ matrix.target }}/release/vessel-ops-ai.exe" \
-             "portable/Vessel-Ops-AI_${version}_x64_portable.exe"
+             "$stage/Vessel Ops AI.exe"
+          # Sidecar: tauri-plugin-shell looks for `<name>.exe` (no target
+          # triple) next to the running launcher in production.
+          cp "frontend/src-tauri/binaries/vessel-ops-backend-${{ matrix.target }}.exe" \
+             "$stage/vessel-ops-backend.exe"
+          cp README.md "$stage/README.md" 2>/dev/null || true
+          (cd "portable/staging" && \
+            7z a -tzip "../Vessel-Ops-AI_${version}_x64_portable.zip" \
+              "Vessel-Ops-AI_${version}_x64_portable")
 
       - name: Upload installers
         uses: actions/upload-artifact@v4
@@ -116,7 +129,7 @@ jobs:
             frontend/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
             frontend/src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app.tar.gz
             frontend/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
-            portable/*.exe
+            portable/*.zip
           if-no-files-found: ignore
 
   release:
