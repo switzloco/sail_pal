@@ -110,28 +110,50 @@ A hosted version runs the full app in **cloud mode** — Google AI Studio
 provides Gemma responses, no Ollama install required. MV Resolute demo data
 is seeded automatically on first boot.
 
-### Backend → Railway
+Stack: **Cloud Run** (backend) + **Firebase Hosting** (frontend) — both
+Google products, which fits the Kaggle × Google DeepMind hackathon context.
 
-1. Create a new Railway project and connect this repo.
-2. Railway auto-detects `railway.toml` and builds `backend/Dockerfile`.
-3. Add a **Volume** mounted at `/data` (keeps the SQLite DB across deploys).
-4. Set environment variables in the Railway dashboard:
-   ```
-   CLOUD_MODE=true
-   GOOGLE_API_KEY=<key from ai.google.dev>
-   VESSEL_OPS_DATA_DIR=/data
-   ```
-5. Deploy. The service seeds demo data and is ready at
-   `https://<service>.railway.app`.
+### Backend → Google Cloud Run
 
-### Frontend → Vercel
+**One-time setup (Cloud Console)**
 
-1. Import the repo in Vercel; set **Root Directory** to `frontend`.
-2. Set one environment variable:
+1. Open [console.cloud.google.com](https://console.cloud.google.com) and
+   create or select a project.
+2. Enable **Cloud Build API** and **Cloud Run API** (search in the top bar).
+3. Go to **Cloud Build → Triggers → Connect repository** → select this repo.
+   Create a trigger on branch `main` pointing at `cloudbuild.yaml`.
+4. Go to **Cloud Run → vessel-ops-backend → Edit & Deploy New Revision →
+   Variables & Secrets** and add:
    ```
-   NEXT_PUBLIC_API_BASE=https://<your-railway-service>.railway.app
+   GOOGLE_API_KEY = <your key from aistudio.google.com/apikey>
    ```
-3. Deploy. Vercel detects Next.js automatically via `frontend/vercel.json`.
+   (`CLOUD_MODE=true` is already set by `cloudbuild.yaml`.)
+
+Push to `main` — Cloud Build builds the Docker image and deploys it.
+Copy the Cloud Run service URL (looks like
+`https://vessel-ops-backend-xxxx-uc.a.run.app`).
+
+> Demo data (MV Resolute) auto-seeds on every cold start since Cloud Run
+> containers are stateless. This is fine for a judging demo.
+
+### Frontend → Firebase Hosting
+
+```bash
+# Install Firebase CLI once
+npm install -g firebase-tools
+firebase login
+
+cd frontend
+
+# Build the static export pointing at your Cloud Run URL
+NEXT_PUBLIC_API_BASE=https://<your-cloud-run-url> WEB_EXPORT=1 npm run build
+
+# Deploy
+firebase init hosting   # choose your GCP project, say "out" as public dir
+firebase deploy --only hosting
+```
+
+Firebase gives you a URL like `https://<project>.web.app` to share with judges.
 
 > **Cloud mode banner:** a yellow "Cloud preview" banner appears in the UI
 > whenever `CLOUD_MODE=true` so judges know AI responses come from

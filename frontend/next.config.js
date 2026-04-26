@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const isTauri = process.env.TAURI_BUILD === "1";
+const isWebExport = process.env.WEB_EXPORT === "1";
 
 const nextConfig = {
   reactStrictMode: true,
-  ...(isTauri
+  ...((isTauri || isWebExport)
     ? {
         output: "export",
         images: { unoptimized: true },
