@@ -104,6 +104,41 @@ No Terminal, no Git, no Python required.
 
 ---
 
+## Web deployment (hackathon demo / judges)
+
+A hosted version runs the full app in **cloud mode** — Google AI Studio
+provides Gemma responses, no Ollama install required. MV Resolute demo data
+is seeded automatically on first boot.
+
+### Backend → Railway
+
+1. Create a new Railway project and connect this repo.
+2. Railway auto-detects `railway.toml` and builds `backend/Dockerfile`.
+3. Add a **Volume** mounted at `/data` (keeps the SQLite DB across deploys).
+4. Set environment variables in the Railway dashboard:
+   ```
+   CLOUD_MODE=true
+   GOOGLE_API_KEY=<key from ai.google.dev>
+   VESSEL_OPS_DATA_DIR=/data
+   ```
+5. Deploy. The service seeds demo data and is ready at
+   `https://<service>.railway.app`.
+
+### Frontend → Vercel
+
+1. Import the repo in Vercel; set **Root Directory** to `frontend`.
+2. Set one environment variable:
+   ```
+   NEXT_PUBLIC_API_BASE=https://<your-railway-service>.railway.app
+   ```
+3. Deploy. Vercel detects Next.js automatically via `frontend/vercel.json`.
+
+> **Cloud mode banner:** a yellow "Cloud preview" banner appears in the UI
+> whenever `CLOUD_MODE=true` so judges know AI responses come from
+> Gemma-4-26b on Google AI Studio, not a local model.
+
+---
+
 ## Run Locally (developer setup)
 
 ### Prerequisites
