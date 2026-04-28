@@ -8,7 +8,7 @@ steps:
       - -t
       - gcr.io/$PROJECT_ID/vessel-ops-backend:latest
       - -f
-      - backend/Dockerfile
+      - Dockerfile
       - .
 
   # Push to Container Registry
