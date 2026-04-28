@@ -2,18 +2,30 @@ import asyncio
 import json
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator, List, Optional
 
 from backend.config import settings
 from backend.db.database import get_db
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
-    MEDICAL_SYSTEM, ENGINE_SYSTEM, DISCLAIMER,
+    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, DISCLAIMER,
     MOCK_MEDICAL_CHUNKS, MOCK_ENGINE_CHUNKS,
 )
 
 router = APIRouter()
+
+
+class ChatMessage(BaseModel):
+    role: str  # "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    crew_id: Optional[str] = None
+    component_id: Optional[str] = None
 
 
 async def _tokens_to_sse(token_iter: AsyncIterator[str]):
@@ -104,6 +116,61 @@ async def analyze_component(
 
     return StreamingResponse(
         _tokens_to_sse(_llm_tokens(ENGINE_SYSTEM, user_prompt, images=image_bytes)),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/chat")
+async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+    """Multi-turn chat with Gemma, optionally grounded in a crew member or component.
+
+    The conversation history is rolled into a single prompt rather than using the
+    SDK's native chat sessions — keeps the streaming path identical to the
+    one-shot medical/engine endpoints.
+    """
+    from backend.db.models import CrewMember, Component
+
+    context_lines: list[str] = []
+    system = GENERAL_SYSTEM
+
+    if payload.crew_id:
+        crew = db.query(CrewMember).filter(CrewMember.crew_id == payload.crew_id).first()
+        if crew:
+            context_lines.append(f"Patient under discussion: {crew.full_name} ({crew.role})")
+            if crew.blood_type:
+                context_lines.append(f"  Blood type: {crew.blood_type}")
+            if crew.allergies:
+                allergies = crew.allergies if isinstance(crew.allergies, list) else json.loads(crew.allergies or "[]")
+                if allergies:
+                    context_lines.append(f"  Allergies: {', '.join(allergies)}")
+            if crew.medical_notes:
+                context_lines.append(f"  Medical notes: {crew.medical_notes}")
+            system = MEDICAL_SYSTEM
+
+    if payload.component_id:
+        comp = db.query(Component).filter(Component.component_id == payload.component_id).first()
+        if comp:
+            context_lines.append(f"Component under discussion: {comp.name} ({comp.system})")
+            if comp.manufacturer:
+                context_lines.append(f"  Manufacturer: {comp.manufacturer} {comp.model_number or ''}")
+            if comp.location:
+                context_lines.append(f"  Location: {comp.location}")
+            if comp.notes:
+                context_lines.append(f"  Notes: {comp.notes}")
+            system = ENGINE_SYSTEM
+
+    if context_lines:
+        system = system + "\n\nContext for this conversation:\n" + "\n".join(context_lines)
+
+    transcript = "\n\n".join(
+        f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}"
+        for m in payload.messages
+    )
+    transcript += "\n\nAssistant:"
+
+    return StreamingResponse(
+        _tokens_to_sse(_llm_tokens(system, transcript)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

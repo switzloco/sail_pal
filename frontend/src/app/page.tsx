@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component, HealthEvent, MaintenanceLog } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { Users, Wrench, HeartPulse, AlertTriangle } from "lucide-react";
+import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles } from "lucide-react";
 
 function StatCard({
   label,
@@ -89,10 +89,20 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="mt-10 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700">
-        <strong>AI guidance is in demo mode.</strong> Medical and engineering queries return
-        illustrative responses. Ollama integration (Gemma 4) activates in Phase 2.
-      </div>
+      <Link
+        href="/chat"
+        className="mt-10 block p-5 bg-gradient-to-br from-ocean-600 to-ocean-800 rounded-xl text-white hover:shadow-lg transition-shadow"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <Sparkles size={22} />
+          <h2 className="text-lg font-bold">Ask Gemma</h2>
+        </div>
+        <p className="text-sm text-ocean-100">
+          Discuss a crew member's symptoms, troubleshoot a fault, or get protocol guidance.
+          Powered by <strong>Gemma</strong> — Google DeepMind's open-weights model, designed
+          to run offline at sea.
+        </p>
+      </Link>
     </div>
   );
 }

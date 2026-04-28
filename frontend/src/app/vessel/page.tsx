@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import type { Component } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { Wrench } from "lucide-react";
+import { Wrench, Plus } from "lucide-react";
 
 const SYSTEM_LABELS: Record<string, string> = {
   propulsion: "Propulsion",
@@ -29,7 +29,15 @@ export default function VesselPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Component Inventory</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Component Inventory</h1>
+        <Link
+          href="/vessel/new"
+          className="inline-flex items-center gap-1 bg-ocean-600 hover:bg-ocean-700 text-white text-sm font-medium px-3 py-2 rounded-lg"
+        >
+          <Plus size={16} /> Add component
+        </Link>
+      </div>
 
       {isLoading && (
         <div className="space-y-3">
