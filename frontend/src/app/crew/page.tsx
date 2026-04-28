@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import type { CrewMember } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User, Plus } from "lucide-react";
 
 export default function CrewPage() {
   const { data: crew, isLoading, error } = useQuery({
@@ -15,7 +15,15 @@ export default function CrewPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Crew Roster</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Crew Roster</h1>
+        <Link
+          href="/crew/new"
+          className="inline-flex items-center gap-1 bg-ocean-600 hover:bg-ocean-700 text-white text-sm font-medium px-3 py-2 rounded-lg"
+        >
+          <Plus size={16} /> Add crew member
+        </Link>
+      </div>
 
       {isLoading && (
         <div className="space-y-3">

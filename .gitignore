@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .next/
 /frontend/out/
+*.tsbuildinfo
 node_modules/
 *.db
 *.db-wal

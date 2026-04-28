@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Users, HeartPulse, Wrench, Settings } from "lucide-react";
+import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: Anchor },
+  { href: "/chat", label: "Ask Gemma", icon: Sparkles },
   { href: "/crew", label: "Crew", icon: Users },
   { href: "/health", label: "Health Log", icon: HeartPulse },
   { href: "/vessel", label: "Components", icon: Wrench },
@@ -40,8 +41,9 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="px-5 py-4 border-t border-ocean-800 text-xs text-ocean-500">
-        Gemma 4 · Offline ready
+      <div className="px-5 py-4 border-t border-ocean-800 text-xs text-ocean-300">
+        <p className="font-semibold text-ocean-100">Powered by Gemma</p>
+        <p className="text-ocean-400 mt-0.5">Google DeepMind · Offline-ready</p>
       </div>
     </aside>
   );

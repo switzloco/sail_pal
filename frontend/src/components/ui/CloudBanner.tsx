@@ -16,7 +16,7 @@ export function CloudBanner() {
 
   return (
     <div className="sticky top-0 z-50 bg-amber-400 text-amber-950 text-sm font-semibold px-4 py-2 text-center flex items-center justify-center gap-2">
-      ☁ Cloud preview — AI responses processed by Google (not local). Install Ollama for offline use.
+      ☁ Cloud preview — running <strong>Gemma</strong> via Google AI Studio. Install Ollama for fully offline use at sea.
     </div>
   );
 }
