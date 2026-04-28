@@ -21,9 +21,9 @@ steps:
     args:
       - run
       - deploy
-      - vessel-ops-backend
+      - sail-pal
       - --image=gcr.io/$PROJECT_ID/vessel-ops-backend:$SHORT_SHA
-      - --region=us-central1
+      - --region=us-west1
       - --platform=managed
       - --allow-unauthenticated
       - --port=8080
