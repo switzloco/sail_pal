@@ -1,6 +1,6 @@
 {
-  "name": "Sail Pal",
-  "short_name": "Sail Pal",
+  "name": "Vessel Ops",
+  "short_name": "Vessel Ops",
   "description": "AI assistant for maritime crew health and vessel operations",
   "start_url": "/",
   "display": "standalone",
