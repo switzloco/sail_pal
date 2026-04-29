@@ -7,13 +7,17 @@ import { CloudBanner } from "@/components/ui/CloudBanner";
 import { SetupGate } from "@/components/setup/SetupGate";
 
 export const metadata: Metadata = {
-  title: "Vessel Ops AI",
+  title: "Sail Pal",
   description: "Offline AI assistant for maritime medical and engineering operations",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0369a1" />
+      </head>
       <body>
         <QueryProvider>
           <SetupGate>

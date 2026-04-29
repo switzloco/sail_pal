@@ -6,12 +6,12 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import AsyncIterator, List, Optional
 
+from backend.ai import mode_state
 from backend.config import settings
 from backend.db.database import get_db
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
     MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, DISCLAIMER,
-    MOCK_MEDICAL_CHUNKS, MOCK_ENGINE_CHUNKS,
 )
 
 router = APIRouter()
@@ -34,19 +34,14 @@ async def _tokens_to_sse(token_iter: AsyncIterator[str]):
     yield f"data: {json.dumps({'done': True})}\n\n"
 
 
-async def _mock_stream(chunks: list[str], delay: float = 0.15) -> AsyncIterator[str]:
-    for chunk in chunks:
-        yield chunk
-        await asyncio.sleep(delay)
-
-
 async def _llm_tokens(
     system: str,
     user_prompt: str,
     images: Optional[list[bytes]] = None,
+    severity: str = "minor",
 ) -> AsyncIterator[str]:
-    """Route to cloud or mock depending on settings."""
-    if settings.cloud_mode:
+    """Route to cloud (Google) or local (Ollama) depending on runtime mode."""
+    if mode_state.is_cloud():
         from backend.ai.google_client import GoogleSimulationClient
         client = GoogleSimulationClient(
             api_key=settings.google_api_key,
@@ -55,17 +50,21 @@ async def _llm_tokens(
         async for token in client.chat_stream(system, user_prompt, images=images):
             yield token
     else:
-        # Phase 2 will wire Ollama here; use mock for now
-        chunks = (
-            MOCK_MEDICAL_CHUNKS if "medical" in system.lower() else MOCK_ENGINE_CHUNKS
+        from backend.ai.ollama_client import OllamaRouter
+        router = OllamaRouter(
+            host=settings.ollama_host,
+            model_primary=settings.model_primary,
+            model_scale=settings.model_scale,
         )
-        async for token in _mock_stream(chunks):
+        async for token in router.chat_stream(
+            system, user_prompt, severity=severity, images=images
+        ):
             yield token
 
 
 @router.post("/medical-query")
 async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_db)):
-    """Stream an AI medical guidance response (cloud or mock)."""
+    """Stream an AI medical guidance response (cloud or local)."""
     from backend.db.models import CrewMember
     crew = db.query(CrewMember).filter(CrewMember.crew_id == payload.crew_id).first()
     if not crew:
@@ -81,7 +80,7 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
     )
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(MEDICAL_SYSTEM, user_prompt)),
+        _tokens_to_sse(_llm_tokens(MEDICAL_SYSTEM, user_prompt, severity=payload.severity)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -95,14 +94,14 @@ async def analyze_component(
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
 ):
-    """Stream an AI component fault analysis (cloud with vision, or mock)."""
+    """Stream an AI component fault analysis (cloud with vision, or local)."""
     from backend.db.models import Component
     component = db.query(Component).filter(Component.component_id == component_id).first()
     if not component:
         raise HTTPException(status_code=404, detail="Component not found")
 
     image_bytes: Optional[list[bytes]] = None
-    if image and settings.cloud_mode:
+    if image:
         image_bytes = [await image.read()]
 
     user_prompt = (
@@ -115,7 +114,7 @@ async def analyze_component(
     )
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(ENGINE_SYSTEM, user_prompt, images=image_bytes)),
+        _tokens_to_sse(_llm_tokens(ENGINE_SYSTEM, user_prompt, images=image_bytes, severity=severity)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -123,12 +122,7 @@ async def analyze_component(
 
 @router.post("/chat")
 async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
-    """Multi-turn chat with Gemma, optionally grounded in a crew member or component.
-
-    The conversation history is rolled into a single prompt rather than using the
-    SDK's native chat sessions — keeps the streaming path identical to the
-    one-shot medical/engine endpoints.
-    """
+    """Multi-turn chat with Gemma, optionally grounded in a crew member or component."""
     from backend.db.models import CrewMember, Component
 
     context_lines: list[str] = []

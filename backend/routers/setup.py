@@ -4,10 +4,11 @@ import shutil
 from typing import AsyncIterator
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from backend.ai import mode_state
 from backend.config import settings
 
 router = APIRouter()
@@ -20,6 +21,14 @@ class SetupStatus(BaseModel):
     model_name: str
     install_url: str = "https://ollama.com/download"
     mode: str = "local"  # "local" | "cloud"
+
+
+class ModeResponse(BaseModel):
+    mode: str  # "cloud" | "local"
+
+
+class ModeRequest(BaseModel):
+    mode: str  # "cloud" | "local"
 
 
 async def _check_ollama_running() -> bool:
@@ -53,7 +62,8 @@ async def _check_model_ready(model_name: str) -> bool:
 
 @router.get("/status", response_model=SetupStatus)
 async def setup_status():
-    if settings.cloud_mode:
+    current_mode = mode_state.get_mode()
+    if current_mode == "cloud":
         # Bypass all Ollama checks — app is ready immediately.
         return SetupStatus(
             ollama_installed=True,
@@ -74,6 +84,34 @@ async def setup_status():
         model_name=settings.model_primary,
         mode="local",
     )
+
+
+@router.get("/mode", response_model=ModeResponse)
+async def get_mode():
+    return ModeResponse(mode=mode_state.get_mode())
+
+
+@router.post("/mode", response_model=ModeResponse)
+async def set_mode(payload: ModeRequest):
+    if payload.mode == "local":
+        running = await _check_ollama_running()
+        model_ready = await _check_model_ready(settings.model_primary) if running else False
+        if not model_ready:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot switch to local: Ollama is not running or the model is not pulled yet.",
+            )
+    elif payload.mode == "cloud":
+        if not settings.google_api_key:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot switch to cloud: GOOGLE_API_KEY is not configured on this server.",
+            )
+    try:
+        mode_state.set_mode(payload.mode)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return ModeResponse(mode=mode_state.get_mode())
 
 
 async def _pull_stream(model_name: str) -> AsyncIterator[str]:

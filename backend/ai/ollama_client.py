@@ -1,13 +1,7 @@
-"""
-Ollama client wrapper — Phase 2.
-
-Routing logic (to be implemented):
-  severity critical/serious  → attempt configured scale model (gemma4:27b),
-                               fallback to primary model (gemma4:12b) on error
-  severity minor/moderate    → primary model directly
-  quick lookups              → primary model with reduced context window
-"""
+import base64
 from typing import AsyncIterator, List, Optional
+
+import ollama
 
 
 class OllamaRouter:
@@ -16,11 +10,37 @@ class OllamaRouter:
         self.model_primary = model_primary
         self.model_scale = model_scale
 
+    def _pick_model(self, severity: str) -> str:
+        if severity in ("critical", "serious"):
+            return self.model_scale
+        return self.model_primary
+
     async def chat_stream(
         self,
-        messages: List[dict],
+        system: str,
+        user_prompt: str,
         severity: str = "minor",
-        images: Optional[List[str]] = None,
+        images: Optional[List[bytes]] = None,
     ) -> AsyncIterator[str]:
-        """Stream chat response tokens from Ollama. Phase 2 implementation."""
-        raise NotImplementedError("Ollama integration is Phase 2")
+        model = self._pick_model(severity)
+        client = ollama.AsyncClient(host=self.host)
+
+        user_msg: dict = {"role": "user", "content": user_prompt}
+        if images:
+            user_msg["images"] = [
+                base64.b64encode(img).decode("utf-8") for img in images
+            ]
+
+        messages = [
+            {"role": "system", "content": system},
+            user_msg,
+        ]
+
+        async for chunk in await client.chat(
+            model=model,
+            messages=messages,
+            stream=True,
+        ):
+            content = chunk["message"]["content"]
+            if content:
+                yield content
