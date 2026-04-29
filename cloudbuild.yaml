@@ -38,31 +38,19 @@ steps:
       # so it never appears in source. Set CLOUD_MODE here since it's not secret.
       - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data
 
-  # Capture the live Cloud Run URL so the frontend bakes in the exact right base.
-  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    id: get-backend-url
-    entrypoint: bash
-    args:
-      - -c
-      - |
-        URL=$(gcloud run services describe sail-pal --region=us-west1 --format='value(status.url)')
-        echo "$$URL" > /workspace/backend_url.txt
-        echo "Backend URL: $$URL"
-    waitFor: [deploy-backend]
-
-  # Build the Next.js frontend as a static export, embedding the live Cloud Run URL.
+  # Build the Next.js frontend as a static export.
+  # NEXT_PUBLIC_API_BASE="" → relative paths → Firebase Hosting proxy routes
+  # all API calls to Cloud Run without any cross-origin issues.
   - name: node:20-slim
     id: build-frontend
     entrypoint: bash
     args:
       - -c
       - |
-        BACKEND_URL=$(cat /workspace/backend_url.txt)
-        echo "Building frontend with NEXT_PUBLIC_API_BASE=$$BACKEND_URL"
         cd frontend
         npm ci
-        NEXT_PUBLIC_API_BASE="$$BACKEND_URL" WEB_EXPORT=1 npm run build
-    waitFor: [get-backend-url]
+        NEXT_PUBLIC_API_BASE="" WEB_EXPORT=1 npm run build
+    waitFor: [deploy-backend]
 
   # Deploy the static export to Firebase Hosting.
   # Requires the Cloud Build service account to have roles/firebasehosting.admin.

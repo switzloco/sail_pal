@@ -126,7 +126,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
 
   useEffect(() => () => { cancelRef.current?.(); }, []);
 
-  if (checking && !status) {
+  if (!status) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Loader2 size={32} className="animate-spin text-ocean-600" />
@@ -134,7 +134,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
     );
   }
 
-  const s = status!;
+  const s = status;
 
   // Determine step states
   const step1: StepState = s.ollama_installed ? "done" : "active";
