@@ -25,6 +25,28 @@ export interface PullProgress {
   done?: boolean;
 }
 
+export async function fetchMode(): Promise<"cloud" | "local"> {
+  const res = await fetch(`${API_BASE}/setup/mode`, {
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) throw new Error("Could not fetch mode");
+  const data = await res.json();
+  return data.mode;
+}
+
+export async function setMode(mode: "cloud" | "local"): Promise<void> {
+  const res = await fetch(`${API_BASE}/setup/mode`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode }),
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Switch failed" }));
+    throw new Error(err.detail ?? "Switch failed");
+  }
+}
+
 export function streamModelPull(
   onProgress: (p: PullProgress) => void,
   onDone: (success: boolean) => void,

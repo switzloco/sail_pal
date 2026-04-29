@@ -1,0 +1,24 @@
+services:
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_data:/root/.ollama   # persists downloaded models between restarts
+    ports:
+      - "11434:11434"
+
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - CLOUD_MODE=false
+      - OLLAMA_HOST=http://ollama:11434
+      - VESSEL_OPS_DATA_DIR=/data
+    volumes:
+      - vessel_data:/data
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
+  vessel_data:
