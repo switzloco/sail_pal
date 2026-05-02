@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 # ── Vessel ──────────────────────────────────────────────────────────────────
 
 class VesselRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
     vessel_id: str
     name: str
@@ -29,7 +29,7 @@ class VesselUpdate(BaseModel):
 # ── Crew ─────────────────────────────────────────────────────────────────────
 
 class CrewMemberRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
     crew_id: str
     vessel_id: str
@@ -96,7 +96,7 @@ class VitalSigns(BaseModel):
 
 
 class HealthEventRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
     event_id: str
     vessel_id: str
@@ -152,7 +152,7 @@ class HealthEventCreate(BaseModel):
 # ── Components ───────────────────────────────────────────────────────────────
 
 class ComponentRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
     component_id: str
     vessel_id: str
@@ -182,6 +182,7 @@ class ComponentRead(BaseModel):
 
 
 class ComponentCreate(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     vessel_id: str
     name: str
     system: str
@@ -196,6 +197,7 @@ class ComponentCreate(BaseModel):
 
 
 class ComponentUpdate(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
     name: Optional[str] = None
     manufacturer: Optional[str] = None
     location: Optional[str] = None
@@ -206,7 +208,7 @@ class ComponentUpdate(BaseModel):
 # ── Maintenance Logs ─────────────────────────────────────────────────────────
 
 class MaintenanceLogRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
 
     log_id: str
     vessel_id: str

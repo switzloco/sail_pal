@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import type { CrewMember, Component, HealthEvent, MaintenanceLog } from "@/lib/types";
+import type { Vessel, CrewMember, Component, HealthEvent, MaintenanceLog } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles } from "lucide-react";
