@@ -10,14 +10,19 @@ from backend.config import settings
 from backend.db.database import Base, engine
 from backend.routers import crew, health, vessel, maintenance, ai, sync, setup
 
-# Create tables on startup (Alembic handles migrations in production)
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
     title="Vessel Ops AI",
     description="Offline AI assistant for maritime Medical Person in Charge and Chief Engineer",
     version="0.1.0",
 )
+
+# Serve manuals as static files
+_MANUALS_DIR = Path(__file__).parent / "data" / "manuals"
+if _MANUALS_DIR.is_dir():
+    app.mount("/manuals", StaticFiles(directory=str(_MANUALS_DIR)), name="manuals")
+
+# Create tables on startup (Alembic handles migrations in production)
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,13 +32,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(crew.router, prefix="/crew", tags=["crew"])
-app.include_router(health.router, prefix="/health", tags=["health"])
-app.include_router(vessel.router, prefix="/components", tags=["vessel"])
-app.include_router(maintenance.router, prefix="/maintenance", tags=["maintenance"])
-app.include_router(ai.router, prefix="/ai", tags=["ai"])
-app.include_router(sync.router, prefix="/sync", tags=["sync"])
-app.include_router(setup.router, prefix="/setup", tags=["setup"])
+app.include_router(crew.router, prefix="/api/crew", tags=["crew"])
+app.include_router(health.router, prefix="/api/health", tags=["health"])
+app.include_router(vessel.router, prefix="/api/components", tags=["vessel"])
+app.include_router(maintenance.router, prefix="/api/maintenance", tags=["maintenance"])
+app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
+app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
+app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
 
 
 @app.get("/healthz", tags=["system"])

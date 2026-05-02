@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
 import { Send, Sparkles, User, Bot } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
 
 interface Message {
   role: "user" | "assistant";

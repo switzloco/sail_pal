@@ -1,5 +1,5 @@
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+  (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -16,7 +16,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 /** Ping the backend — resolves true if reachable, false otherwise. */
 export async function pingBackend(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/`, { signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"}/healthz`, { signal: AbortSignal.timeout(3000) });
     return res.ok;
   } catch {
     return false;

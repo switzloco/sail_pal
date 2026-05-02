@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 const SEVERITIES = ["advisory", "degraded", "critical", "down"] as const;
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
 
 export default function NewMaintenanceLogPage() {
   const router = useRouter();

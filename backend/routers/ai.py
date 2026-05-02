@@ -219,3 +219,70 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post("/upload-manual")
+async def upload_manual(
+    category: str = Form(..., description="'medical_protocols' or 'engine_manuals'"),
+    file: UploadFile = File(...)
+):
+    """Upload a PDF manual, extract its text using PyMuPDF, and add it to the local RAG ChromaDB."""
+    import fitz  # PyMuPDF
+    import uuid
+    import tempfile
+    import os
+    
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+        
+    if category not in ("medical_protocols", "engine_manuals"):
+        raise HTTPException(status_code=400, detail="Invalid category. Must be 'medical_protocols' or 'engine_manuals'")
+        
+    try:
+        content = await file.read()
+        
+        # Save to temporary file to read with fitz
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+            
+        doc = fitz.open(tmp_path)
+        chunks = []
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            text = page.get_text()
+            if not text.strip():
+                continue
+                
+            chunks.append({
+                "text": text.strip(),
+                "metadata": {"source": file.filename, "page": page_num + 1}
+            })
+            
+        doc.close()
+        os.remove(tmp_path)
+        
+        if not chunks:
+            raise HTTPException(status_code=400, detail="No readable text found in PDF")
+        
+        # Add to ChromaDB
+        from backend.ai.rag_engine import RAGEngine
+        rag = RAGEngine()
+        ids = [f"{file.filename}-{c['metadata']['page']}-{uuid.uuid4().hex[:8]}" for c in chunks]
+        texts = [c["text"] for c in chunks]
+        metadatas = [c["metadata"] for c in chunks]
+        
+        # Add in batches to avoid ChromaDB limits
+        batch_size = 100
+        for i in range(0, len(chunks), batch_size):
+            rag.add_documents(
+                collection_name=category,
+                documents=texts[i:i+batch_size],
+                metadatas=metadatas[i:i+batch_size],
+                ids=ids[i:i+batch_size]
+            )
+            
+        return {"status": "success", "pages_processed": len(chunks), "filename": file.filename}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")

@@ -5,7 +5,8 @@ import { apiFetch } from "@/lib/api";
 import type { Component } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { Wrench, Plus } from "lucide-react";
+import { Wrench, Plus, Upload } from "lucide-react";
+import { useRef, useState } from "react";
 
 const SYSTEM_LABELS: Record<string, string> = {
   propulsion: "Propulsion",
@@ -17,10 +18,39 @@ const SYSTEM_LABELS: Record<string, string> = {
 };
 
 export default function VesselPage() {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { data: components, isLoading } = useQuery({
     queryKey: ["components"],
     queryFn: () => apiFetch<Component[]>("/components"),
   });
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    const file = e.target.files[0];
+    
+    const formData = new FormData();
+    formData.append("category", "engine_manuals");
+    formData.append("file", file);
+
+    setIsUploading(true);
+    try {
+      const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
+      const res = await fetch(`${API_BASE}/ai/upload-manual`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      alert("Manual processed and ingested into RAG Engine successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to upload manual.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const grouped = components?.reduce((acc, c) => {
     (acc[c.system] = acc[c.system] || []).push(c);
@@ -31,12 +61,28 @@ export default function VesselPage() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Component Inventory</h1>
-        <Link
-          href="/vessel/new"
-          className="inline-flex items-center gap-1 bg-ocean-600 hover:bg-ocean-700 text-white text-sm font-medium px-3 py-2 rounded-lg"
-        >
-          <Plus size={16} /> Add component
-        </Link>
+        <div className="flex gap-2">
+          <input 
+            type="file" 
+            accept=".pdf" 
+            ref={fileInputRef} 
+            onChange={handleUpload} 
+            className="hidden" 
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="inline-flex items-center gap-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium px-3 py-2 rounded-lg disabled:opacity-50"
+          >
+            <Upload size={16} /> {isUploading ? "Processing..." : "Upload Manual"}
+          </button>
+          <Link
+            href="/vessel/new"
+            className="inline-flex items-center gap-1 bg-ocean-600 hover:bg-ocean-700 text-white text-sm font-medium px-3 py-2 rounded-lg"
+          >
+            <Plus size={16} /> Add component
+          </Link>
+        </div>
       </div>
 
       {isLoading && (
