@@ -51,7 +51,9 @@ the browser — no installation required.
 
 **Backend:** Python 3.11+ · FastAPI · SQLAlchemy 2.0 · Alembic · Pydantic v2 · SQLite (WAL)
 
-**AI:** Gemma 4 via Ollama (Phase 2) · ChromaDB RAG (Phase 2) · sentence-transformers
+**AI:** Gemma 4 via Ollama · ChromaDB RAG · sentence-transformers
+
+**Knowledge Source:** Full offline integration of the *World Health Organization (WHO) International Medical Guide for Ships (IMGS, 3rd Edition)* for RAG-grounded medical guidance.
 
 **Sync (roadmap):** Firebase Firestore — accumulates locally, pushes when in port
 
@@ -240,9 +242,9 @@ CI builds on tag push.
 | Maintenance log | ✅ Phase 1 |
 | AI medical query (mock SSE) | ✅ Phase 1 |
 | AI component analysis (mock SSE) | ✅ Phase 1 |
-| Ollama / Gemma 4 integration | 🔜 Phase 2 |
-| ChromaDB RAG (medical + engine manuals) | 🔜 Phase 2 |
-| Multimodal image analysis | 🔜 Phase 2 |
+| Ollama / Gemma 4 integration | ✅ Phase 2 |
+| ChromaDB RAG (WHO IMGS 3rd Ed. + engine manuals) | ✅ Phase 2 |
+| Multimodal image analysis | ✅ Phase 2 |
 | Firebase sync (port-side) | 🔜 Phase 2 |
 
 ---

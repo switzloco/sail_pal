@@ -13,6 +13,8 @@ from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalys
 from backend.ai.prompt_templates import (
     MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, DISCLAIMER,
 )
+from backend.ai.rag_engine import RAGEngine
+from backend.ai.image_parser import parse_component_image
 
 router = APIRouter()
 
@@ -75,7 +77,17 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
         f"Severity: {payload.severity.upper()}\n"
         f"Symptoms: {', '.join(payload.symptoms)}\n"
         + (f"Vitals: {payload.vitals}\n" if payload.vitals else "")
-        + f"\nPlease assess and provide immediate treatment guidance. "
+    )
+
+    rag = RAGEngine()
+    rag_results = rag.query("medical_protocols", ", ".join(payload.symptoms), k=2)
+    if rag_results:
+        user_prompt += "\nRelevant Protocol Excerpts:\n"
+        for r in rag_results:
+            user_prompt += f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})\n"
+
+    user_prompt += (
+        f"\nPlease assess and provide immediate treatment guidance. "
         f"End with: {DISCLAIMER}"
     )
 
@@ -101,15 +113,39 @@ async def analyze_component(
         raise HTTPException(status_code=404, detail="Component not found")
 
     image_bytes: Optional[list[bytes]] = None
+    image_analysis = None
     if image:
         image_bytes = [await image.read()]
+        image_analysis = await parse_component_image(image_bytes[0], component.name)
 
     user_prompt = (
         f"Component: {component.name} ({component.system})\n"
         f"Issue: {issue_description}\n"
         f"Severity: {severity.upper()}\n"
-        + ("An image of the component has been attached.\n" if image_bytes else "")
-        + f"\nDiagnose the fault and provide repair/safety guidance. "
+    )
+
+    if image_analysis:
+        user_prompt += (
+            f"Image Analysis: {image_analysis.get('fault_type')}\n"
+            f"Affected Parts: {', '.join(image_analysis.get('affected_parts', []))}\n"
+            f"Confidence: {image_analysis.get('confidence')}\n"
+        )
+    elif image_bytes:
+        user_prompt += "An image of the component has been attached.\n"
+
+    rag = RAGEngine()
+    rag_query = f"{component.name} {component.model_number or ''} {issue_description}"
+    if image_analysis:
+        rag_query += f" {image_analysis.get('fault_type', '')}"
+
+    rag_results = rag.query("engine_manuals", rag_query, k=2)
+    if rag_results:
+        user_prompt += "\nRelevant Manual Excerpts:\n"
+        for r in rag_results:
+            user_prompt += f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})\n"
+
+    user_prompt += (
+        f"\nDiagnose the fault and provide repair/safety guidance. "
         f"End with: {DISCLAIMER}"
     )
 
@@ -153,6 +189,21 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             if comp.notes:
                 context_lines.append(f"  Notes: {comp.notes}")
             system = ENGINE_SYSTEM
+
+    rag_query_text = payload.messages[-1].content
+    rag = RAGEngine()
+    if payload.crew_id:
+        rag_results = rag.query("medical_protocols", rag_query_text, k=2)
+        if rag_results:
+            context_lines.append("\nRelevant Protocol Excerpts:")
+            for r in rag_results:
+                context_lines.append(f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})")
+    elif payload.component_id:
+        rag_results = rag.query("engine_manuals", rag_query_text, k=2)
+        if rag_results:
+            context_lines.append("\nRelevant Manual Excerpts:")
+            for r in rag_results:
+                context_lines.append(f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})")
 
     if context_lines:
         system = system + "\n\nContext for this conversation:\n" + "\n".join(context_lines)
