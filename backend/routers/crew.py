@@ -54,3 +54,13 @@ def update_crew_member(crew_id: str, payload: CrewMemberUpdate, db: Session = De
     db.commit()
     db.refresh(member)
     return member
+
+
+@router.delete("/{crew_id}", status_code=204)
+def delete_crew_member(crew_id: str, db: Session = Depends(get_db)):
+    member = db.query(CrewMember).filter(CrewMember.crew_id == crew_id).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Crew member not found")
+    db.delete(member)
+    db.commit()
+    return None

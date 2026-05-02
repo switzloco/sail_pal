@@ -1,27 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { SetupWizard } from "./SetupWizard";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
 export function SetupGate({ children }: { children: React.ReactNode }) {
-  // Start optimistically assuming setup is complete to avoid flash on returning visits.
-  // SetupWizard will call onComplete immediately if status is already green.
   const [ready, setReady] = useState(false);
-  const [checked, setChecked] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  function handleComplete() {
-    setReady(true);
-    setChecked(true);
-  }
+  useEffect(() => {
+    const onboarded = localStorage.getItem("vessel_ops_onboarded");
+    if (onboarded === "true" || pathname?.startsWith("/welcome")) {
+      setReady(true);
+    } else {
+      router.push("/welcome");
+    }
+  }, [pathname, router]);
 
-  if (ready) return <>{children}</>;
+  if (!ready) return null;
 
-  // Render wizard (it calls onComplete on its own if everything is already set up)
-  return (
-    <>
-      <SetupWizard onComplete={handleComplete} />
-      {/* Keep children mounted but hidden so Next.js doesn't re-fetch on reveal */}
-      <div className="hidden">{checked ? null : children}</div>
-    </>
-  );
+  return <>{children}</>;
 }

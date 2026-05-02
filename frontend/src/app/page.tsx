@@ -38,19 +38,40 @@ function StatCard({
 
 export default function Dashboard() {
   const crew = useQuery({ queryKey: ["crew"], queryFn: () => apiFetch<CrewMember[]>("/crew") });
+  const vessel = useQuery({ queryKey: ["vessel-info"], queryFn: () => apiFetch<Vessel>("/setup/vessel-info") });
   const components = useQuery({ queryKey: ["components"], queryFn: () => apiFetch<Component[]>("/components") });
   const healthEvents = useQuery({ queryKey: ["health"], queryFn: () => apiFetch<HealthEvent[]>("/health/events") });
   const maintenanceLogs = useQuery({ queryKey: ["maintenance"], queryFn: () => apiFetch<MaintenanceLog[]>("/maintenance/logs") });
 
-  const isLoading = crew.isLoading || components.isLoading;
+  const isLoading = crew.isLoading || components.isLoading || vessel.isLoading;
   const openIssues = maintenanceLogs.data?.filter((l) => !l.resolved).length ?? 0;
 
   return (
     <div className="max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">MV Resolute</h1>
-        <p className="text-slate-500 mt-1">IMO 9876543 · Vessel Ops AI Dashboard</p>
+        <h1 className="text-2xl font-bold text-slate-900">{vessel.data?.name ?? "Vessel Ops AI"}</h1>
+        <p className="text-slate-500 mt-1">{vessel.data?.imo_number ? `IMO ${vessel.data.imo_number}` : "Vessel Ops AI Dashboard"}</p>
       </div>
+
+      {crew.data?.some(c => c.crew_id.startsWith("crew-00")) && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3 text-amber-800">
+            <AlertTriangle size={20} />
+            <p className="text-sm font-medium">You are viewing demo data (MV Resolute).</p>
+          </div>
+          <button 
+            onClick={async () => {
+              if (confirm("Clear all demo crew, logs, and components?")) {
+                await apiFetch("/setup/reset-demo-data", { method: "POST" });
+                window.location.reload();
+              }
+            }}
+            className="text-amber-700 text-xs font-bold hover:underline"
+          >
+            Clear Demo Data
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="grid grid-cols-2 gap-4">

@@ -25,7 +25,7 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(",")]
         return v
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()

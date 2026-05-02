@@ -286,3 +286,16 @@ async def upload_manual(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process PDF: {str(e)}")
+
+
+@router.get("/knowledge-stats")
+async def get_knowledge_stats():
+    engine = RAGEngine()
+    stats = {}
+    for coll in ["medical_protocols", "engine_manuals"]:
+        try:
+            collection = engine.client.get_collection(coll)
+            stats[coll] = collection.count()
+        except Exception:
+            stats[coll] = 0
+    return stats

@@ -21,6 +21,11 @@ class VesselCreate(BaseModel):
     imo_number: Optional[str] = None
 
 
+class VesselUpdate(BaseModel):
+    name: Optional[str] = None
+    imo_number: Optional[str] = None
+
+
 # ── Crew ─────────────────────────────────────────────────────────────────────
 
 class CrewMemberRead(BaseModel):

@@ -8,7 +8,7 @@ import type { CrewMember, HealthEvent } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -61,6 +61,20 @@ function CrewDetail() {
             value={`${member.emergency_contact.name} (${member.emergency_contact.relation}) — ${member.emergency_contact.phone}`}
           />
         )}
+      </div>
+
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={async () => {
+            if (confirm("Permanently remove this crew member?")) {
+              await apiFetch(`/crew/${member.crew_id}`, { method: "DELETE" });
+              router.push("/crew");
+            }
+          }}
+          className="text-red-500 text-xs font-medium hover:underline flex items-center gap-1"
+        >
+          <Trash2 size={12} /> Remove Crew Member
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-5">

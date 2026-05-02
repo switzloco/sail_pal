@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+import type { Vessel } from "@/lib/types";
+import Image from "next/image";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: Anchor },
@@ -10,17 +14,23 @@ const NAV = [
   { href: "/crew", label: "Crew", icon: Users },
   { href: "/health", label: "Health Log", icon: HeartPulse },
   { href: "/vessel", label: "Components", icon: Wrench },
-  { href: "/maintenance", label: "Maintenance", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
   const path = usePathname();
+  const { data: vessel } = useQuery({ queryKey: ["vessel-info"], queryFn: () => apiFetch<Vessel>("/setup/vessel-info") });
 
   return (
     <aside className="w-56 shrink-0 bg-ocean-900 text-white flex flex-col min-h-screen">
-      <div className="px-5 py-6 border-b border-ocean-800">
-        <p className="text-xs uppercase tracking-widest text-ocean-500 mb-1">Vessel Ops AI</p>
-        <p className="font-bold text-lg leading-tight">MV Resolute</p>
+      <div className="px-5 py-6 border-b border-ocean-800 flex items-center gap-3">
+        <div className="bg-white p-1.5 rounded-lg shrink-0">
+          <Image src="/images/logo.png" alt="Logo" width={24} height={24} />
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-ocean-500 leading-none mb-1">Vessel Ops AI</p>
+          <p className="font-bold text-sm leading-tight truncate w-28">{vessel?.name ?? "MV Resolute"}</p>
+        </div>
       </div>
       <nav className="flex-1 py-4">
         {NAV.map(({ href, label, icon: Icon }) => {

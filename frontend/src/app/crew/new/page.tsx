@@ -6,6 +6,8 @@ import { apiFetch } from "@/lib/api";
 import type { CrewMember } from "@/lib/types";
 import Link from "next/link";
 import { ArrowLeft, UserPlus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import type { Vessel } from "@/lib/types";
 
 const ROLES = [
   "Captain",
@@ -16,11 +18,10 @@ const ROLES = [
   "Engineer",
   "Other",
 ];
-
-const VESSEL_ID = "vessel-mv-resolute-001";
-
 export default function NewCrewPage() {
   const router = useRouter();
+  const { data: vessel } = useQuery({ queryKey: ["vessel-info"], queryFn: () => apiFetch<Vessel>("/setup/vessel-info") });
+  const VESSEL_ID = vessel?.vessel_id || "vessel-mv-resolute-001";
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

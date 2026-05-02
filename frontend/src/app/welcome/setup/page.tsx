@@ -1,0 +1,249 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { 
+  fetchSetupStatus, 
+  streamModelPull, 
+  type PullProgress, 
+  type SetupStatus 
+} from "@/lib/setup";
+import { apiFetch } from "@/lib/api";
+import { 
+  CheckCircle2, 
+  Circle, 
+  Loader2, 
+  Download, 
+  UserPlus, 
+  Ship, 
+  FileText, 
+  ArrowRight,
+  ExternalLink,
+  Trash2
+} from "lucide-react";
+import type { Vessel, CrewMember } from "@/lib/types";
+
+export default function SetupChecklistPage() {
+  const router = useRouter();
+  const [status, setStatus] = useState<SetupStatus | null>(null);
+  const [vessel, setVessel] = useState<Vessel | null>(null);
+  const [crewCount, setCrewCount] = useState(0);
+  const [pulling, setPulling] = useState(false);
+  const [progress, setProgress] = useState<PullProgress | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const cancelRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [s, v, c] = await Promise.all([
+          fetchSetupStatus(),
+          apiFetch<Vessel>("/setup/vessel-info"),
+          apiFetch<CrewMember[]>("/crew")
+        ]);
+        setStatus(s);
+        setVessel(v);
+        setCrewCount(c.length);
+      } catch (err) {
+        console.error("Failed to fetch setup data", err);
+      }
+    };
+    fetchData();
+    const id = setInterval(fetchData, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const handleStartPull = () => {
+    setPulling(true);
+    setProgress(null);
+    cancelRef.current = streamModelPull(
+      (p) => setProgress(p),
+      (success) => {
+        setPulling(false);
+        if (success) {
+          fetchSetupStatus().then(setStatus);
+        } else {
+          alert("Failed to pull model. Check your connection.");
+        }
+      }
+    );
+  };
+
+  const handleReset = async () => {
+    if (!confirm("This will clear all demo crew and logs. Are you sure?")) return;
+    setIsResetting(true);
+    try {
+      await apiFetch("/setup/reset-demo-data", { method: "POST" });
+      setCrewCount(0);
+      alert("Demo data cleared!");
+    } catch (err) {
+      alert("Failed to reset data.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleFinish = () => {
+    localStorage.setItem("vessel_ops_onboarded", "true");
+    router.push("/");
+  };
+
+  if (!status) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <Loader2 className="animate-spin text-ocean-600" size={32} />
+    </div>
+  );
+
+  const steps = [
+    {
+      id: "ollama",
+      title: "Install Ollama",
+      desc: "Local AI engine for offline privacy.",
+      status: status.ollama_installed ? "done" : "active",
+      required: true,
+      action: status.ollama_installed ? null : (
+        <a
+          href={status.install_url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 text-ocean-600 font-semibold text-sm hover:underline"
+        >
+          Download <ExternalLink size={14} />
+        </a>
+      )
+    },
+    {
+      id: "model",
+      title: `Download ${status.model_name}`,
+      desc: "The brains of the system (~8 GB).",
+      status: status.model_ready ? "done" : (status.ollama_running ? "active" : "pending"),
+      required: true,
+      action: status.model_ready ? null : (
+        pulling ? (
+          <div className="w-full mt-2">
+            <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+              <span>{progress?.status ?? "Starting..."}</span>
+              {progress?.total && <span>{((progress.completed / progress.total) * 100).toFixed(0)}%</span>}
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+              <div 
+                className="bg-ocean-600 h-full transition-all duration-300" 
+                style={{ width: `${progress?.total ? (progress.completed / progress.total) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleStartPull}
+            disabled={!status.ollama_running}
+            className="text-ocean-600 font-semibold text-sm hover:underline disabled:text-slate-300"
+          >
+            Start Download
+          </button>
+        )
+      )
+    },
+    {
+      id: "crew",
+      title: "Add Your Crew",
+      desc: `Total members: ${crewCount}`,
+      status: crewCount > 0 ? "done" : "active",
+      required: false,
+      action: (
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={() => router.push("/crew/new")}
+            className="text-ocean-600 font-semibold text-sm hover:underline"
+          >
+            Add Member
+          </button>
+          {crewCount > 0 && (
+            <button
+              onClick={handleReset}
+              disabled={isResetting}
+              className="text-red-500 font-medium text-xs hover:underline flex items-center gap-1"
+            >
+              <Trash2 size={12} /> Clear Demo
+            </button>
+          )}
+        </div>
+      )
+    },
+    {
+      id: "vessel",
+      title: "Vessel Identity",
+      desc: vessel?.name ?? "My Vessel",
+      status: vessel && vessel.name !== "My Vessel" ? "done" : "active",
+      required: false,
+      action: (
+        <button
+          onClick={() => {
+            const name = prompt("Enter vessel name:", vessel?.name);
+            if (name) {
+              apiFetch("/setup/vessel-info", {
+                method: "POST",
+                body: JSON.stringify({ name }),
+              }).then(setVessel);
+            }
+          }}
+          className="text-ocean-600 font-semibold text-sm hover:underline"
+        >
+          Rename
+        </button>
+      )
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
+      <div className="max-w-xl w-full">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold text-slate-900">🚀 Getting Started</h1>
+          <p className="text-slate-500 mt-2">Set up your vessel and AI for local operations.</p>
+        </div>
+
+        <div className="space-y-4 mb-10">
+          {steps.map((step, idx) => (
+            <div 
+              key={step.id}
+              className={`bg-white border rounded-2xl p-5 flex items-start gap-4 transition-all ${
+                step.status === "pending" ? "opacity-40 grayscale" : "shadow-sm border-slate-200"
+              }`}
+            >
+              <div className="mt-1">
+                {step.status === "done" ? (
+                  <CheckCircle2 className="text-green-500" size={24} />
+                ) : (
+                  <div className="w-6 h-6 rounded-full border-2 border-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                    {idx + 1}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-slate-900">{step.title}</h3>
+                  {!step.required && (
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 px-1.5 py-0.5 bg-slate-50 rounded">Optional</span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-500">{step.desc}</p>
+                {step.action && <div className="mt-3">{step.action}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleFinish}
+          className="w-full py-4 bg-ocean-600 hover:bg-ocean-700 text-white rounded-2xl font-bold shadow-xl shadow-ocean-200 transition-all flex items-center justify-center gap-2"
+        >
+          Launch Vessel Ops AI <ArrowRight size={20} />
+        </button>
+        
+        <p className="mt-6 text-center text-xs text-slate-400">
+          You can always change these settings later in the app.
+        </p>
+      </div>
+    </div>
+  );
+}

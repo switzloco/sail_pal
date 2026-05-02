@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
-import { Send, Sparkles, User, Bot } from "lucide-react";
+import { Send, Sparkles, User, Bot, Mic, MicOff } from "lucide-react";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
 
@@ -26,7 +26,41 @@ export default function ChatPage() {
   const [streaming, setStreaming] = useState(false);
   const [crewContext, setCrewContext] = useState<string>("");
   const [componentContext, setComponentContext] = useState<string>("");
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+
+        recognitionRef.current.onresult = (event: any) => {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          setInput(transcript);
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
   const crew = useQuery({ queryKey: ["crew"], queryFn: () => apiFetch<CrewMember[]>("/crew") });
   const components = useQuery({
@@ -235,6 +269,18 @@ export default function ChatPage() {
           disabled={streaming}
           className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500"
         />
+        <button
+          type="button"
+          onClick={toggleListening}
+          className={`px-3 py-2 rounded-lg border transition-colors flex items-center justify-center ${
+            isListening 
+              ? "bg-red-50 border-red-200 text-red-600 animate-pulse" 
+              : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50"
+          }`}
+          title={isListening ? "Stop listening" : "Start voice-to-text"}
+        >
+          {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+        </button>
         <button
           type="submit"
           disabled={streaming || !input.trim()}

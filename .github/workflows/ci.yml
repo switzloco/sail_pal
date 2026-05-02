@@ -1,0 +1,130 @@
+name: CI — Tests & Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Backend: pytest + coverage ─────────────────────────────────────────────
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-test.txt
+
+      - name: Run pytest with coverage
+        env:
+          DATABASE_URL: "sqlite:///./test_vessel.db"
+          CLOUD_MODE: "false"
+          GOOGLE_API_KEY: "test-key"
+        run: python -m pytest
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/tests/htmlcov/
+
+  # ── Backend: security scan (bandit) ────────────────────────────────────────
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install bandit
+        run: pip install bandit
+
+      - name: Run bandit security scan
+        run: bandit -r backend/ -x backend/tests,backend/data -s B101 -f json -o bandit-report.json || true
+
+      - name: Display bandit results
+        if: always()
+        run: |
+          echo "=== Bandit Security Report ==="
+          python -c "
+          import json, sys
+          with open('bandit-report.json') as f:
+              report = json.load(f)
+          results = report.get('results', [])
+          if not results:
+              print('No security issues found.')
+              sys.exit(0)
+          for r in results:
+              print(f\"[{r['issue_severity']}] {r['issue_text']}\")
+              print(f\"  File: {r['filename']}:{r['line_number']}\")
+              print()
+          high = sum(1 for r in results if r['issue_severity'] == 'HIGH')
+          if high > 0:
+              print(f'FAIL: {high} HIGH severity issues found')
+              sys.exit(1)
+          "
+
+      - name: Upload bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  # ── Dependency vulnerability check ────────────────────────────────────────
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check for known vulnerabilities
+        run: |
+          pip install pip-audit
+          pip install -r backend/requirements.txt
+          pip-audit --desc || true
+
+  # ── Frontend: lint ─────────────────────────────────────────────────────────
+  frontend-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint

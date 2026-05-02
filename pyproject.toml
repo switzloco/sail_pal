@@ -1,0 +1,42 @@
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--cov=backend",
+    "--cov-report=term-missing",
+    "--cov-report=html:backend/tests/htmlcov",
+    "--cov-config=pyproject.toml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "security: security-related tests",
+    "integration: integration tests requiring full app context",
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "backend/tests/*",
+    "backend/data/*",
+    "backend/db/migrations/*",
+    "backend/__init__.py",
+]
+
+[tool.coverage.report]
+fail_under = 60
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ ==",
+    "raise NotImplementedError",
+]
+
+[tool.bandit]
+targets = ["backend"]
+exclude_dirs = ["backend/tests", "backend/data"]
+skips = ["B101"]  # assert is fine in non-prod code

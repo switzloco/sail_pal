@@ -4,12 +4,16 @@ import shutil
 from typing import AsyncIterator
 
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from backend.ai import mode_state
 from backend.config import settings
+from backend.db.database import get_db
+from backend.db.models import Vessel, CrewMember, HealthEvent, Component, MaintenanceLog
+from backend.schemas.pydantic_models import VesselRead, VesselUpdate
 
 router = APIRouter()
 
@@ -157,3 +161,51 @@ async def pull_model():
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.post("/reset-demo-data")
+async def reset_demo_data(db: Session = Depends(get_db)):
+    """Wipe all user-generated data to start fresh."""
+    try:
+        db.query(MaintenanceLog).delete()
+        db.query(HealthEvent).delete()
+        db.query(Component).delete()
+        db.query(CrewMember).delete()
+        # We keep the Vessel record but reset its name if needed? 
+        # Or just leave it for the user to rename.
+        db.commit()
+        return {"status": "success", "message": "Demo data cleared."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/vessel-info", response_model=VesselRead)
+async def get_vessel_info(db: Session = Depends(get_db)):
+    vessel = db.query(Vessel).first()
+    if not vessel:
+        # Create a default one if missing
+        vessel = Vessel(name="My Vessel", imo_number="0000000")
+        db.add(vessel)
+        db.commit()
+        db.refresh(vessel)
+    return vessel
+
+
+@router.post("/vessel-info", response_model=VesselRead)
+async def update_vessel_info(payload: VesselUpdate, db: Session = Depends(get_db)):
+    vessel = db.query(Vessel).first()
+    if not vessel:
+        vessel = Vessel(name="My Vessel", imo_number="0000000")
+        db.add(vessel)
+        db.commit()
+        db.refresh(vessel)
+    
+    if payload.name:
+        vessel.name = payload.name
+    if payload.imo_number is not None:
+        vessel.imo_number = payload.imo_number
+        
+    db.commit()
+    db.refresh(vessel)
+    return vessel
