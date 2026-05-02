@@ -67,7 +67,7 @@ def main() -> None:
 
     uvicorn.run(
         app,
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=int(os.environ.get("VESSEL_OPS_PORT", "8000")),
         log_level="info",
     )

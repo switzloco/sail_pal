@@ -12,8 +12,10 @@ import os
 from typing import List
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from backend.rag.store import knowledge_store
 
-_CHROMA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "chroma")
+_DATA_DIR = os.getenv("VESSEL_OPS_DATA_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
+_CHROMA_DIR = os.path.join(_DATA_DIR, "chroma")
 
 class RAGEngine:
     def __init__(self):
@@ -46,6 +48,17 @@ class RAGEngine:
                     "text": doc,
                     "metadata": meta
                 })
+
+        # Fallback/Additional context from JSON KnowledgeStore
+        if collection_name == "medical_protocols":
+            json_context = knowledge_store.search_protocols(text)
+            if json_context:
+                chunks.append({"text": json_context, "metadata": {"source": "Local JSON Protocols"}})
+        elif collection_name == "engine_manuals":
+            json_context = knowledge_store.search_manuals(text)
+            if json_context:
+                chunks.append({"text": json_context, "metadata": {"source": "Local JSON Manuals"}})
+
         return chunks
 
     def add_documents(self, collection_name: str, documents: List[str], metadatas: List[dict], ids: List[str]):

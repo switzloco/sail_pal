@@ -4,7 +4,17 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    database_url: str = "sqlite:///./backend/data/vessel.db"
+    # Use VESSEL_OPS_DATA_DIR if set (e.g. /tmp/data in Cloud Run), otherwise local default
+    database_url: str = ""
+    
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def assemble_db_url(cls, v: str, info) -> str:
+        if v: return v
+        data_dir = os.getenv("VESSEL_OPS_DATA_DIR", "./backend/data")
+        db_path = os.path.join(data_dir, "vessel.db")
+        return f"sqlite:///{db_path}"
+
     ollama_host: str = "http://localhost:11434"
     model_primary: str = "gemma4:12b"
     model_scale: str = "gemma4:27b"

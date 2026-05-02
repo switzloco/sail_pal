@@ -16,6 +16,16 @@ from backend.ai.prompt_templates import (
 from backend.ai.rag_engine import RAGEngine
 from backend.ai.image_parser import parse_component_image
 
+_rag_engine = None
+
+def get_rag_engine():
+    """Lazy-load RAGEngine to prevent blocking startup with heavy models."""
+    global _rag_engine
+    if _rag_engine is None:
+        from backend.ai.rag_engine import RAGEngine
+        _rag_engine = RAGEngine()
+    return _rag_engine
+
 router = APIRouter()
 
 
@@ -79,8 +89,7 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
         + (f"Vitals: {payload.vitals}\n" if payload.vitals else "")
     )
 
-    rag = RAGEngine()
-    rag_results = rag.query("medical_protocols", ", ".join(payload.symptoms), k=2)
+    rag_results = get_rag_engine().query("medical_protocols", ", ".join(payload.symptoms), k=2)
     if rag_results:
         user_prompt += "\nRelevant Protocol Excerpts:\n"
         for r in rag_results:
@@ -133,12 +142,11 @@ async def analyze_component(
     elif image_bytes:
         user_prompt += "An image of the component has been attached.\n"
 
-    rag = RAGEngine()
     rag_query = f"{component.name} {component.model_number or ''} {issue_description}"
     if image_analysis:
         rag_query += f" {image_analysis.get('fault_type', '')}"
 
-    rag_results = rag.query("engine_manuals", rag_query, k=2)
+    rag_results = get_rag_engine().query("engine_manuals", rag_query, k=2)
     if rag_results:
         user_prompt += "\nRelevant Manual Excerpts:\n"
         for r in rag_results:
@@ -160,6 +168,7 @@ async def analyze_component(
 async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     """Multi-turn chat with Gemma, optionally grounded in a crew member or component."""
     from backend.db.models import CrewMember, Component
+    rag_engine = get_rag_engine()
 
     context_lines: list[str] = []
     system = GENERAL_SYSTEM
@@ -191,15 +200,14 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             system = ENGINE_SYSTEM
 
     rag_query_text = payload.messages[-1].content
-    rag = RAGEngine()
     if payload.crew_id:
-        rag_results = rag.query("medical_protocols", rag_query_text, k=2)
+        rag_results = rag_engine.query("medical_protocols", rag_query_text, k=2)
         if rag_results:
             context_lines.append("\nRelevant Protocol Excerpts:")
             for r in rag_results:
                 context_lines.append(f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})")
     elif payload.component_id:
-        rag_results = rag.query("engine_manuals", rag_query_text, k=2)
+        rag_results = rag_engine.query("engine_manuals", rag_query_text, k=2)
         if rag_results:
             context_lines.append("\nRelevant Manual Excerpts:")
             for r in rag_results:
@@ -266,8 +274,6 @@ async def upload_manual(
             raise HTTPException(status_code=400, detail="No readable text found in PDF")
         
         # Add to ChromaDB
-        from backend.ai.rag_engine import RAGEngine
-        rag = RAGEngine()
         ids = [f"{file.filename}-{c['metadata']['page']}-{uuid.uuid4().hex[:8]}" for c in chunks]
         texts = [c["text"] for c in chunks]
         metadatas = [c["metadata"] for c in chunks]
@@ -275,7 +281,7 @@ async def upload_manual(
         # Add in batches to avoid ChromaDB limits
         batch_size = 100
         for i in range(0, len(chunks), batch_size):
-            rag.add_documents(
+            get_rag_engine().add_documents(
                 collection_name=category,
                 documents=texts[i:i+batch_size],
                 metadatas=metadatas[i:i+batch_size],
@@ -290,11 +296,10 @@ async def upload_manual(
 
 @router.get("/knowledge-stats")
 async def get_knowledge_stats():
-    engine = RAGEngine()
     stats = {}
     for coll in ["medical_protocols", "engine_manuals"]:
         try:
-            collection = engine.client.get_collection(coll)
+            collection = get_rag_engine().client.get_collection(coll)
             stats[coll] = collection.count()
         except Exception:
             stats[coll] = 0

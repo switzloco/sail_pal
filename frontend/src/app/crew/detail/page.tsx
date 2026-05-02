@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, HealthEvent } from "@/lib/types";
@@ -22,6 +22,7 @@ function Row({ label, value }: { label: string; value?: string | null }) {
 
 function CrewDetail() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get("id") ?? "";
 
   const { data: member, isLoading } = useQuery({
