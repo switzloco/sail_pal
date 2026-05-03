@@ -123,12 +123,12 @@ export default function SetupChecklistPage() {
           <div className="w-full mt-2">
             <div className="flex justify-between text-[10px] text-slate-400 mb-1">
               <span>{progress?.status ?? "Starting..."}</span>
-              {progress?.total && <span>{((progress.completed / progress.total) * 100).toFixed(0)}%</span>}
+              {progress?.total && progress?.completed !== undefined && <span>{((progress.completed / progress.total) * 100).toFixed(0)}%</span>}
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
               <div 
                 className="bg-ocean-600 h-full transition-all duration-300" 
-                style={{ width: `${progress?.total ? (progress.completed / progress.total) * 100 : 0}%` }}
+                style={{ width: `${(progress?.total && progress?.completed !== undefined) ? (progress.completed / progress.total) * 100 : 0}%` }}
               />
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function SetupChecklistPage() {
               apiFetch("/setup/vessel-info", {
                 method: "POST",
                 body: JSON.stringify({ name }),
-              }).then(setVessel);
+              }).then(v => setVessel(v as Vessel));
             }
           }}
           className="text-ocean-600 font-semibold text-sm hover:underline"

@@ -4,7 +4,7 @@ steps:
     args:
       - build
       - -t
-      - gcr.io/$PROJECT_ID/vessel-ops-backend:$SHORT_SHA
+      - gcr.io/$PROJECT_ID/vessel-ops-backend:$BUILD_ID
       - -t
       - gcr.io/$PROJECT_ID/vessel-ops-backend:latest
       - -f
@@ -24,7 +24,7 @@ steps:
       - run
       - deploy
       - sail-pal
-      - --image=gcr.io/$PROJECT_ID/vessel-ops-backend:$SHORT_SHA
+      - --image=gcr.io/$PROJECT_ID/vessel-ops-backend:$BUILD_ID
       - --region=us-west1
       - --platform=managed
       - --allow-unauthenticated

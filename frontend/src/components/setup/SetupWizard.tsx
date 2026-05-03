@@ -152,7 +152,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
 
   // Compute download progress
   const pct =
-    progress?.total && progress.completed
+    progress?.total && progress?.completed !== undefined
       ? (progress.completed / progress.total) * 100
       : 0;
 
