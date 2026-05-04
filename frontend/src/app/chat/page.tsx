@@ -165,7 +165,7 @@ export default function ChatPage() {
           <h1 className="text-2xl font-bold text-slate-900">Ask Gemma</h1>
         </div>
         <p className="text-sm text-slate-500 mt-1">
-          Powered by <span className="font-semibold">Gemma</span> — Google DeepMind's open-weights model.
+          Powered by <span className="font-semibold">Gemma</span> — Google DeepMind&apos;s open-weights model.
           Ground a question in a specific crew member or component for medical / engineering context.
         </p>
       </div>

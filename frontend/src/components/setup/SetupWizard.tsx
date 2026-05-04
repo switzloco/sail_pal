@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { CheckCircle, Circle, Loader2, ExternalLink, Download, Cloud } from "lucide-react";
 import {
   fetchSetupStatus,
@@ -88,7 +88,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
   const [pullError, setPullError] = useState(false);
   const cancelRef = useRef<(() => void) | null>(null);
 
-  async function check() {
+  const check = useCallback(async () => {
     setChecking(true);
     try {
       const s = await fetchSetupStatus();
@@ -99,14 +99,14 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
     } finally {
       setChecking(false);
     }
-  }
+  }, [onComplete]);
 
   useEffect(() => {
     check();
     // poll every 5s so the UI updates when user installs Ollama externally
     const id = setInterval(check, 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [check]);
 
   function startPull() {
     setPulling(true);
@@ -123,6 +123,8 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
         }
       },
     );
+  }
+
   async function switchToCloud() {
     try {
       await setMode("cloud");

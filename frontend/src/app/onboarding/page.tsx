@@ -32,7 +32,7 @@ export default function Onboarding() {
             </p>
             <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl">
               <p className="text-amber-200/80 text-sm">
-                If you are connected to the internet now, you can use the <strong>Cloud Test Mode</strong>, but for production, you must connect to the boat's server.
+                If you are connected to the internet now, you can use the <strong>Cloud Test Mode</strong>, but for production, you must connect to the boat&apos;s server.
               </p>
             </div>
             <button
@@ -54,7 +54,7 @@ export default function Onboarding() {
             <div className="space-y-4">
               <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
                 <h3 className="font-bold text-white/90 mb-1">1. Connect to Wi-Fi</h3>
-                <p className="text-xs text-white/50">Ensure you are on the local boat network (e.g., 'MV-RESOLUTE-WIFI').</p>
+                <p className="text-xs text-white/50">Ensure you are on the local boat network (e.g., &apos;MV-RESOLUTE-WIFI&apos;).</p>
               </div>
               <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
                 <h3 className="font-bold text-white/90 mb-1">2. Target Server</h3>
