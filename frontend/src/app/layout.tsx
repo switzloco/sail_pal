@@ -1,3 +1,4 @@
+"use client";
 import type { Metadata } from "next";
 import "./globals.css";
 import { QueryProvider } from "@/components/ui/QueryProvider";
@@ -5,13 +6,18 @@ import { Sidebar } from "@/components/ui/Sidebar";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { CloudBanner } from "@/components/ui/CloudBanner";
 import { SetupGate } from "@/components/setup/SetupGate";
+import { useState } from "react";
+import { Menu } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Sail Pal",
-  description: "Offline AI assistant for maritime medical and engineering operations",
-};
+// Metadata must be in a separate Server Component or metadata.ts in Next.js 13+ App Router
+// export const metadata: Metadata = {
+//   title: "Sail Pal",
+//   description: "Offline AI assistant for maritime medical and engineering operations",
+// };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <html lang="en">
       <head>
@@ -23,9 +29,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SetupGate>
             <OfflineBanner />
             <CloudBanner />
-            <div className="flex min-h-screen">
-              <Sidebar />
-              <main className="flex-1 p-8 overflow-auto">{children}</main>
+            <div className="flex min-h-screen relative">
+              <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+              <div className="flex-1 flex flex-col min-w-0">
+                <header className="lg:hidden h-14 bg-ocean-900 text-white flex items-center px-4 shrink-0">
+                  <button 
+                    onClick={() => setSidebarOpen(true)}
+                    className="p-2 hover:bg-ocean-800 rounded-lg"
+                  >
+                    <Menu size={20} />
+                  </button>
+                  <span className="ml-3 font-bold text-sm">Sail Pal</span>
+                </header>
+                <main className="flex-1 p-4 md:p-8 overflow-auto">{children}</main>
+              </div>
             </div>
           </SetupGate>
         </QueryProvider>

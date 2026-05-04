@@ -16,9 +16,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 /** Ping the backend — resolves true if reachable, false otherwise. */
 export async function pingBackend(): Promise<boolean> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000"}/healthz`, { signal: AbortSignal.timeout(3000) });
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
+    // Ensure we don't have double slashes if base ends with one
+    const url = `${baseUrl.replace(/\/$/, "")}/healthz`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
     return res.ok;
-  } catch {
+  } catch (err) {
+    console.warn("Heartbeat failed:", err);
     return false;
   }
 }

@@ -9,6 +9,7 @@ import { useState } from "react";
 export default function WelcomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [stGemmaActive, setStGemmaActive] = useState(true);
 
   const handleTryCloud = async () => {
     setLoading("cloud");
@@ -32,30 +33,31 @@ export default function WelcomePage() {
         {/* Hero Section */}
         <div className="relative h-64 w-full">
           <Image
-            src="/images/hero-bridge.png"
+            src="/images/hero-bridge-v2.png"
             alt="Vessel Bridge"
             fill
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ocean-950/80 via-transparent to-transparent" />
+          
           <div className="absolute bottom-6 left-8 flex items-center gap-3 text-white">
             <div className="bg-ocean-600 p-2 rounded-xl shadow-lg">
               <Anchor size={32} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Vessel Ops AI</h1>
-              <p className="text-ocean-100 font-medium">Precision Assistance for Remote Operations</p>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Vessel Ops AI</h1>
+              <p className="text-ocean-100 text-sm md:text-base font-medium">Precision Assistance for Remote Operations</p>
             </div>
           </div>
         </div>
 
         {/* Content */}
         <div className="p-10 text-center">
-          <p className="text-slate-600 text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
+          <p className="text-slate-600 text-base md:text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
             Your offline-first AI companion for maritime emergencies. Grounded in the 
             <strong> WHO International Medical Guide for Ships</strong> and your vessel&apos;s own technical manuals. 
-            Built to save lives and hardware where the internet ends.
+            Built to save lives where the internet ends.
           </p>
 
           <div className="grid md:grid-cols-2 gap-6 mb-12">

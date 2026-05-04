@@ -61,6 +61,9 @@ def main() -> None:
     from backend.main import app
 
     port = int(os.environ.get("PORT", "8080"))
+    print(f"Starting Vessel Ops AI on 0.0.0.0:{port}...")
+    print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}")
+    
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 

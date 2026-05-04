@@ -32,6 +32,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/healthz", tags=["system"])
+@app.get("/healthz/", tags=["system"])
+def healthcheck():
+    return {"status": "ok", "service": "vessel-ops-ai", "version": "0.1.2"}
+
+
 app.include_router(crew.router, prefix="/api/crew", tags=["crew"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
 app.include_router(vessel.router, prefix="/api/components", tags=["vessel"])
@@ -41,25 +47,34 @@ app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
 
 
-@app.get("/healthz", tags=["system"])
-def healthcheck():
-    return {"status": "ok", "service": "vessel-ops-ai"}
-
-
 # Serve the embedded Next.js static export when present (Docker / local dev).
 # In the Cloud Run + Firebase Hosting deployment, frontend_out won't exist and
 # Firebase serves the frontend directly — this block is simply skipped.
 _FRONTEND = Path(__file__).parent.parent / "frontend_out"
 if _FRONTEND.is_dir():
+    # Serve Next.js assets
     app.mount("/_next", StaticFiles(directory=str(_FRONTEND / "_next")), name="nextjs-assets")
+    
+    # Serve public assets (images, etc)
+    if (_FRONTEND / "images").is_dir():
+        app.mount("/images", StaticFiles(directory=str(_FRONTEND / "images")), name="public-images")
+    if (_FRONTEND / "favicon.ico").is_file():
+        @app.get("/favicon.ico", include_in_schema=False)
+        async def favicon():
+            return FileResponse(str(_FRONTEND / "favicon.ico"))
 
     @app.get("/", include_in_schema=False)
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_fallback(full_path: str = ""):
-        # Serve the page's own index.html if it exists (Next.js trailingSlash export),
-        # otherwise fall back to the root index for client-side routing.
-        candidate = _FRONTEND / full_path / "index.html"
-        if candidate.is_file():
-            return FileResponse(str(candidate))
-        root_index = _FRONTEND / "index.html"
-        return FileResponse(str(root_index))
+        # 1. Check if the path points directly to a file (images, robots.txt, manifest.json)
+        file_path = _FRONTEND / full_path
+        if full_path and file_path.is_file():
+            return FileResponse(str(file_path))
+
+        # 2. Check for Next.js trailingSlash export (path/index.html)
+        index_candidate = _FRONTEND / full_path / "index.html"
+        if index_candidate.is_file():
+            return FileResponse(str(index_candidate))
+
+        # 3. Fallback to root index for SPA routing
+        return FileResponse(str(_FRONTEND / "index.html"))

@@ -74,11 +74,11 @@ export default function Dashboard() {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <StatCard
             label="Active crew"
             value={crew.data?.length ?? 0}
@@ -112,17 +112,32 @@ export default function Dashboard() {
 
       <Link
         href="/chat"
-        className="mt-10 block p-5 bg-gradient-to-br from-ocean-600 to-ocean-800 rounded-xl text-white hover:shadow-lg transition-shadow"
+        className="mt-10 block p-6 bg-gradient-to-br from-ocean-600 to-ocean-800 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden"
       >
-        <div className="flex items-center gap-3 mb-2">
-          <Sparkles size={22} />
-          <h2 className="text-lg font-bold">Ask Gemma</h2>
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Sparkles size={120} />
         </div>
-        <p className="text-sm text-ocean-100">
-          Discuss a crew member's symptoms, troubleshoot a fault, or get protocol guidance.
-          Powered by <strong>Gemma</strong> — Google DeepMind's open-weights model, designed
-          to run offline at sea.
-        </p>
+        
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md">
+                <Sparkles size={24} />
+              </div>
+              <h2 className="text-xl font-bold">Ask Gemma</h2>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white">System Ready</span>
+            </div>
+          </div>
+          
+          <p className="text-sm md:text-base text-ocean-50 leading-relaxed max-w-lg">
+            Consult your vessel&apos;s medical and technical knowledge base. Powered by 
+            <strong> Gemma</strong> (Google DeepMind) and the 
+            <strong> WHO International Medical Guide</strong>.
+          </p>
+        </div>
       </Link>
     </div>
   );

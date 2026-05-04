@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CheckCircle, Circle, Loader2, ExternalLink, Download, Cloud } from "lucide-react";
 import {
   fetchSetupStatus,
   streamModelPull,
+  setMode,
   type PullProgress,
   type SetupStatus,
 } from "@/lib/setup";
-import { CheckCircle, Circle, Loader2, ExternalLink, Download } from "lucide-react";
 
 type StepState = "pending" | "active" | "done" | "error";
 
@@ -122,6 +123,13 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
         }
       },
     );
+  async function switchToCloud() {
+    try {
+      await setMode("cloud");
+      onComplete();
+    } catch (err) {
+      console.error("Failed to switch to cloud mode:", err);
+    }
   }
 
   useEffect(() => () => { cancelRef.current?.(); }, []);
@@ -288,6 +296,20 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
           This setup only happens once. After this, Vessel Ops AI works
           completely offline.
         </p>
+
+        {/* Cloud Fallback Escape Hatch */}
+        <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+          <p className="text-sm text-slate-500 mb-3">
+            Having trouble with local setup?
+          </p>
+          <button
+            onClick={switchToCloud}
+            className="text-ocean-700 text-sm font-medium hover:text-ocean-800 flex items-center justify-center gap-1.5 mx-auto transition-colors"
+          >
+            <Cloud size={15} />
+            Use Cloud Fallback (Trial Mode)
+          </button>
+        </div>
       </div>
     </div>
   );

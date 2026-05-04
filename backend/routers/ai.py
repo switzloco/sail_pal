@@ -95,10 +95,7 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
         for r in rag_results:
             user_prompt += f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})\n"
 
-    user_prompt += (
-        f"\nPlease assess and provide immediate treatment guidance. "
-        f"End with: {DISCLAIMER}"
-    )
+    user_prompt += "\nPlease assess and provide immediate treatment guidance."
 
     return StreamingResponse(
         _tokens_to_sse(_llm_tokens(MEDICAL_SYSTEM, user_prompt, severity=payload.severity)),
@@ -152,10 +149,7 @@ async def analyze_component(
         for r in rag_results:
             user_prompt += f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})\n"
 
-    user_prompt += (
-        f"\nDiagnose the fault and provide repair/safety guidance. "
-        f"End with: {DISCLAIMER}"
-    )
+    user_prompt += "\nDiagnose the fault and provide repair/safety guidance."
 
     return StreamingResponse(
         _tokens_to_sse(_llm_tokens(ENGINE_SYSTEM, user_prompt, images=image_bytes, severity=severity)),
