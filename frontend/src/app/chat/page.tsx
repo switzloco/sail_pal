@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
 import { Send, Sparkles, User, Bot, Mic, MicOff } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
 
@@ -27,6 +28,7 @@ export default function ChatPage() {
   const [crewContext, setCrewContext] = useState<string>("");
   const [componentContext, setComponentContext] = useState<string>("");
   const [isListening, setIsListening] = useState(false);
+  const [succinct, setSuccinct] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -85,7 +87,7 @@ export default function ChatPage() {
     setMessages((m) => [...m, { role: "assistant", content: "" }]);
 
     try {
-      const body: Record<string, unknown> = { messages: next };
+      const body: Record<string, unknown> = { messages: next, succinct };
       if (crewContext) body.crew_id = crewContext;
       if (componentContext) body.component_id = componentContext;
 
@@ -204,10 +206,19 @@ export default function ChatPage() {
           ))}
         </select>
         {contextLabel && (
-          <span className="text-xs text-ocean-700 bg-ocean-50 px-2 py-1 rounded">
+          <span className=\"text-xs text-ocean-700 bg-ocean-50 px-2 py-1 rounded\">
             Discussing: {contextLabel}
           </span>
         )}
+        <label className=\"flex items-center gap-2 ml-auto cursor-pointer\">
+          <input 
+            type=\"checkbox\" 
+            checked={succinct} 
+            onChange={(e) => setSuccinct(e.target.checked)}
+            className=\"w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500\"
+          />
+          <span className=\"text-xs font-semibold text-slate-600\">Succinct Mode</span>
+        </label>
       </div>
 
       {/* Messages */}
@@ -242,12 +253,25 @@ export default function ChatPage() {
                 <p className="text-xs font-semibold text-slate-500 mb-1">
                   {m.role === "user" ? "You" : "Gemma"}
                 </p>
-                <div className="text-sm text-slate-800 whitespace-pre-wrap">
-                  {m.content}
-                  {streaming && i === messages.length - 1 && m.role === "assistant" && (
-                    <span className="inline-block w-2 h-4 ml-0.5 bg-ocean-400 animate-pulse" />
+                <div className=\"text-sm text-slate-800 markdown-content\">
+                  <ReactMarkdown>
+                    {m.content}
+                  </ReactMarkdown>
+                  {streaming && i === messages.length - 1 && m.role === \"assistant\" && (
+                    <span className=\"inline-block w-2 h-4 ml-0.5 bg-ocean-400 animate-pulse\" />
                   )}
                 </div>
+                {m.role === 'assistant' && m.content.toLowerCase().includes('splint') && (
+                  <div className=\"mt-4 p-4 bg-slate-800 rounded-lg border border-blue-500/30\">
+                    <p className=\"text-xs font-semibold text-blue-400 uppercase tracking-wider mb-2\">Onboard Visual Aid: Splint Types</p>
+                    <img 
+                      src={`/api/resource?path=medical_splint_types_1778021722507.png`} 
+                      alt=\"Splint Types Diagram\"
+                      className=\"rounded border border-slate-700 w-full max-w-md\"
+                    />
+                    <p className=\"text-xs text-slate-400 mt-2 italic\">Source: Vessel Medical Manual, App. D</p>
+                  </div>
+                )}
               </div>
             </div>
           ))
@@ -265,9 +289,12 @@ export default function ChatPage() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Gemma about a symptom, fault, or decision…"
+          placeholder=\"Ask Gemma about a symptom, fault, or decision…\"
           disabled={streaming}
-          className="flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500"
+          className=\"flex-1 bg-white border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500\"
+          autoCorrect=\"off\"
+          spellCheck=\"false\"
+          autoComplete=\"off\"
         />
         <button
           type="button"

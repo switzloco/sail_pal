@@ -275,6 +275,7 @@ class MedicalQueryRequest(BaseModel):
     symptoms: List[str]
     vitals: Optional[Dict[str, Any]] = None
     severity: str
+    succinct: bool = False
 
 
 class ComponentAnalysisRequest(BaseModel):

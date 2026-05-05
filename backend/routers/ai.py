@@ -1,6 +1,6 @@
 import asyncio
 import json
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Body
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -11,7 +11,7 @@ from backend.config import settings
 from backend.db.database import get_db
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
-    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, DISCLAIMER,
+    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, DISCLAIMER, SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS
 )
 from backend.ai.rag_engine import RAGEngine
 from backend.ai.image_parser import parse_component_image
@@ -38,6 +38,7 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     crew_id: Optional[str] = None
     component_id: Optional[str] = None
+    succinct: bool = False
 
 
 async def _tokens_to_sse(token_iter: AsyncIterator[str]):
@@ -74,6 +75,17 @@ async def _llm_tokens(
             yield token
 
 
+async def _llm_full_response(
+    system: str,
+    user_prompt: str,
+) -> str:
+    """Get the full response from the LLM (non-streaming)."""
+    full_text = ""
+    async for token in _llm_tokens(system, user_prompt):
+        full_text += token
+    return full_text
+
+
 @router.post("/medical-query")
 async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_db)):
     """Stream an AI medical guidance response (cloud or local)."""
@@ -90,15 +102,25 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
     )
 
     rag_results = get_rag_engine().query("medical_protocols", ", ".join(payload.symptoms), k=2)
+    has_rag = False
     if rag_results:
+        has_rag = True
         user_prompt += "\nRelevant Protocol Excerpts:\n"
         for r in rag_results:
-            user_prompt += f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})\n"
+            source = r['metadata'].get('source', 'Unknown Document')
+            page = r['metadata'].get('page', '?')
+            user_prompt += f"- {r['text']} (Source: {source}, Page: {page})\n"
 
     user_prompt += "\nPlease assess and provide immediate treatment guidance."
+    
+    system = MEDICAL_SYSTEM
+    if has_rag:
+        system += CITATION_INSTRUCTIONS
+    if payload.succinct:
+        system += SUCCINCT_MODIFIER
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(MEDICAL_SYSTEM, user_prompt, severity=payload.severity)),
+        _tokens_to_sse(_llm_tokens(system, user_prompt, severity=payload.severity)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -144,15 +166,23 @@ async def analyze_component(
         rag_query += f" {image_analysis.get('fault_type', '')}"
 
     rag_results = get_rag_engine().query("engine_manuals", rag_query, k=2)
+    has_rag = False
     if rag_results:
+        has_rag = True
         user_prompt += "\nRelevant Manual Excerpts:\n"
         for r in rag_results:
-            user_prompt += f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})\n"
+            source = r['metadata'].get('source', 'Unknown Manual')
+            page = r['metadata'].get('page', '?')
+            user_prompt += f"- {r['text']} (Source: {source}, Page: {page})\n"
 
     user_prompt += "\nDiagnose the fault and provide repair/safety guidance."
+    
+    system = ENGINE_SYSTEM
+    if has_rag:
+        system += CITATION_INSTRUCTIONS
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(ENGINE_SYSTEM, user_prompt, images=image_bytes, severity=severity)),
+        _tokens_to_sse(_llm_tokens(system, user_prompt, images=image_bytes, severity=severity)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -193,22 +223,35 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
                 context_lines.append(f"  Notes: {comp.notes}")
             system = ENGINE_SYSTEM
 
+    has_rag = False
     rag_query_text = payload.messages[-1].content
     if payload.crew_id:
         rag_results = rag_engine.query("medical_protocols", rag_query_text, k=2)
         if rag_results:
+            has_rag = True
             context_lines.append("\nRelevant Protocol Excerpts:")
             for r in rag_results:
-                context_lines.append(f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})")
+                source = r['metadata'].get('source', 'Unknown Document')
+                page = r['metadata'].get('page', '?')
+                context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
     elif payload.component_id:
         rag_results = rag_engine.query("engine_manuals", rag_query_text, k=2)
         if rag_results:
+            has_rag = True
             context_lines.append("\nRelevant Manual Excerpts:")
             for r in rag_results:
-                context_lines.append(f"- {r['text']} (Source: {r['metadata'].get('source', 'Unknown')})")
+                source = r['metadata'].get('source', 'Unknown Manual')
+                page = r['metadata'].get('page', '?')
+                context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
 
     if context_lines:
         system = system + "\n\nContext for this conversation:\n" + "\n".join(context_lines)
+
+    if has_rag:
+        system += CITATION_INSTRUCTIONS
+
+    if payload.succinct:
+        system += SUCCINCT_MODIFIER
 
     transcript = "\n\n".join(
         f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}"
@@ -298,3 +341,38 @@ async def get_knowledge_stats():
         except Exception:
             stats[coll] = 0
     return stats
+
+
+@router.post("/extract-medical-info")
+async def extract_medical_info(data: dict = Body(...)):
+    """Use LLM to extract structured medical data from free-text/voice transcripts."""
+    text = data.get("text", "")
+    if not text:
+        return {}
+        
+    system = "You are a medical data extraction assistant. Extract symptoms and vitals into a structured JSON object."
+    user_prompt = f"""Extract symptoms and vitals from this maritime medical log transcript:
+"{text}"
+
+Return ONLY a JSON object with these exact keys: 
+- symptoms (string, comma-separated)
+- hr (integer)
+- bp (string)
+- temp (float)
+- spo2 (integer)
+- severity (one of: minor, moderate, serious, critical)
+
+If a value is not mentioned, use null (for numbers) or an empty string (for text).
+"""
+    response_text = await _llm_full_response(system, user_prompt)
+    
+    # Try to extract JSON block from potentially verbose LLM output
+    try:
+        import re
+        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if json_match:
+            return json.loads(json_match.group(0))
+    except Exception:
+        pass
+        
+    return {"raw_response": response_text}

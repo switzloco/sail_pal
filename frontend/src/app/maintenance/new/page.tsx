@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mic, MicOff } from "lucide-react";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 
 const SEVERITIES = ["advisory", "degraded", "critical", "down"] as const;
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
@@ -26,6 +27,17 @@ export default function NewMaintenanceLogPage() {
     issue_description: "",
     follow_up: "",
   });
+
+  const { isListening, transcript, startListening, stopListening, error: sttError } = useSpeechToText();
+
+  useEffect(() => {
+    if (transcript) {
+      setForm(prev => ({
+        ...prev,
+        issue_description: (prev.issue_description ? prev.issue_description + " " : "") + transcript
+      }));
+    }
+  }, [transcript]);
   const [photo, setPhoto] = useState<File | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -36,8 +48,8 @@ export default function NewMaintenanceLogPage() {
     try {
       const fd = new FormData();
       fd.append("vessel_id", "vessel-mv-resolute-001");
-      fd.append("component_id", form.component_id);
-      fd.append("logged_by", form.logged_by);
+      fd.append("component_id", form.component_id || "general");
+      fd.append("logged_by", form.logged_by || "unknown");
       fd.append("severity", form.severity);
       fd.append("issue_description", form.issue_description);
       if (form.follow_up) fd.append("follow_up", form.follow_up);
@@ -72,38 +84,61 @@ export default function NewMaintenanceLogPage() {
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Log Maintenance Issue</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
-        {field("Component", (
-          <select className={inputClass} required value={form.component_id} onChange={(e) => setForm({ ...form, component_id: e.target.value })}>
-            <option value="">Select component</option>
-            {components?.map((c) => (
-              <option key={c.component_id} value={c.component_id}>{c.name} — {c.system}</option>
-            ))}
-          </select>
-        ))}
-
-        {field("Logged by", (
-          <select className={inputClass} required value={form.logged_by} onChange={(e) => setForm({ ...form, logged_by: e.target.value })}>
-            <option value="">Select crew member</option>
-            {crew?.map((m) => (
-              <option key={m.crew_id} value={m.crew_id}>{m.full_name} — {m.role}</option>
-            ))}
-          </select>
-        ))}
-
-        {field("Severity", (
-          <select className={inputClass} value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value as typeof SEVERITIES[number] })}>
-            {SEVERITIES.map((s) => (
-              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-            ))}
-          </select>
-        ))}
-
         {field("Issue description", (
-          <textarea className={inputClass} rows={3} required value={form.issue_description} onChange={(e) => setForm({ ...form, issue_description: e.target.value })} />
+          <div className="relative">
+            <textarea
+              className={`${inputClass} pr-10`}
+              rows={4}
+              required
+              placeholder="Describe what happened or what broke..."
+              value={form.issue_description}
+              onChange={(e) => setForm({ ...form, issue_description: e.target.value })}
+              autoCorrect="off"
+              spellCheck="false"
+              autoComplete="off"
+            />
+            <button 
+              type="button"
+              onClick={isListening ? stopListening : startListening}
+              className={`absolute right-3 top-3 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-ocean-600'}`}
+              title={isListening ? "Stop Recording" : "Voice Dictation"}
+            >
+              {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+            </button>
+            {sttError && <p className="text-[10px] text-red-500 mt-1 absolute right-0 -bottom-4">{sttError}</p>}
+          </div>
         ))}
 
-        {field("Follow-up required", (
-          <input className={inputClass} value={form.follow_up} onChange={(e) => setForm({ ...form, follow_up: e.target.value })} placeholder="Optional notes on next steps" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {field("Component", (
+            <select className={inputClass} value={form.component_id} onChange={(e) => setForm({ ...form, component_id: e.target.value })}>
+              <option value=\"\">General / Unsure</option>
+              {components?.map((c) => (
+                <option key={c.component_id} value={c.component_id}>{c.name} — {c.system}</option>
+              ))}
+            </select>
+          ))}
+
+          {field(\"Logged by\", (
+            <select className={inputClass} value={form.logged_by} onChange={(e) => setForm({ ...form, logged_by: e.target.value })}>
+              <option value=\"\">Unknown</option>
+              {crew?.map((m) => (
+                <option key={m.crew_id} value={m.crew_id}>{m.full_name} — {m.role}</option>
+              ))}
+            </select>
+          ))}
+        </div>
+
+        {field(\"Follow-up required\", (
+          <input
+            className={inputClass}
+            value={form.follow_up}
+            onChange={(e) => setForm({ ...form, follow_up: e.target.value })}
+            placeholder=\"Optional notes on next steps\"
+            autoCorrect=\"off\"
+            spellCheck=\"false\"
+            autoComplete=\"off\"
+          />
         ))}
 
         {field("Photo (optional)", (

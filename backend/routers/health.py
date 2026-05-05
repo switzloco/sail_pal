@@ -57,3 +57,31 @@ def get_crew_health_history(crew_id: str, db: Session = Depends(get_db)):
         .order_by(HealthEvent.event_time.desc())
         .all()
     )
+
+
+@router.get("/crew/{crew_id}/vitals-trend")
+def get_vitals_trend(crew_id: str, db: Session = Depends(get_db)):
+    """Return a time-series of vitals for trend analysis."""
+    events = (
+        db.query(HealthEvent)
+        .filter(HealthEvent.crew_id == crew_id)
+        .order_by(HealthEvent.event_time.asc())
+        .all()
+    )
+    
+    trend = []
+    for e in events:
+        if e.vital_signs:
+            try:
+                v = json.loads(e.vital_signs)
+                # Filter out nulls/zeros to keep charts clean
+                trend.append({
+                    "time": e.event_time.isoformat(),
+                    "hr": v.get("hr"),
+                    "temp": v.get("temp"),
+                    "spo2": v.get("spo2"),
+                    "bp": v.get("bp") # BP is often a string "120/80"
+                })
+            except Exception:
+                continue
+    return trend

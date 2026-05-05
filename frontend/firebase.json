@@ -1,29 +1,135 @@
 {
   "hosting": {
     "public": "out",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
-      { "source": "/crew",          "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/crew/**",       "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/health",        "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/health/**",     "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/components",    "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/components/**", "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/maintenance",   "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/maintenance/**","run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/ai",            "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/ai/**",         "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/sync",          "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/sync/**",       "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/setup/**",      "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "/healthz",        "run": { "serviceId": "sail-pal", "region": "us-west1" } },
-      { "source": "**",             "destination": "/index.html" }
+      {
+        "source": "/crew",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/crew/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/health",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/health/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/components",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/components/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/maintenance",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/maintenance/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/ai",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/ai/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/sync",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/sync/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/setup/**",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "/healthz",
+        "run": {
+          "serviceId": "sail-pal",
+          "region": "us-west1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ],
     "headers": [
       {
         "source": "**/*.@(js|css|png|jpg|svg|ico|woff2)",
-        "headers": [{ "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public,max-age=31536000,immutable"
+          }
+        ]
       }
     ]
+  },
+  "auth": {
+    "providers": {
+      "anonymous": true,
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "CFO Fitness",
+        "supportEmail": "nswitzer@gmail.com"
+      }
+    }
   }
 }
