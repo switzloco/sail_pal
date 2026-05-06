@@ -112,16 +112,16 @@ export default function NewMaintenanceLogPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {field("Component", (
             <select className={inputClass} value={form.component_id} onChange={(e) => setForm({ ...form, component_id: e.target.value })}>
-              <option value=\"\">General / Unsure</option>
+              <option value="">General / Unsure</option>
               {components?.map((c) => (
                 <option key={c.component_id} value={c.component_id}>{c.name} — {c.system}</option>
               ))}
             </select>
           ))}
 
-          {field(\"Logged by\", (
+          {field("Logged by", (
             <select className={inputClass} value={form.logged_by} onChange={(e) => setForm({ ...form, logged_by: e.target.value })}>
-              <option value=\"\">Unknown</option>
+              <option value="">Unknown</option>
               {crew?.map((m) => (
                 <option key={m.crew_id} value={m.crew_id}>{m.full_name} — {m.role}</option>
               ))}
@@ -129,15 +129,15 @@ export default function NewMaintenanceLogPage() {
           ))}
         </div>
 
-        {field(\"Follow-up required\", (
+        {field("Follow-up required", (
           <input
             className={inputClass}
             value={form.follow_up}
             onChange={(e) => setForm({ ...form, follow_up: e.target.value })}
-            placeholder=\"Optional notes on next steps\"
-            autoCorrect=\"off\"
-            spellCheck=\"false\"
-            autoComplete=\"off\"
+            placeholder="Optional notes on next steps"
+            autoCorrect="off"
+            spellCheck="false"
+            autoComplete="off"
           />
         ))}
 
