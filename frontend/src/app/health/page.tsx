@@ -6,7 +6,7 @@ import type { HealthEvent } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import Link from "next/link";
-import { Plus, Activity } from "lucide-react";
+import { Plus, Activity, Sparkles } from "lucide-react";
 import VitalsTrendChart from "@/components/VitalsTrendChart";
 import { useState } from "react";
 import type { CrewMember } from "@/lib/types";

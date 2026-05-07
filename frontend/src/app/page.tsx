@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import type { Vessel, CrewMember, Component, HealthEvent, MaintenanceLog } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles, Gamepad2 } from "lucide-react";
+import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles, Gamepad2, GraduationCap } from "lucide-react";
 
 function StatCard({
   label,

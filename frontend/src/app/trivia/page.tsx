@@ -173,9 +173,11 @@ export default function TriviaPage() {
                     ? "bg-ocean-600 text-white rounded-tr-none" 
                     : "bg-white text-slate-800 border border-slate-100 rounded-tl-none"
                 }`}>
-                  <ReactMarkdown className="prose prose-sm prose-slate max-w-none">
-                    {m.content}
-                  </ReactMarkdown>
+                  <div className="prose prose-sm prose-slate max-w-none">
+                    <ReactMarkdown>
+                      {m.content}
+                    </ReactMarkdown>
+                  </div>
                   {streaming && i === messages.length - 1 && m.role === "assistant" && (
                     <span className="inline-block w-2 h-4 ml-1 bg-ocean-400 animate-bounce align-middle" />
                   )}

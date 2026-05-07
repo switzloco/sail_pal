@@ -250,9 +250,11 @@ export default function StudyPage() {
                         ? "bg-slate-800 text-white rounded-tr-none" 
                         : "bg-white text-slate-800 border border-slate-100 rounded-tl-none"
                     }`}>
-                      <ReactMarkdown className="prose prose-sm prose-slate max-w-none prose-headings:text-indigo-600 prose-headings:mb-2">
+                    <div className="prose prose-sm prose-slate max-w-none prose-headings:text-indigo-600 prose-headings:mb-2">
+                      <ReactMarkdown>
                         {m.content}
                       </ReactMarkdown>
+                    </div>
                       {streaming && i === messages.length - 1 && m.role === "assistant" && (
                         <span className="inline-block w-2 h-4 ml-1 bg-indigo-400 animate-pulse align-middle" />
                       )}
@@ -355,7 +357,7 @@ export default function StudyPage() {
               </div>
               <h2 className="text-3xl font-black text-slate-900 mb-2">Milestone Reached!</h2>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Outstanding dedication, Officer! You've accumulated over <span className="font-bold text-indigo-600">{showMilestone.toLocaleString()}</span> training points. Your proficiency as an MPIC is rising.
+                Outstanding dedication, Officer! You&apos;ve accumulated over <span className="font-bold text-indigo-600">{showMilestone.toLocaleString()}</span> training points. Your proficiency as an MPIC is rising.
               </p>
               <button 
                 onClick={() => setShowMilestone(null)}
