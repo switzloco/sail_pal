@@ -5,10 +5,10 @@ import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import Link from \"next/link\";
-import { ArrowLeft, Sparkles, Mic, MicOff } from \"lucide-react\";
-import { useSpeechToText } from \"@/hooks/useSpeechToText\";
-import { useEffect } from \"react\";
+import Link from "next/link";
+import { ArrowLeft, Sparkles, Mic, MicOff } from "lucide-react";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { useEffect } from "react";
 
 const SEVERITIES = ["minor", "moderate", "serious", "critical"] as const;
 
@@ -125,15 +125,15 @@ export default function NewHealthEventPage() {
             </button>
             {sttError && <p className="text-[10px] text-red-500 mt-1 absolute right-0 -bottom-4">{sttError}</p>}
           </div>
-          <p className=\"text-[10px] text-ocean-600 mt-2 flex justify-between items-center\">
+          <p className="text-[10px] text-ocean-600 mt-2 flex justify-between items-center">
             <span>Tip: You can just type the whole story here and hit save.</span>
             <button
-              type=\"button\"
+              type="button"
               onClick={async () => {
                 if (!form.quick_log) return;
                 try {
-                  const res = await apiFetch(\"/ai/extract-medical-info\", {
-                    method: \"POST\",
+                  const res = await apiFetch<any>("/ai/extract-medical-info", {
+                    method: "POST",
                     body: JSON.stringify({ text: form.quick_log })
                   });
                   if (res) {
@@ -148,37 +148,37 @@ export default function NewHealthEventPage() {
                     }));
                   }
                 } catch (e) {
-                  console.error(\"Extraction failed\", e);
+                  console.error("Extraction failed", e);
                 }
               }}
-              className=\"bg-ocean-100 hover:bg-ocean-200 text-ocean-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider transition-colors\"
+              className="bg-ocean-100 hover:bg-ocean-200 text-ocean-700 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider transition-colors"
             >
               Auto-Fill Form
             </button>
           </p>
         </div>
 
-        <div className=\"grid grid-cols-1 md:grid-cols-2 gap-4\">
-          {field(\"Patient\", (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {field("Patient", (
             <select
               className={selectClass}
               value={form.crew_id}
               onChange={(e) => setForm({ ...form, crew_id: e.target.value })}
             >
-              <option value=\"\">Unknown / Guest</option>
+              <option value="">Unknown / Guest</option>
               {crew?.map((m) => (
                 <option key={m.crew_id} value={m.crew_id}>{m.full_name} — {m.role}</option>
               ))}
             </select>
           ))}
 
-          {field(\"Logged by (MPIC)\", (
+          {field("Logged by (MPIC)", (
             <select
               className={selectClass}
               value={form.logged_by}
               onChange={(e) => setForm({ ...form, logged_by: e.target.value })}
             >
-              <option value=\"\">Unknown</option>
+              <option value="">Unknown</option>
               {crew?.map((m) => (
                 <option key={m.crew_id} value={m.crew_id}>{m.full_name} — {m.role}</option>
               ))}
@@ -198,42 +198,42 @@ export default function NewHealthEventPage() {
           </select>
         ))}
 
-        {field(\"Symptoms (comma-separated)\", (
+        {field("Symptoms (comma-separated)", (
           <input
             className={inputClass}
-            placeholder=\"e.g. headache, nausea, dizziness\"
+            placeholder="e.g. headache, nausea, dizziness"
             value={form.symptoms}
             onChange={(e) => setForm({ ...form, symptoms: e.target.value })}
-            autoCorrect=\"off\"
-            spellCheck=\"false\"
-            autoComplete=\"off\"
+            autoCorrect="off"
+            spellCheck="false"
+            autoComplete="off"
           />
         ))}
 
         <div>
           <p className="text-sm font-medium text-slate-700 mb-3">Vital Signs</p>
           <div className="grid grid-cols-2 gap-3">
-            {field(\"Heart rate (bpm)\", (
-              <input className={inputClass} inputMode=\"numeric\" placeholder=\"72\" value={form.hr} onChange={(e) => setForm({ ...form, hr: e.target.value })} autoCorrect=\"off\" spellCheck=\"false\" />
+            {field("Heart rate (bpm)", (
+              <input className={inputClass} inputMode="numeric" placeholder="72" value={form.hr} onChange={(e) => setForm({ ...form, hr: e.target.value })} autoCorrect="off" spellCheck="false" />
             ))}
-            {field(\"Blood pressure\", (
-              <input className={inputClass} placeholder=\"120/80\" value={form.bp} onChange={(e) => setForm({ ...form, bp: e.target.value })} autoCorrect=\"off\" spellCheck=\"false\" />
+            {field("Blood pressure", (
+              <input className={inputClass} placeholder="120/80" value={form.bp} onChange={(e) => setForm({ ...form, bp: e.target.value })} autoCorrect="off" spellCheck="false" />
             ))}
-            {field(\"Temperature (°C)\", (
-              <input className={inputClass} inputMode=\"decimal\" placeholder=\"37.0\" value={form.temp} onChange={(e) => setForm({ ...form, temp: e.target.value })} autoCorrect=\"off\" spellCheck=\"false\" />
+            {field("Temperature (°C)", (
+              <input className={inputClass} inputMode="decimal" placeholder="37.0" value={form.temp} onChange={(e) => setForm({ ...form, temp: e.target.value })} autoCorrect="off" spellCheck="false" />
             ))}
-            {field(\"SpO₂ (%)\", (
-              <input className={inputClass} inputMode=\"numeric\" placeholder=\"98\" value={form.spo2} onChange={(e) => setForm({ ...form, spo2: e.target.value })} autoCorrect=\"off\" spellCheck=\"false\" />
+            {field("SpO₂ (%)", (
+              <input className={inputClass} inputMode="numeric" placeholder="98" value={form.spo2} onChange={(e) => setForm({ ...form, spo2: e.target.value })} autoCorrect="off" spellCheck="false" />
             ))}
           </div>
         </div>
 
-        {field(\"Preliminary diagnosis\", (
-          <textarea className={inputClass} rows={2} value={form.diagnosis} onChange={(e) => setForm({ ...form, diagnosis: e.target.value })} autoCorrect=\"off\" spellCheck=\"false\" />
+        {field("Preliminary diagnosis", (
+          <textarea className={inputClass} rows={2} value={form.diagnosis} onChange={(e) => setForm({ ...form, diagnosis: e.target.value })} autoCorrect="off" spellCheck="false" />
         ))}
 
-        {field(\"Treatment given\", (
-          <textarea className={inputClass} rows={2} value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} autoCorrect=\"off\" spellCheck=\"false\" />
+        {field("Treatment given", (
+          <textarea className={inputClass} rows={2} value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} autoCorrect="off" spellCheck="false" />
         ))}
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
