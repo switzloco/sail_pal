@@ -111,10 +111,11 @@ class HealthEventRead(BaseModel):
     ai_response: Optional[str] = None
     severity: str
     follow_up_required: bool = False
+    photo_paths: Optional[List[str]] = None
     synced: bool = False
     created_at: Optional[datetime] = None
 
-    @field_validator("symptoms", mode="before")
+    @field_validator("symptoms", "photo_paths", mode="before")
     @classmethod
     def parse_symptoms(cls, v):
         if isinstance(v, str):
@@ -147,6 +148,7 @@ class HealthEventCreate(BaseModel):
     protocol_used: Optional[str] = None
     severity: str
     follow_up_required: bool = False
+    photo_paths: Optional[List[str]] = None
 
 
 # ── Components ───────────────────────────────────────────────────────────────
@@ -193,6 +195,7 @@ class ComponentCreate(BaseModel):
     location: Optional[str] = None
     manual_ref: Optional[str] = None
     spare_parts: Optional[List[str]] = None
+    photo_path: Optional[str] = None
     notes: Optional[str] = None
 
 
@@ -201,6 +204,7 @@ class ComponentUpdate(BaseModel):
     name: Optional[str] = None
     manufacturer: Optional[str] = None
     location: Optional[str] = None
+    photo_path: Optional[str] = None
     notes: Optional[str] = None
     is_active: Optional[bool] = None
 

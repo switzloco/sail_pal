@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import type { Component } from "@/lib/types";
 import Link from "next/link";
 import { ArrowLeft, Wrench } from "lucide-react";
+import ImageUpload from "@/components/ImageUpload";
 
 const SYSTEMS = [
   { value: "propulsion", label: "Propulsion" },
@@ -33,6 +34,7 @@ export default function NewComponentPage() {
   const [manualRef, setManualRef] = useState("");
   const [spareParts, setSpareParts] = useState("");
   const [notes, setNotes] = useState("");
+  const [photoPath, setPhotoPath] = useState("");
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +60,7 @@ export default function NewComponentPage() {
           .filter(Boolean);
       }
       if (notes.trim()) payload.notes = notes;
+      if (photoPath) payload.photo_path = photoPath;
 
       const comp = await apiFetch<Component>("/components", {
         method: "POST",
@@ -142,6 +145,11 @@ export default function NewComponentPage() {
             className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm"
           />
         </div>
+
+        <ImageUpload 
+          label="Component Photo" 
+          onUploadComplete={(paths) => setPhotoPath(paths[0])} 
+        />
 
         <button
           type="submit"

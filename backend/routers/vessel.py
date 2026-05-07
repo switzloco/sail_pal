@@ -39,6 +39,7 @@ def create_component(payload: ComponentCreate, db: Session = Depends(get_db)):
         location=payload.location,
         manual_ref=payload.manual_ref,
         spare_parts=json.dumps(payload.spare_parts or []),
+        photo_path=payload.photo_path,
         notes=payload.notes,
     )
     db.add(component)

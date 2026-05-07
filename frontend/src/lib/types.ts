@@ -41,6 +41,7 @@ export interface HealthEvent {
   ai_response?: string;
   severity: "minor" | "moderate" | "serious" | "critical";
   follow_up_required: boolean;
+  photo_paths?: string[];
   synced: boolean;
   created_at?: string;
 }

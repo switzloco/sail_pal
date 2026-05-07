@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getUploadUrl } from "@/lib/api";
 import type { HealthEvent } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
@@ -152,6 +152,18 @@ export default function HealthPage() {
                   </p>
                   {evt.diagnosis && (
                     <p className="text-sm text-slate-600 mt-2">{evt.diagnosis}</p>
+                  )}
+                  {evt.photo_paths && evt.photo_paths.length > 0 && (
+                    <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+                      {evt.photo_paths.map((p, i) => (
+                        <img 
+                          key={i} 
+                          src={getUploadUrl(p)} 
+                          alt="Medical" 
+                          className="w-16 h-16 rounded-lg object-cover border border-slate-100 flex-shrink-0" 
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
                 <SeverityBadge severity={evt.severity} />

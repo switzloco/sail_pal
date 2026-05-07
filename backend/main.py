@@ -8,13 +8,18 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.db.database import Base, engine
-from backend.routers import crew, health, vessel, maintenance, ai, sync, setup
+from backend.routers import crew, health, vessel, maintenance, ai, sync, setup, uploads
 
 app = FastAPI(
     title="Vessel Ops AI",
     description="Offline AI assistant for maritime Medical Person in Charge and Chief Engineer",
     version="0.1.0",
 )
+
+# Serve uploads as static files
+_UPLOADS_DIR = Path(__file__).parent / "data" / "uploads"
+_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="uploads")
 
 # Serve manuals as static files
 _MANUALS_DIR = Path(__file__).parent / "data" / "manuals"
@@ -45,6 +50,7 @@ app.include_router(maintenance.router, prefix="/api/maintenance", tags=["mainten
 app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
 app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
+app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
 
 
 # Serve the embedded Next.js static export when present (Docker / local dev).

@@ -66,6 +66,7 @@ class HealthEvent(Base):
     ai_response = Column(Text)
     severity = Column(String, nullable=False)
     follow_up_required = Column(Boolean, default=False)
+    photo_paths = Column(Text)      # JSON array
     synced = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles, Mic, MicOff } from "lucide-react";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { useEffect } from "react";
+import ImageUpload from "@/components/ImageUpload";
 
 const SEVERITIES = ["minor", "moderate", "serious", "critical"] as const;
 
@@ -34,6 +35,7 @@ export default function NewHealthEventPage() {
     bp: "",
     temp: "",
     spo2: "",
+    photo_paths: [] as string[],
   });
 
   const { isListening, transcript, startListening, stopListening, error: sttError } = useSpeechToText();
@@ -69,6 +71,7 @@ export default function NewHealthEventPage() {
             temp: form.temp ? parseFloat(form.temp) : undefined,
             spo2: form.spo2 ? parseInt(form.spo2) : undefined,
           },
+          photo_paths: form.photo_paths,
         }),
       });
       router.push("/health");
@@ -235,6 +238,12 @@ export default function NewHealthEventPage() {
         {field("Treatment given", (
           <textarea className={inputClass} rows={2} value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} autoCorrect="off" spellCheck="false" />
         ))}
+
+        <ImageUpload 
+          label="Medical Photos" 
+          multiple 
+          onUploadComplete={(paths) => setForm(prev => ({ ...prev, photo_paths: [...prev.photo_paths, ...paths] }))} 
+        />
 
         {error && <p className="text-red-600 text-sm">{error}</p>}
 

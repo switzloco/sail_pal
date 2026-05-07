@@ -16,6 +16,7 @@ export default function TriviaPage() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [score, setScore] = useState(0);
+  const [pointsAwarded, setPointsAwarded] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Initialize the game
@@ -83,9 +84,27 @@ export default function TriviaPage() {
               setMessages((prev) => {
                 const copy = [...prev];
                 const last = copy[copy.length - 1];
+                const newContent = last.content + parsed.token;
+                
+                // Check for point awards
+                const pointsMatch = newContent.match(/\[AWARD_POINTS:\s*(\d+)\]/);
+                if (pointsMatch) {
+                  const pts = parseInt(pointsMatch[1]);
+                  // Only add if we haven't processed this specific point tag yet
+                  // We can track this by checking if the tag was already in the content
+                  // But since we are appending, we need a way to only trigger it once
+                  // Let's use a temporary flag or just check if the previous content didn't have it
+                  if (!last.content.includes(pointsMatch[0])) {
+                    const pts = parseInt(pointsMatch[1]);
+                    setScore(s => s + pts);
+                    setPointsAwarded(pts);
+                    setTimeout(() => setPointsAwarded(null), 3000);
+                  }
+                }
+
                 copy[copy.length - 1] = {
                   ...last,
-                  content: last.content + parsed.token,
+                  content: newContent,
                 };
                 return copy;
               });
@@ -104,6 +123,16 @@ export default function TriviaPage() {
       });
     } finally {
       setStreaming(false);
+      
+      // Clean up points tags from the final message
+      setMessages((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last && last.role === "assistant") {
+          last.content = last.content.replace(/\[AWARD_POINTS:\s*\d+\]/g, "").trim();
+        }
+        return copy;
+      });
     }
   }
 
@@ -129,11 +158,18 @@ export default function TriviaPage() {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="bg-amber-100 text-amber-800 px-4 py-2 rounded-xl border border-amber-200 flex items-center gap-2 font-bold shadow-sm">
-            <Trophy size={18} className="text-amber-600" />
+        <div className="flex items-center gap-3 relative">
+          <div className={`bg-amber-100 text-amber-800 px-4 py-2 rounded-xl border border-amber-200 flex items-center gap-2 font-bold shadow-sm transition-all duration-500 ${pointsAwarded ? "scale-110 bg-amber-200 border-amber-300" : ""}`}>
+            <Trophy size={18} className={`text-amber-600 ${pointsAwarded ? "animate-bounce" : ""}`} />
             <span>Bravery Points: {score}</span>
           </div>
+          
+          {pointsAwarded && (
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-amber-600 font-black text-xl animate-out fade-out slide-out-to-top-8 duration-1000 fill-mode-forwards">
+              +{pointsAwarded}
+            </div>
+          )}
+
           <button 
             onClick={startNewGame}
             className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"

@@ -42,6 +42,7 @@ def create_health_event(payload: HealthEventCreate, db: Session = Depends(get_db
         protocol_used=payload.protocol_used,
         severity=payload.severity,
         follow_up_required=payload.follow_up_required,
+        photo_paths=json.dumps(payload.photo_paths or []),
     )
     db.add(event)
     db.commit()
