@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
 from typing import List
@@ -12,8 +13,16 @@ class Settings(BaseSettings):
     def assemble_db_url(cls, v: str, info) -> str:
         if v: return v
         data_dir = os.getenv("VESSEL_OPS_DATA_DIR", "./backend/data")
+        os.makedirs(data_dir, exist_ok=True)
         db_path = os.path.join(data_dir, "vessel.db")
         return f"sqlite:///{db_path}"
+
+    @property
+    def upload_dir(self) -> str:
+        data_dir = os.getenv("VESSEL_OPS_DATA_DIR", "./backend/data")
+        u_dir = os.path.join(data_dir, "uploads")
+        os.makedirs(u_dir, exist_ok=True)
+        return u_dir
 
     ollama_host: str = "http://localhost:11434"
     model_primary: str = "gemma4:e2b"

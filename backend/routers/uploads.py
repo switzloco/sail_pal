@@ -4,16 +4,18 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 from fastapi import APIRouter, File, UploadFile, HTTPException
+from backend.config import settings
 
 router = APIRouter()
 
-UPLOAD_DIR = Path("backend/data/uploads")
+UPLOAD_DIR = Path(settings.upload_dir)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("")
 async def upload_files(files: List[UploadFile] = File(...)):
     """Upload one or more files and return their saved paths."""
     saved_paths = []
+    upload_dir = Path(settings.upload_dir)
     for file in files:
         if not file.filename:
             continue

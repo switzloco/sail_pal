@@ -17,9 +17,7 @@ app = FastAPI(
 )
 
 # Serve uploads as static files
-_UPLOADS_DIR = Path(__file__).parent / "data" / "uploads"
-_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(_UPLOADS_DIR)), name="uploads")
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
 
 # Serve manuals as static files
 _MANUALS_DIR = Path(__file__).parent / "data" / "manuals"
