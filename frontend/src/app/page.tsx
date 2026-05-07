@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import type { Vessel, CrewMember, Component, HealthEvent, MaintenanceLog } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles } from "lucide-react";
+import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles, Gamepad2 } from "lucide-react";
 
 function StatCard({
   label,
@@ -110,35 +110,76 @@ export default function Dashboard() {
         </div>
       )}
 
-      <Link
-        href="/chat"
-        className="mt-10 block p-6 bg-gradient-to-br from-ocean-600 to-ocean-800 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Sparkles size={120} />
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md">
-                <Sparkles size={24} />
-              </div>
-              <h2 className="text-xl font-bold">Ask Gemma</h2>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-white">System Ready</span>
-            </div>
+      <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Link
+          href="/chat"
+          className="md:col-span-2 p-6 bg-gradient-to-br from-ocean-600 to-ocean-800 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Sparkles size={120} />
           </div>
           
-          <p className="text-sm md:text-base text-ocean-50 leading-relaxed max-w-lg">
-            Consult your vessel&apos;s medical and technical knowledge base. Powered by 
-            <strong> Gemma</strong> (Google DeepMind) and the 
-            <strong> WHO International Medical Guide</strong>.
-          </p>
-        </div>
-      </Link>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md">
+                  <Sparkles size={24} />
+                </div>
+                <h2 className="text-xl font-bold">Ask Gemma</h2>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">System Ready</span>
+              </div>
+            </div>
+            
+            <p className="text-sm text-ocean-50 leading-relaxed max-w-lg">
+              Consult your vessel&apos;s medical and technical knowledge base. Powered by 
+              <strong> Gemma</strong>.
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/study"
+          className="p-6 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
+            <GraduationCap size={80} />
+          </div>
+          
+          <div className="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md w-fit mb-4">
+                <GraduationCap size={24} />
+              </div>
+              <h2 className="text-xl font-bold">MPIC Study</h2>
+              <p className="text-xs text-indigo-50 mt-1">Medical Simulations</p>
+            </div>
+            <p className="text-xs font-bold uppercase tracking-widest mt-4">Start Training &rarr;</p>
+          </div>
+        </Link>
+
+        <Link
+          href="/trivia"
+          className="p-6 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
+            <Gamepad2 size={80} />
+          </div>
+          
+          <div className="relative z-10 h-full flex flex-col justify-between">
+            <div>
+              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md w-fit mb-4">
+                <Gamepad2 size={24} />
+              </div>
+              <h2 className="text-xl font-bold">Trivia</h2>
+              <p className="text-xs text-amber-50 mt-1">Break Time</p>
+            </div>
+            <p className="text-xs font-bold uppercase tracking-widest mt-4">Play &rarr;</p>
+          </div>
+        </Link>
+      </div>
     </div>
   );
 }

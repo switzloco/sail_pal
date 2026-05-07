@@ -1,5 +1,10 @@
-const API_BASE =
-  (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
+const getApiBase = () => {
+  if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:8000";
+};
+
+const API_BASE = getApiBase() + "/api";
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -16,8 +21,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 /** Ping the backend — resolves true if reachable, false otherwise. */
 export async function pingBackend(): Promise<boolean> {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
-    // Ensure we don't have double slashes if base ends with one
+    const baseUrl = getApiBase();
     const url = `${baseUrl.replace(/\/$/, "")}/healthz`;
     const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
     return res.ok;

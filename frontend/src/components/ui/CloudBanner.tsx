@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { fetchSetupStatus, setMode } from "@/lib/setup";
 import type { SetupStatus } from "@/lib/setup";
+import { useToast } from "@/components/ui/Toast";
+import { LocalSetupGuide } from "./LocalSetupGuide";
 
 export function CloudBanner() {
   const [status, setStatus] = useState<SetupStatus | null>(null);
   const [switching, setSwitching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const { showToast } = useToast();
 
   async function refresh() {
     try {
@@ -25,12 +28,13 @@ export function CloudBanner() {
 
   async function handleSwitch(target: "cloud" | "local") {
     setSwitching(true);
-    setError(null);
     try {
       await setMode(target);
       await refresh();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Switch failed");
+      const msg = e instanceof Error ? e.message : "Switch failed";
+      showToast(msg, "error");
+      setShowGuide(true); // Pop the guide automatically on failure
     } finally {
       setSwitching(false);
     }
@@ -53,11 +57,19 @@ export function CloudBanner() {
             {switching ? "Switching…" : "Switch to Local Ollama"}
           </button>
         ) : (
-          <span className="text-xs font-normal opacity-75">
-            Install Ollama + pull {status.model_name} for offline use.
-          </span>
+          <button 
+            onClick={() => setShowGuide(true)}
+            className="text-xs font-bold underline decoration-amber-600 hover:text-amber-900 transition-colors"
+          >
+            Setup local AI for offline use →
+          </button>
         )}
-        {error && <span className="text-red-800 text-xs">{error}</span>}
+
+        <LocalSetupGuide 
+          isOpen={showGuide} 
+          onClose={() => setShowGuide(false)} 
+          status={status} 
+        />
       </div>
     );
   }
@@ -73,7 +85,6 @@ export function CloudBanner() {
       >
         {switching ? "…" : "Use Cloud"}
       </button>
-      {error && <span className="text-red-300 text-xs">{error}</span>}
     </div>
   );
 }

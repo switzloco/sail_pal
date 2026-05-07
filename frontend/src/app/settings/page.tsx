@@ -13,12 +13,19 @@ import {
   Save, 
   RotateCcw,
   Cloud,
-  HardDrive
+  HardDrive,
+  ExternalLink,
+  CheckCircle2
 } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
+import { useToast } from "@/components/ui/Toast";
+import { LocalSetupGuide } from "@/components/ui/LocalSetupGuide";
+import { fetchSetupStatus, type SetupStatus } from "@/lib/setup";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const { data: vessel, isLoading: vesselLoading } = useQuery({ 
     queryKey: ["vessel-info"], 
     queryFn: () => apiFetch<Vessel>("/setup/vessel-info") 
@@ -34,6 +41,12 @@ export default function SettingsPage() {
 
   const [vesselName, setVesselName] = useState("");
   const [imo, setImo] = useState("");
+  const [showGuide, setShowGuide] = useState(false);
+
+  const { data: status } = useQuery({ 
+    queryKey: ["setup-status"], 
+    queryFn: () => fetchSetupStatus() 
+  });
 
   const updateVessel = useMutation({
     mutationFn: (payload: { name: string; imo_number: string }) => 
@@ -44,18 +57,24 @@ export default function SettingsPage() {
   const toggleMode = useMutation({
     mutationFn: (mode: string) => 
       apiFetch("/setup/mode", { method: "POST", body: JSON.stringify({ mode }) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ai-mode"] }),
-    onError: (err) => alert(err.message)
+    onSuccess: () => {
+      showToast("AI Intelligence mode updated.", "success");
+      queryClient.invalidateQueries({ queryKey: ["ai-mode"] });
+    },
+    onError: (err) => {
+      showToast(err.message, "error");
+      setShowGuide(true);
+    }
   });
 
   const clearDemoData = async () => {
     if (!confirm("Delete all demo crew and logs? This cannot be undone.")) return;
     try {
       await apiFetch("/setup/reset-demo-data", { method: "POST" });
-      alert("Demo data cleared.");
+      showToast("Demo data cleared.", "success");
       window.location.reload();
     } catch (err) {
-      alert("Failed to clear data.");
+      showToast("Failed to clear data.", "error");
     }
   };
 
@@ -132,8 +151,24 @@ export default function SettingsPage() {
               Local mode runs Gemma 4 entirely on your hardware for 100% offline operation. 
               Cloud mode uses Google AI Studio for faster responses while connected.
             </p>
+            <div className="pt-2 border-t border-slate-50">
+              <button 
+                onClick={() => setShowGuide(true)}
+                className="text-[11px] text-ocean-600 font-bold hover:underline flex items-center gap-1"
+              >
+                Local AI Setup Guide <ExternalLink size={10} />
+              </button>
+            </div>
           </div>
         </section>
+
+        {status && (
+          <LocalSetupGuide 
+            isOpen={showGuide} 
+            onClose={() => setShowGuide(false)} 
+            status={status} 
+          />
+        )}
 
         {/* Knowledge Base Card */}
         <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -181,9 +216,9 @@ export default function SettingsPage() {
                 localStorage.removeItem("vessel_ops_onboarded");
                 window.location.href = "/welcome";
               }}
-              className="w-full py-2 bg-slate-900 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors"
+              className="w-full py-2 bg-ocean-900 text-white rounded-lg text-sm font-bold hover:bg-black transition-colors flex items-center justify-center gap-2"
             >
-              Re-run Setup Wizard
+              <CheckCircle2 size={16} /> Run System Health Check & Setup
             </button>
             <button 
               onClick={clearDemoData}

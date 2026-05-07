@@ -10,9 +10,11 @@ import { Plus, Activity } from "lucide-react";
 import VitalsTrendChart from "@/components/VitalsTrendChart";
 import { useState } from "react";
 import type { CrewMember } from "@/lib/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function HealthPage() {
   const [selectedCrewId, setSelectedCrewId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: crew } = useQuery({
     queryKey: ["crew"],
@@ -50,17 +52,17 @@ export default function HealthPage() {
       {/* Vitals Trends Section */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-            <Activity size={14} /> Vital Sign Trends
+          <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <Activity size={16} /> Vital Sign Trends
           </h2>
           {crew && crew.length > 1 && (
             <select 
-              className="bg-transparent text-[10px] font-bold text-ocean-600 outline-none"
+              className="bg-transparent text-sm font-bold text-ocean-600 outline-none cursor-pointer"
               value={selectedCrewId || ""}
               onChange={(e) => setSelectedCrewId(e.target.value)}
             >
               {crew.map(c => (
-                <option key={c.crew_id} value={c.crew_id}>{c.full_name}</option>
+                <option key={c.crew_id} value={c.crew_id}>{c.role}: {c.full_name}</option>
               ))}
             </select>
           )}
@@ -68,7 +70,57 @@ export default function HealthPage() {
         <VitalsTrendChart data={trends || []} />
       </section>
 
-      <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Recent Incidents</h2>
+      {/* Quick Log Chat-style Interface */}
+      <section className="mb-10 bg-ocean-50/50 border border-ocean-100 rounded-2xl p-5 shadow-sm shadow-ocean-100/50">
+        <h2 className="text-sm font-black text-ocean-900/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+          <Sparkles size={16} className="text-ocean-500" /> Quick Log Event
+        </h2>
+        <form 
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const text = (e.currentTarget.elements.namedItem("quick_log") as HTMLInputElement).value;
+            if (!text.trim()) return;
+            
+            try {
+              await apiFetch("/health/events", {
+                method: "POST",
+                body: JSON.stringify({
+                  vessel_id: "vessel-mv-resolute-001",
+                  crew_id: activeCrewId || "guest",
+                  logged_by: "guest", // Default for quick log
+                  severity: "minor",
+                  diagnosis: `Quick Log: ${text}`,
+                  event_time: new Date().toISOString(),
+                }),
+              });
+              (e.currentTarget.elements.namedItem("quick_log") as HTMLInputElement).value = "";
+              // Trigger a refetch of the events
+              queryClient.invalidateQueries({ queryKey: ["health"] });
+            } catch (err) {
+              console.error("Failed to log event", err);
+            }
+          }}
+          className="flex gap-3"
+        >
+          <input
+            name="quick_log"
+            placeholder="Type a quick medical note (e.g. Smith has a minor headache)..."
+            className="flex-1 bg-white border border-ocean-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500 shadow-inner"
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            className="bg-ocean-600 hover:bg-ocean-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 shadow-md shadow-ocean-200 flex items-center gap-2"
+          >
+            Log <Plus size={16} strokeWidth={3} />
+          </button>
+        </form>
+        <p className="text-[11px] text-ocean-400 mt-2 ml-1 italic">
+          Logging for: <span className="font-bold">{crew?.find(c => c.crew_id === activeCrewId)?.full_name || "Guest"}</span>
+        </p>
+      </section>
+
+      <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Recent Incidents</h2>
 
       {isLoading && (
         <div className="space-y-3">

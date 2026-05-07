@@ -28,7 +28,7 @@ export default function ChatPage() {
   const [crewContext, setCrewContext] = useState<string>("");
   const [componentContext, setComponentContext] = useState<string>("");
   const [isListening, setIsListening] = useState(false);
-  const [succinct, setSuccinct] = useState(false);
+  const [verbose, setVerbose] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -87,7 +87,7 @@ export default function ChatPage() {
     setMessages((m) => [...m, { role: "assistant", content: "" }]);
 
     try {
-      const body: Record<string, unknown> = { messages: next, succinct };
+      const body: Record<string, unknown> = { messages: next, succinct: !verbose };
       if (crewContext) body.crew_id = crewContext;
       if (componentContext) body.component_id = componentContext;
 
@@ -210,14 +210,14 @@ export default function ChatPage() {
             Discussing: {contextLabel}
           </span>
         )}
-        <label className="flex items-center gap-2 ml-auto cursor-pointer">
+        <label className="flex items-center gap-2 ml-auto cursor-pointer" title="Enable more detailed, conversational responses">
           <input 
             type="checkbox" 
-            checked={succinct} 
-            onChange={(e) => setSuccinct(e.target.checked)}
+            checked={verbose} 
+            onChange={(e) => setVerbose(e.target.checked)}
             className="w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500"
           />
-          <span className="text-xs font-semibold text-slate-600">Succinct Mode</span>
+          <span className="text-xs font-semibold text-slate-600">Verbose Mode</span>
         </label>
       </div>
 

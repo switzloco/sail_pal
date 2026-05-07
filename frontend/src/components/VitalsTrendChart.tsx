@@ -33,17 +33,17 @@ export default function VitalsTrendChart({ data }: { data: VitalData[] }) {
     <div className="space-y-6">
       {/* Heart Rate & SpO2 Chart */}
       <div className="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Vitals: HR (BPM) & SpO2 (%)</h3>
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Vitals: HR (BPM) & SpO2 (%)</h3>
         <div className="h-48 w-full -ml-6">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={formattedData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="displayTime" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
-              <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
+              <XAxis dataKey="displayTime" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+              <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
               <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '14px' }}
               />
-              <Legend verticalAlign="top" align="right" height={24} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+              <Legend verticalAlign="top" align="right" height={24} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
               <Line 
                 type="monotone" 
                 dataKey="hr" 
@@ -68,7 +68,7 @@ export default function VitalsTrendChart({ data }: { data: VitalData[] }) {
 
       {/* Temperature Chart */}
       <div className="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Body Temperature (°C)</h3>
+        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Body Temperature (°C)</h3>
         <div className="h-48 w-full -ml-6">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={formattedData}>
@@ -79,9 +79,9 @@ export default function VitalsTrendChart({ data }: { data: VitalData[] }) {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="displayTime" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
-              <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
+              <XAxis dataKey="displayTime" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+              <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '14px' }} />
               <Area 
                 type="monotone" 
                 dataKey="temp" 

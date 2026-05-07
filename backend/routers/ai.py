@@ -11,7 +11,7 @@ from backend.config import settings
 from backend.db.database import get_db
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
-    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, DISCLAIMER, SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS
+    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, TRIVIA_SYSTEM, MPIC_STUDY_SYSTEM, DISCLAIMER, SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS
 )
 from backend.ai.rag_engine import RAGEngine
 from backend.ai.image_parser import parse_component_image
@@ -38,7 +38,7 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
     crew_id: Optional[str] = None
     component_id: Optional[str] = None
-    succinct: bool = False
+    succinct: bool = True
 
 
 async def _tokens_to_sse(token_iter: AsyncIterator[str]):
@@ -258,6 +258,49 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         for m in payload.messages
     )
     transcript += "\n\nAssistant:"
+
+    return StreamingResponse(
+        _tokens_to_sse(_llm_tokens(system, transcript)),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/trivia")
+async def trivia(payload: ChatRequest):
+    """Trivia game stream with Captain Sparky."""
+    system = TRIVIA_SYSTEM
+    
+    # If no messages, start with a welcome
+    if not payload.messages:
+        transcript = "User: Let's play trivia!\n\nAssistant:"
+    else:
+        transcript = "\n\n".join(
+            f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}"
+            for m in payload.messages
+        )
+        transcript += "\n\nAssistant:"
+
+    return StreamingResponse(
+        _tokens_to_sse(_llm_tokens(system, transcript)),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/study")
+async def study(payload: ChatRequest):
+    """MPIC Study mode stream."""
+    system = MPIC_STUDY_SYSTEM
+    
+    if not payload.messages:
+        transcript = "User: I want to start my MPIC study session. Please give me a scenario.\n\nAssistant:"
+    else:
+        transcript = "\n\n".join(
+            f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}"
+            for m in payload.messages
+        )
+        transcript += "\n\nAssistant:"
 
     return StreamingResponse(
         _tokens_to_sse(_llm_tokens(system, transcript)),

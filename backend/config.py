@@ -16,8 +16,8 @@ class Settings(BaseSettings):
         return f"sqlite:///{db_path}"
 
     ollama_host: str = "http://localhost:11434"
-    model_primary: str = "gemma4:12b"
-    model_scale: str = "gemma4:27b"
+    model_primary: str = "gemma4:e2b"
+    model_scale: str = "gemma4:e4b"
     cors_origins: List[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     # ── Cloud simulation mode ─────────────────────────────────────────────────

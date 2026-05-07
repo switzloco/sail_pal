@@ -1,4 +1,10 @@
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
+const getApiBase = () => {
+  if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:8000";
+};
+
+const API_BASE = getApiBase() + "/api";
 
 export interface SetupStatus {
   ollama_installed: boolean;
