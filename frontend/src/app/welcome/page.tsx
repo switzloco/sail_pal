@@ -125,7 +125,7 @@ export default function WelcomePage() {
         </div>
       </div>
       <p className="mt-8 text-slate-400 text-sm">
-        Vessel Ops AI runs entirely in your browser and on your local machine.
+        When using the local setup (via Ollama), Vessel Ops AI runs entirely in your browser and on your local machine.
       </p>
     </div>
   );
