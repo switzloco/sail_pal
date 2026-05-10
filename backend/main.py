@@ -9,6 +9,9 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import settings
 from backend.db.database import Base, engine
 from backend.routers import crew, health, vessel, maintenance, ai, sync, setup, uploads
+from backend.logger import logger
+import time
+from fastapi import Request
 
 app = FastAPI(
     title="Vessel Ops AI",
@@ -29,11 +32,27 @@ Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    logger.debug(f"Incoming request: {request.method} {request.url.path}")
+    
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logger.debug(f"Completed {request.method} {request.url.path} with status {response.status_code} in {process_time:.4f}s")
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.exception(f"Request failed: {request.method} {request.url.path} after {process_time:.4f}s - {str(e)}")
+        raise
+
 
 @app.get("/healthz", tags=["system"])
 @app.get("/healthz/", tags=["system"])

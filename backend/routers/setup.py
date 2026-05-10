@@ -25,6 +25,8 @@ class SetupStatus(BaseModel):
     model_name: str
     install_url: str = "https://ollama.com/download"
     mode: str = "local"  # "local" | "cloud"
+    data_dir: str = ""
+
 
 
 class ModeResponse(BaseModel):
@@ -75,7 +77,9 @@ async def setup_status():
             model_ready=True,
             model_name=settings.cloud_model,
             mode="cloud",
+            data_dir=settings.data_dir,
         )
+
 
     installed = shutil.which("ollama") is not None
     running = await _check_ollama_running() if installed else False
@@ -87,7 +91,9 @@ async def setup_status():
         model_ready=model_ready,
         model_name=settings.model_primary,
         mode="local",
+        data_dir=settings.data_dir,
     )
+
 
 
 @router.get("/mode", response_model=ModeResponse)

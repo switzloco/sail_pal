@@ -13,7 +13,9 @@ export interface SetupStatus {
   model_name: string;
   install_url: string;
   mode: "local" | "cloud";
+  data_dir: string;
 }
+
 
 export async function fetchSetupStatus(): Promise<SetupStatus> {
   const res = await fetch(`${API_BASE}/setup/status`, {

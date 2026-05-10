@@ -1,13 +1,13 @@
 {
-  "name": "Sail Pal",
-  "short_name": "Sail Pal",
-  "description": "AI assistant for maritime crew health and vessel operations",
+  "name": "Vessel Ops AI",
+  "short_name": "Vessel Ops",
+  "description": "Offline AI assistant for maritime medical and engineering operations — powered by Gemma 4",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0369a1",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

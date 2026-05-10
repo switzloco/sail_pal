@@ -9,7 +9,7 @@ export const NetworkStatus = () => {
 
   useEffect(() => {
     const checkStatus = async () => {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
       const status = await getBackendStatus(apiUrl);
       setIsLocalOnline(status);
       setIsInternetOnline(navigator.onLine);

@@ -30,15 +30,25 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return res.json() as Promise<T>;
 }
 
+let failureCount = 0;
+
 /** Ping the backend — resolves true if reachable, false otherwise. */
 export async function pingBackend(): Promise<boolean> {
   try {
     const baseUrl = getApiBase();
     const url = `${baseUrl.replace(/\/$/, "")}/healthz`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
-    return res.ok;
+    // Increase timeout to 10s to handle Cloud Run cold starts
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      failureCount = 0;
+      return true;
+    }
+    throw new Error("Ping non-OK");
   } catch (err) {
-    console.warn("Heartbeat failed:", err);
-    return false;
+    failureCount++;
+    console.warn(`Heartbeat attempt ${failureCount} failed:`, err);
+    // Only report "down" if it fails twice in a row (stops flickering)
+    return failureCount < 2;
   }
 }
+

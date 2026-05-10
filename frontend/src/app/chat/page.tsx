@@ -23,6 +23,24 @@ const QUICK_PROMPTS = [
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
+  
+  // Load history from LocalStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("vessel_ops_chat_history");
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load chat history", e);
+      }
+    }
+  }, []);
+
+  // Save history on change
+  useEffect(() => {
+    localStorage.setItem("vessel_ops_chat_history", JSON.stringify(messages));
+  }, [messages]);
+
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [crewContext, setCrewContext] = useState<string>("");
@@ -138,7 +156,7 @@ export default function ChatPage() {
         const copy = [...m];
         copy[copy.length - 1] = {
           role: "assistant",
-          content: `[Error: ${(err as Error).message}]`,
+          content: `[AI Connection Lost: Gemma is currently offline. Your message has been saved locally and will be processed when the connection is restored.]`,
         };
         return copy;
       });

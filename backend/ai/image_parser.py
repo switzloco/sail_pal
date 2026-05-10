@@ -10,16 +10,21 @@ Two-pass flow:
 """
 import json
 from typing import Optional
+from backend.ai import mode_state
 from backend.config import settings
+
 
 async def parse_component_image(image_bytes: bytes, component_name: str) -> Optional[dict]:
     """Phase 2 implementation: Extract JSON struct from image."""
     prompt = f"Analyze this image of a {component_name}. Return ONLY a JSON object with keys: 'fault_type' (string), 'affected_parts' (list of strings), and 'confidence' (string like 'high', 'medium', 'low'). Do not include any markdown formatting or extra text."
     
     result_text = ""
-    if settings.USE_CLOUD_PREVIEW:
-        from backend.ai.google_client import GoogleStudioClient
-        client = GoogleStudioClient(api_key=settings.GEMINI_API_KEY, model_name="gemini-2.5-flash")
+    if mode_state.is_cloud():
+        from backend.ai.google_client import GoogleSimulationClient
+        client = GoogleSimulationClient(
+            api_key=settings.google_api_key,
+            model=settings.cloud_model,
+        )
         try:
             async for chunk in client.chat_stream(
                 system="You are a strict JSON-only image analysis tool.",
@@ -31,7 +36,11 @@ async def parse_component_image(image_bytes: bytes, component_name: str) -> Opti
             pass
     else:
         from backend.ai.ollama_client import OllamaRouter
-        client = OllamaRouter(host=settings.OLLAMA_HOST, model_primary=settings.OLLAMA_MODEL_PRIMARY, model_scale=settings.OLLAMA_MODEL_SCALE)
+        client = OllamaRouter(
+            host=settings.ollama_host,
+            model_primary=settings.model_primary,
+            model_scale=settings.model_scale,
+        )
         try:
             async for chunk in client.chat_stream(
                 system="You are a strict JSON-only image analysis tool.",

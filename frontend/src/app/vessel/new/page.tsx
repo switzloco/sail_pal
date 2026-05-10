@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import type { Component } from "@/lib/types";
+import { addToQueue } from "@/lib/offlineQueue";
+
 import Link from "next/link";
 import { ArrowLeft, Wrench } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
@@ -41,38 +43,41 @@ export default function NewComponentPage() {
     setSubmitting(true);
     setError(null);
 
-    try {
-      const payload: Record<string, unknown> = {
-        vessel_id: VESSEL_ID,
-        name,
-        system,
-      };
-      if (manufacturer) payload.manufacturer = manufacturer;
-      if (modelNumber) payload.model_number = modelNumber;
-      if (serialNumber) payload.serial_number = serialNumber;
-      if (installDate) payload.install_date = installDate;
-      if (location) payload.location = location;
-      if (manualRef) payload.manual_ref = manualRef;
-      if (spareParts.trim()) {
-        payload.spare_parts = spareParts
-          .split(",")
-          .map((p) => p.trim())
-          .filter(Boolean);
-      }
-      if (notes.trim()) payload.notes = notes;
-      if (photoPath) payload.photo_path = photoPath;
+    const payload: Record<string, unknown> = {
+      vessel_id: VESSEL_ID,
+      name,
+      system,
+    };
+    if (manufacturer) payload.manufacturer = manufacturer;
+    if (modelNumber) payload.model_number = modelNumber;
+    if (serialNumber) payload.serial_number = serialNumber;
+    if (installDate) payload.install_date = installDate;
+    if (location) payload.location = location;
+    if (manualRef) payload.manual_ref = manualRef;
+    if (spareParts.trim()) {
+      payload.spare_parts = spareParts
+        .split(",")
+        .map((p) => p.trim())
+        .filter(Boolean);
+    }
+    if (notes.trim()) payload.notes = notes;
+    if (photoPath) payload.photo_path = photoPath;
 
+    try {
       const comp = await apiFetch<Component>("/components", {
         method: "POST",
         body: JSON.stringify(payload),
       });
-
       router.push(`/vessel/detail?id=${comp.component_id}&new=1`);
     } catch (err) {
-      setError((err as Error).message);
+      console.warn("Component creation failed, queueing for offline sync", err);
+      addToQueue("/components", "POST", payload);
+      router.push("/vessel?synced=false");
+    } finally {
       setSubmitting(false);
     }
   }
+
 
   return (
     <div className="max-w-2xl">

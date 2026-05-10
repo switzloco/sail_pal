@@ -4,8 +4,8 @@ This document captures tribal knowledge and fixes for common issues encountered 
 
 ## 🧠 AI & LLM (Ollama)
 - **Model Names**: Local Ollama installations may use specific tags. Always check `ollama list` before updating `backend/config.py`. 
-  - *Current working tags*: `gemma4:e2b` (Primary), `gemma4:e4b` (Scale/Critical).
-  - *Previous mismatch*: `gemma4:12b` (Status: 404).
+  - *Current working tags*: `gemma4:e2b` (Primary), `gemma4:e4b` (Scale).
+  - *Previous mismatch*: `gemma4:12b` and `gemma4:27b` were removed from docs/config — these tags returned 404 on Ollama.
 - **Streaming**: AI endpoints (`/api/ai/*`) use `StreamingResponse`. Ensure frontend fetch logic handles `ReadableStream` correctly and parses the `data: { "token": "..." }` SSE format.
 
 ## 🎨 Frontend (Next.js / React)

@@ -6,23 +6,31 @@ from typing import List
 
 class Settings(BaseSettings):
     # Use VESSEL_OPS_DATA_DIR if set (e.g. /tmp/data in Cloud Run), otherwise local default
+    vessel_ops_data_dir: str = "./backend/data"
     database_url: str = ""
     
     @field_validator("database_url", mode="before")
     @classmethod
     def assemble_db_url(cls, v: str, info) -> str:
         if v: return v
+        # Accessing data_dir from defaults if not provided in environment
         data_dir = os.getenv("VESSEL_OPS_DATA_DIR", "./backend/data")
         os.makedirs(data_dir, exist_ok=True)
-        db_path = os.path.join(data_dir, "vessel.db")
+        db_path = os.path.abspath(os.path.join(data_dir, "vessel.db"))
         return f"sqlite:///{db_path}"
 
     @property
+    def data_dir(self) -> str:
+        d = os.getenv("VESSEL_OPS_DATA_DIR", self.vessel_ops_data_dir)
+        os.makedirs(d, exist_ok=True)
+        return os.path.abspath(d)
+
+    @property
     def upload_dir(self) -> str:
-        data_dir = os.getenv("VESSEL_OPS_DATA_DIR", "./backend/data")
-        u_dir = os.path.join(data_dir, "uploads")
+        u_dir = os.path.join(self.data_dir, "uploads")
         os.makedirs(u_dir, exist_ok=True)
         return u_dir
+
 
     ollama_host: str = "http://localhost:11434"
     model_primary: str = "gemma4:e2b"
@@ -34,6 +42,9 @@ class Settings(BaseSettings):
     # Useful for testing without the ~8 GB model download.
     # The Ollama setup wizard is bypassed; a cloud-mode banner appears in the UI.
     cloud_mode: bool = False
+    
+    # Turn this on to enable verbose debug logging to backend/data/logs/vessel_debug.log
+    debug_mode: bool = True
     google_api_key: str = ""
     cloud_model: str = "gemma-4-26b-a4b-it"
 

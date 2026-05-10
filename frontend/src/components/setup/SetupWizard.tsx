@@ -159,6 +159,9 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
       : s.model_ready
       ? "done"
       : "active";
+  const step4: StepState = step3 === "done" ? "active" : "pending";
+
+
 
   // Compute download progress
   const pct =
@@ -292,6 +295,35 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
               </div>
             )}
           </Step>
+
+          {/* Step 4 — Confirm Storage */}
+          <Step
+            n={4}
+            title="Confirm Storage"
+            subtitle="Your logs and AI knowledge base are stored locally."
+            state={step4}
+          >
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                All data is saved to this directory on your computer:
+              </p>
+              <div className="bg-slate-100 p-3 rounded-lg border border-slate-200 break-all font-mono text-[10px] text-slate-700">
+                {s.data_dir}
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Tip: You can change this by setting the <code className="bg-slate-50 px-1 rounded text-slate-500">VESSEL_OPS_DATA_DIR</code> environment variable.
+              </p>
+              {step4 === "active" && (
+                <button
+                  onClick={onComplete}
+                  className="w-full bg-ocean-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-ocean-800 transition-colors"
+                >
+                  All set — Enter Vessel Ops
+                </button>
+              )}
+            </div>
+          </Step>
+
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">

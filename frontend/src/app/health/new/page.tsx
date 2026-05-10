@@ -10,6 +10,8 @@ import { ArrowLeft, Sparkles, Mic, MicOff } from "lucide-react";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { useEffect } from "react";
 import ImageUpload from "@/components/ImageUpload";
+import { addToQueue } from "@/lib/offlineQueue";
+
 
 const SEVERITIES = ["minor", "moderate", "serious", "critical"] as const;
 
@@ -54,33 +56,39 @@ export default function NewHealthEventPage() {
     setSubmitting(true);
     setError("");
 
+    const payload = {
+      vessel_id: "vessel-mv-resolute-001",
+      crew_id: form.crew_id || "guest",
+      logged_by: form.logged_by || "unknown",
+      severity: form.severity,
+      symptoms: form.symptoms ? form.symptoms.split(",").map((s) => s.trim()).filter(Boolean) : [],
+      diagnosis: form.diagnosis || (form.quick_log ? `Quick Log: ${form.quick_log}` : undefined),
+      treatment: form.treatment || undefined,
+      vital_signs: {
+        hr: form.hr ? parseInt(form.hr) : undefined,
+        bp: form.bp || undefined,
+        temp: form.temp ? parseFloat(form.temp) : undefined,
+        spo2: form.spo2 ? parseInt(form.spo2) : undefined,
+      },
+      photo_paths: form.photo_paths,
+    };
+
     try {
       await apiFetch("/health/events", {
         method: "POST",
-        body: JSON.stringify({
-          vessel_id: "vessel-mv-resolute-001",
-          crew_id: form.crew_id || "guest",
-          logged_by: form.logged_by || "unknown",
-          severity: form.severity,
-          symptoms: form.symptoms ? form.symptoms.split(",").map((s) => s.trim()).filter(Boolean) : [],
-          diagnosis: form.diagnosis || (form.quick_log ? `Quick Log: ${form.quick_log}` : undefined),
-          treatment: form.treatment || undefined,
-          vital_signs: {
-            hr: form.hr ? parseInt(form.hr) : undefined,
-            bp: form.bp || undefined,
-            temp: form.temp ? parseFloat(form.temp) : undefined,
-            spo2: form.spo2 ? parseInt(form.spo2) : undefined,
-          },
-          photo_paths: form.photo_paths,
-        }),
+        body: JSON.stringify(payload),
       });
       router.push("/health");
     } catch (err) {
-      setError((err as Error).message);
+      console.warn("Submit failed, adding to offline queue", err);
+      addToQueue("/health/events", "POST", payload);
+      // Still redirect, but maybe show a toast or message
+      router.push("/health?synced=false");
     } finally {
       setSubmitting(false);
     }
   }
+
 
   function field(label: string, children: React.ReactNode) {
     return (

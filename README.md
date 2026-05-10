@@ -25,7 +25,7 @@ Prize targets:
 
 ```
 Laptop (MacBook, Windows, Linux)
-  └── Ollama  →  gemma4:12b or gemma4:27b
+  └── Ollama  →  gemma4:e2b or gemma4:e4b
   └── FastAPI backend  →  SQLite (WAL mode)
   └── Next.js frontend  →  http://localhost:3000
 
@@ -40,8 +40,8 @@ the browser — no installation required.
 
 | RAM | Recommended model | Notes |
 |-----|------------------|-------|
-| 8–16 GB | `gemma4:12b` | Fits most MacBook Air / mid-range laptops |
-| 32 GB+ | `gemma4:27b` | Mixture-of-experts, noticeably better medical reasoning |
+| 8–16 GB | `gemma4:e2b` | Gemma 4 E2B — fits most MacBook Air / mid-range laptops |
+| 32 GB+ | `gemma4:e4b` | Gemma 4 E4B — noticeably better medical and engineering reasoning |
 
 ---
 
@@ -195,7 +195,7 @@ That's it. `start.sh` will:
 
 ```bash
 # Install Ollama: https://ollama.com
-ollama pull gemma4:12b   # or gemma4:27b on 32GB+ machines
+ollama pull gemma4:e2b   # or gemma4:e4b on 32GB+ machines
 # Then ./scripts/start.sh as normal
 ```
 
