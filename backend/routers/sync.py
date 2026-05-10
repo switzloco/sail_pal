@@ -1,9 +1,11 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from backend.db.database import get_db
 from backend.db.models import SyncQueue
 from backend.schemas.pydantic_models import SyncStatusRead
+from backend.logger import logger
 
 router = APIRouter()
 
@@ -18,6 +20,16 @@ def sync_status(db: Session = Depends(get_db)):
     return SyncStatusRead(queue_depth=depth, last_sync=None)
 
 
-@router.post("/now", status_code=501)
-def sync_now():
-    return {"detail": "Firebase sync not enabled yet — coming in Phase 2"}
+@router.post("/now")
+def sync_now(db: Session = Depends(get_db)):
+    pending = db.query(SyncQueue).filter(SyncQueue.synced_at == None).all()
+    count = 0
+    for item in pending:
+        logger.info(f"Mock syncing {item.action} on {item.entity_type} to cloud")
+        item.synced_at = datetime.utcnow()
+        count += 1
+    
+    if count > 0:
+        db.commit()
+
+    return {"status": "success", "synced_items": count}

@@ -29,7 +29,16 @@ export function OfflineBanner() {
   if (backendDown) {
     return (
       <div className="sticky top-0 z-50 bg-red-600 text-white text-xs font-bold px-4 py-2 text-center shadow-lg animate-in slide-in-from-top duration-300">
-        ⚠ Backend unreachable — Working offline. {pendingCount > 0 && `(${pendingCount} changes pending sync)`}
+        ⚠ Backend unreachable — Working offline. 
+        {pendingCount > 0 ? (
+          <span className="ml-1">
+            ({pendingCount} changes pending sync) <a href="/setup" className="underline ml-2">Troubleshoot Connection</a>
+          </span>
+        ) : (
+          <span className="ml-1">
+            <a href="/setup" className="underline ml-2">Troubleshoot Connection</a>
+          </span>
+        )}
       </div>
     );
   }
@@ -37,7 +46,7 @@ export function OfflineBanner() {
   if (pendingCount > 0) {
     return (
       <div className="sticky top-0 z-50 bg-blue-600 text-white text-[10px] font-bold px-4 py-1 text-center shadow-sm">
-        Syncing {pendingCount} pending changes...
+        You have pending logs. They will automatically sync when the Hub is reachable. ({pendingCount} pending)
       </div>
     );
   }

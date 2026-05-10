@@ -8,6 +8,7 @@ export interface QueuedRequest {
   method: string;
   body: string;
   timestamp: number;
+  retryCount: number;
 }
 
 const QUEUE_KEY = "vessel_ops_sync_queue";
@@ -26,6 +27,7 @@ export function addToQueue(path: string, method: string, body: any) {
     method,
     body: JSON.stringify(body),
     timestamp: Date.now(),
+    retryCount: 0,
   };
   queue.push(req);
   localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
@@ -38,8 +40,16 @@ export async function processQueue(): Promise<number> {
 
   const remaining: QueuedRequest[] = [];
   let processed = 0;
+  const now = Date.now();
 
   for (const req of queue) {
+    // Exponential backoff: max 5 minutes (300000 ms)
+    const backoffMs = Math.min(Math.pow(2, req.retryCount || 0) * 1000, 300000);
+    if (now < req.timestamp + backoffMs) {
+      remaining.push(req);
+      continue;
+    }
+
     try {
       await apiFetch(req.path, {
         method: req.method,
@@ -48,6 +58,8 @@ export async function processQueue(): Promise<number> {
       processed++;
     } catch (err) {
       console.warn(`Sync failed for ${req.id}, keeping in queue:`, err);
+      req.retryCount = (req.retryCount || 0) + 1;
+      req.timestamp = Date.now();
       remaining.push(req);
     }
   }

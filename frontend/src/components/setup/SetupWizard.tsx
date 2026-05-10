@@ -187,8 +187,8 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
           {/* Step 1 — Install Ollama */}
           <Step
             n={1}
-            title="Install Ollama"
-            subtitle="Runs the AI model locally — no internet needed at sea."
+            title="Install Ollama (Port-side)"
+            subtitle="Runs the AI model locally — internet required for download."
             state={step1}
           >
             {step1 === "active" && (
@@ -233,15 +233,15 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
           {/* Step 3 — Download model */}
           <Step
             n={3}
-            title={`Download ${s.model_name}`}
-            subtitle="One-time download (~8 GB). Only needs internet this once."
+            title={`Download ${s.model_name} (Port-side)`}
+            subtitle="One-time download (~1.6GB). Internet required."
             state={pullError ? "error" : step3}
           >
             {step3 === "active" && !pulling && !pullError && (
               <div className="space-y-3">
                 <p className="text-sm text-slate-600">
-                  This downloads Gemma 4 to your machine. After this, everything
-                  runs completely offline — no internet required.
+                  This downloads Gemma to your machine. After this, everything
+                  runs completely offline — no internet required. Please ensure a stable internet connection and do not close your browser.
                 </p>
                 <button
                   onClick={startPull}
@@ -299,7 +299,7 @@ export function SetupWizard({ onComplete }: { onComplete: () => void }) {
           {/* Step 4 — Confirm Storage */}
           <Step
             n={4}
-            title="Confirm Storage"
+            title="Confirm Storage (Sea-state ready)"
             subtitle="Your logs and AI knowledge base are stored locally."
             state={step4}
           >
