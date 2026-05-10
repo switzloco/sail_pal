@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/ui/Sidebar";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { CloudBanner } from "@/components/ui/CloudBanner";
 import { SetupGate } from "@/components/setup/SetupGate";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -20,6 +20,16 @@ import { ToastProvider } from "@/components/ui/Toast";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+
+  // Register service worker for offline PWA support
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => console.log("SW registered, scope:", reg.scope))
+        .catch((err) => console.warn("SW registration failed:", err));
+    }
+  }, []);
 
   const isWelcomePage = pathname?.startsWith("/welcome");
 
@@ -49,7 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       >
                         <Menu size={20} />
                       </button>
-                      <span className="ml-3 font-bold text-sm">Sail Pal</span>
+                      <span className="ml-3 font-bold text-sm">Vessel Ops AI</span>
                     </header>
                     <main className="flex-1 p-4 md:p-8 overflow-auto">{children}</main>
                   </div>
