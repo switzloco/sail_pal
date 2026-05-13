@@ -210,6 +210,59 @@ export default function SetupChecklistPage() {
           <p className="text-slate-500 mt-2">Approximately 15 minutes to complete local AI configuration for disconnected maritime operations.</p>
         </div>
 
+        {!status.server_is_local && (
+          <div className="mb-6 bg-sky-50 border border-sky-200 rounded-2xl p-5 text-sm text-sky-900">
+            <p className="font-bold text-base mb-1">You&apos;re using the web version</p>
+            <p className="text-sky-700 mb-3">
+              To run offline at sea, install the <strong>desktop companion</strong> on your laptop while you still have internet. It runs Vessel Ops entirely on your device — no cloud needed.
+            </p>
+            <ol className="list-decimal list-inside space-y-2 text-sky-800">
+              <li>
+                Install{" "}
+                <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer" className="font-semibold underline">Python 3.11+</a>
+                {" "}and{" "}
+                <a href="https://nodejs.org/" target="_blank" rel="noreferrer" className="font-semibold underline">Node.js LTS</a>
+              </li>
+              <li>
+                Install{" "}
+                <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className="font-semibold underline">Ollama</a>
+                {" "}and open it so it&apos;s running in the background
+              </li>
+              <li>
+                <a
+                  href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
+                  className="font-semibold underline"
+                >
+                  Download Vessel Ops AI
+                </a>
+                {" "}→ unzip it
+              </li>
+              <li>
+                Inside the folder, run{" "}
+                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">scripts\install.ps1</code> (Windows) or{" "}
+                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">bash scripts/install.sh</code> (Mac/Linux)
+              </li>
+              <li>
+                Then run{" "}
+                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">scripts\start.bat</code> (Windows) or{" "}
+                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">bash scripts/start.sh</code> and open{" "}
+                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">http://localhost:8000</code>
+              </li>
+            </ol>
+            <p className="mt-3 text-xs text-sky-600">
+              The installer saves an offline quickstart guide to your Desktop — keep it for use at sea.{" "}
+              <a
+                href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold underline"
+              >
+                Preview it here →
+              </a>
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4 mb-10">
           {steps.map((step, idx) => (
             <div 
