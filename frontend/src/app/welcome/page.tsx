@@ -3,13 +3,20 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
-import { Sparkles, Globe, Shield, Anchor } from "lucide-react";
-import { useState } from "react";
+import { fetchSetupStatus } from "@/lib/setup";
+import { Globe, Shield, Anchor } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function WelcomePage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
-  const [stGemmaActive, setStGemmaActive] = useState(true);
+  const [serverIsLocal, setServerIsLocal] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetchSetupStatus()
+      .then(s => setServerIsLocal(s.server_is_local))
+      .catch(() => setServerIsLocal(false));
+  }, []);
 
   const handleTryCloud = async () => {
     setLoading("cloud");
@@ -82,7 +89,17 @@ export default function WelcomePage() {
             </button>
 
             <button
-              onClick={() => router.push("/welcome/setup")}
+              onClick={() => {
+                if (serverIsLocal === false) {
+                  const proceed = confirm(
+                    "You're using the hosted web version.\n\n" +
+                    "Running offline at sea requires installing Vessel Ops AI on your own laptop — a one-time 15-minute setup.\n\n" +
+                    "The next page shows exactly what to download. Continue?"
+                  );
+                  if (!proceed) return;
+                }
+                router.push("/welcome/setup");
+              }}
               disabled={!!loading}
               className="group p-6 bg-slate-50 border border-slate-200 rounded-2xl hover:border-green-300 hover:bg-green-50 transition-all text-left"
             >

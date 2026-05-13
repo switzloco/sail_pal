@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 # Vessel Ops AI — Desktop Companion Installer (macOS / Linux)
 #
+# HOW TO OPEN A TERMINAL:
+#   macOS: Press Cmd+Space, type "Terminal", press Enter.
+#          Then type: bash ~/Downloads/sail_pal-main/scripts/install.sh
+#          (adjust the path to wherever you unzipped the folder)
+#   Linux: Right-click the desktop → "Open Terminal", then run:
+#          bash /path/to/sail_pal/scripts/install.sh
+#
 # Run from the repo root:
 #   bash scripts/install.sh
 #
-# Installs Ollama, sets up a Python venv, pulls the Gemma model, and builds
-# the frontend. After this finishes, run `bash scripts/start.sh` to launch.
+# After this finishes, run: bash scripts/start.sh
 
 set -euo pipefail
 
@@ -22,10 +28,17 @@ PY_MIN_MINOR=11
 NODE_MIN=20
 MODEL="gemma4:e2b"
 
+# ── curl ──────────────────────────────────────────────────────────────────────
+if ! command -v curl &>/dev/null; then
+  fail "curl is required but not found. Install it first:
+  macOS:  brew install curl
+  Linux:  sudo apt install curl  (or  sudo dnf install curl)"
+fi
+
 # ── Python ────────────────────────────────────────────────────────────────────
 info "Checking Python..."
 if ! command -v python3 &>/dev/null; then
-  fail "Python 3 is not installed. Install from https://www.python.org/downloads/ (need 3.11+)."
+  fail "Python 3 is not installed. Install 3.11+ from https://www.python.org/downloads/ and re-run."
 fi
 PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 PY_MAJOR=${PY_VER%.*}; PY_MINOR=${PY_VER#*.}
@@ -47,13 +60,25 @@ info "Node.js v${NODE_MAJOR} ✓"
 
 # ── Ollama ────────────────────────────────────────────────────────────────────
 info "Checking Ollama..."
-if ! command -v ollama &>/dev/null; then
-  warn "Ollama not found. Installing via official script..."
+OLLAMA_OK=false
+if command -v ollama &>/dev/null && ollama --version &>/dev/null 2>&1; then
+  OLLAMA_OK=true
+fi
+
+if [ "$OLLAMA_OK" = "false" ]; then
   if [[ "$(uname)" == "Darwin" ]]; then
-    warn "On macOS, please download Ollama.app from https://ollama.com/download and then re-run this script."
+    warn "Ollama not found or not working."
+    warn "  1. Download Ollama.app from: https://ollama.com/download/mac"
+    warn "  2. Open it and wait for the llama icon in your menu bar"
+    warn "  3. Re-run this script"
     fail "Ollama install required."
+  else
+    warn "Ollama not found. Installing via official script..."
+    curl -fsSL https://ollama.com/install.sh | sh
+    if ! command -v ollama &>/dev/null; then
+      fail "Ollama install failed. Visit https://ollama.com/download for manual instructions."
+    fi
   fi
-  curl -fsSL https://ollama.com/install.sh | sh
 fi
 info "Ollama $(ollama --version 2>/dev/null | head -1) ✓"
 
@@ -68,34 +93,47 @@ info "Installing backend dependencies..."
 pip install --quiet --upgrade pip
 pip install --quiet -r backend/requirements.txt
 
-# ── Pull model ────────────────────────────────────────────────────────────────
-info "Ensuring Ollama is running..."
+# ── Ensure Ollama is running before pull ─────────────────────────────────────
+info "Checking Ollama is running..."
 if ! curl -fsS http://localhost:11434/api/tags >/dev/null 2>&1; then
-  warn "Ollama isn't responding on localhost:11434."
-  warn "Start the Ollama app (or run 'ollama serve' in another terminal) and re-run this script."
+  warn "Ollama is installed but not running."
+  if [[ "$(uname)" == "Darwin" ]]; then
+    warn "  → Open the Ollama app from Applications and wait for the llama icon in your menu bar."
+  else
+    warn "  → Run 'ollama serve' in a separate terminal."
+  fi
+  warn "  Then re-run this script."
   fail "Ollama not running."
 fi
 
+# ── Pull model ────────────────────────────────────────────────────────────────
 if ollama list 2>/dev/null | grep -q "${MODEL%:*}"; then
   info "Model ${MODEL} already pulled ✓"
 else
-  info "Pulling ${MODEL} (~8 GB, one-time download)..."
+  info "Pulling ${MODEL} (~8 GB, one-time download — this may take 15–30 minutes)..."
+  info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   ollama pull "${MODEL}"
 fi
 
 # ── Frontend build ───────────────────────────────────────────────────────────
-if [ ! -d "frontend_out" ] || [ ! -f "frontend_out/index.html" ]; then
-  info "Building frontend (one-time)..."
+if [ ! -f "frontend_out/index.html" ]; then
+  info "Building frontend (one-time, ~2 minutes)..."
   (cd frontend && npm ci --silent && NEXT_PUBLIC_API_BASE="" WEB_EXPORT=1 npm run build --silent)
+  if [ ! -f "frontend/out/index.html" ]; then
+    fail "Frontend build failed — index.html not found. Check Node.js version (need ${NODE_MIN}+) and try again."
+  fi
   cp -R frontend/out frontend_out
+  info "Frontend built ✓"
+else
+  info "Frontend already built ✓"
 fi
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}  Install complete!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo "  Run:  bash scripts/start.sh"
-echo "  Then open: http://localhost:8000"
+echo "  Next step:  bash scripts/start.sh"
+echo "  Then open:  http://localhost:8000"
 echo ""
 
 # ── Drop an offline-ready quickstart on the Desktop ──────────────────────────
@@ -103,5 +141,5 @@ DESKTOP_DIR="$HOME/Desktop"
 if [ -d "$DESKTOP_DIR" ] && [ -f "DESKTOP_QUICKSTART.md" ]; then
   cp "DESKTOP_QUICKSTART.md" "$DESKTOP_DIR/Vessel-Ops-Quickstart.md"
   info "Saved offline instructions to: $DESKTOP_DIR/Vessel-Ops-Quickstart.md"
-  warn "Keep this file! You'll need it if you lose internet at sea."
+  warn "IMPORTANT: Keep this file — you'll need it if you lose internet at sea."
 fi

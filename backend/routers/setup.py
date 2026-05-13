@@ -94,6 +94,15 @@ async def get_mode():
 
 @router.post("/mode", response_model=ModeResponse)
 async def set_mode(payload: ModeRequest):
+    if payload.mode == "local" and settings.cloud_mode:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Cannot switch to local: this is the hosted web version. "
+                "Local Ollama mode requires installing Vessel Ops AI on your own machine. "
+                "Visit /welcome/setup for instructions."
+            ),
+        )
     if payload.mode == "local":
         installed = shutil.which("ollama") is not None
         running = await _check_ollama_running() if installed else False

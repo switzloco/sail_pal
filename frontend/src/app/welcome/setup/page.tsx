@@ -10,17 +10,13 @@ import {
   type SetupStatus
 } from "@/lib/setup";
 import { apiFetch } from "@/lib/api";
-import { 
-  CheckCircle2, 
-  Circle, 
-  Loader2, 
-  Download, 
-  UserPlus, 
-  Ship, 
-  FileText, 
+import {
+  CheckCircle2,
+  Loader2,
   ArrowRight,
   ExternalLink,
-  Trash2
+  Trash2,
+  AlertCircle
 } from "lucide-react";
 import type { Vessel, CrewMember } from "@/lib/types";
 
@@ -32,6 +28,8 @@ export default function SetupChecklistPage() {
   const [pulling, setPulling] = useState(false);
   const [progress, setProgress] = useState<PullProgress | null>(null);
   const [isResetting, setIsResetting] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const [finishing, setFinishing] = useState(false);
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -64,7 +62,7 @@ export default function SetupChecklistPage() {
         if (success) {
           fetchSetupStatus().then(setStatus);
         } else {
-          alert("Failed to pull model. Check your connection.");
+          alert("Download failed or was interrupted. Re-click 'Start Download' — Ollama will resume from where it left off.");
         }
       }
     );
@@ -85,12 +83,17 @@ export default function SetupChecklistPage() {
   };
 
   const handleFinish = async () => {
+    setFinishError(null);
+    setFinishing(true);
     localStorage.setItem("vessel_ops_onboarded", "true");
     if (status?.model_ready) {
       try {
         await setMode("local");
-      } catch {
-        // If switching to local fails, proceed in cloud mode
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Could not switch to local mode.";
+        setFinishError(`${msg} You can continue in cloud mode or fix the issue and try again.`);
+        setFinishing(false);
+        return;
       }
     }
     router.push("/");
@@ -116,14 +119,14 @@ export default function SetupChecklistPage() {
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 text-ocean-600 font-semibold text-sm hover:underline"
         >
-          Download <ExternalLink size={14} />
+          Download Ollama <ExternalLink size={14} />
         </a>
       )
     },
     {
       id: "model",
-      title: `Download ${status.model_name}`,
-      desc: "The brains of the system (~8 GB).",
+      title: "Download Gemma 4 AI Model",
+      desc: "The brains of the system (~8 GB). One-time download.",
       status: status.model_ready ? "done" : (status.ollama_running ? "active" : "pending"),
       required: true,
       action: status.model_ready ? null : (
@@ -134,11 +137,12 @@ export default function SetupChecklistPage() {
               {progress?.total && progress?.completed !== undefined && <span>{((progress.completed / progress.total) * 100).toFixed(0)}%</span>}
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-              <div 
-                className="bg-ocean-600 h-full transition-all duration-300" 
+              <div
+                className="bg-ocean-600 h-full transition-all duration-300"
                 style={{ width: `${(progress?.total && progress?.completed !== undefined) ? (progress.completed / progress.total) * 100 : 0}%` }}
               />
             </div>
+            <p className="text-[10px] text-slate-400 mt-1">If interrupted, re-click "Start Download" to resume.</p>
           </div>
         ) : (
           <button
@@ -146,7 +150,7 @@ export default function SetupChecklistPage() {
             disabled={!status.ollama_running}
             className="text-ocean-600 font-semibold text-sm hover:underline disabled:text-slate-300"
           >
-            Start Download
+            {status.ollama_running ? "Start Download" : "Start Ollama first →"}
           </button>
         )
       )
@@ -265,7 +269,7 @@ export default function SetupChecklistPage() {
 
         <div className="space-y-4 mb-10">
           {steps.map((step, idx) => (
-            <div 
+            <div
               key={step.id}
               className={`bg-white border rounded-2xl p-5 flex items-start gap-4 transition-all ${
                 step.status === "pending" ? "opacity-40 grayscale" : "shadow-sm border-slate-200"
@@ -294,13 +298,31 @@ export default function SetupChecklistPage() {
           ))}
         </div>
 
+        {finishError && (
+          <div className="mb-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">
+            <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-500" />
+            <span>{finishError}</span>
+          </div>
+        )}
+
         <button
           onClick={handleFinish}
-          className="w-full py-4 bg-ocean-600 hover:bg-ocean-700 text-white rounded-2xl font-bold shadow-xl shadow-ocean-200 transition-all flex items-center justify-center gap-2"
+          disabled={finishing}
+          className="w-full py-4 bg-ocean-600 hover:bg-ocean-700 disabled:opacity-60 text-white rounded-2xl font-bold shadow-xl shadow-ocean-200 transition-all flex items-center justify-center gap-2"
         >
-          Launch Vessel Ops AI <ArrowRight size={20} />
+          {finishing ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}
+          {finishing ? "Launching…" : "Launch Vessel Ops AI"}
         </button>
-        
+
+        {finishError && (
+          <button
+            onClick={() => { setFinishError(null); localStorage.setItem("vessel_ops_onboarded", "true"); router.push("/"); }}
+            className="mt-3 w-full py-3 border border-slate-200 text-slate-600 rounded-2xl text-sm font-medium hover:bg-slate-50 transition-all"
+          >
+            Continue in cloud mode anyway →
+          </button>
+        )}
+
         <p className="mt-6 text-center text-xs text-slate-400">
           You can always change these settings later in the app.
         </p>

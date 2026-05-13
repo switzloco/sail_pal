@@ -32,11 +32,11 @@ export function OfflineBanner() {
         ⚠ Backend unreachable — Working offline. 
         {pendingCount > 0 ? (
           <span className="ml-1">
-            ({pendingCount} changes pending sync) <a href="/setup" className="underline ml-2">Troubleshoot Connection</a>
+            ({pendingCount} changes pending sync) <a href="/welcome/setup" className="underline ml-2">Troubleshoot Connection</a>
           </span>
         ) : (
           <span className="ml-1">
-            <a href="/setup" className="underline ml-2">Troubleshoot Connection</a>
+            <a href="/welcome/setup" className="underline ml-2">Troubleshoot Connection</a>
           </span>
         )}
       </div>

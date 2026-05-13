@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { getBackendStatus } from "@/lib/network";
 import { fetchSetupStatus } from "@/lib/setup";
+import type { SetupStatus } from "@/lib/setup";
 
 export const NetworkStatus = () => {
   const [isLocalOnline, setIsLocalOnline] = useState<boolean | null>(null);
   const [isInternetOnline, setIsInternetOnline] = useState<boolean>(true);
   const [isModelReady, setIsModelReady] = useState<boolean | null>(null);
   const [mode, setMode] = useState<string | null>(null);
+  const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -19,9 +21,10 @@ export const NetworkStatus = () => {
 
       if (status) {
         try {
-          const setupStatus = await fetchSetupStatus();
-          setMode(setupStatus.mode);
-          setIsModelReady(setupStatus.model_ready);
+          const s = await fetchSetupStatus();
+          setMode(s.mode);
+          setIsModelReady(s.model_ready);
+          setSetupStatus(s);
         } catch (e) {
           setIsModelReady(false);
         }
@@ -77,6 +80,14 @@ export const NetworkStatus = () => {
             <span className={`text-[10px] font-bold tracking-widest uppercase ${(mode === "cloud" || isModelReady) ? 'text-green-400' : 'text-yellow-400'}`}>
               {(mode === "cloud" || isModelReady) ? "Ready for Sea" : "Missing Model"}
             </span>
+            {!(mode === "cloud" || isModelReady) && setupStatus?.server_is_local && (
+              <a
+                href="/welcome/setup"
+                className="text-[10px] text-yellow-300 hover:text-yellow-100 underline ml-1"
+              >
+                Setup →
+              </a>
+            )}
           </div>
         </>
       )}
