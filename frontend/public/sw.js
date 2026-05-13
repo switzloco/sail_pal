@@ -55,6 +55,10 @@ self.addEventListener("fetch", (event) => {
   // Skip chrome-extension and other non-http schemes
   if (!url.protocol.startsWith("http")) return;
 
+  // Skip cross-origin requests (e.g. Cloud Run API on a different domain).
+  // CORS rules apply to those fetches — the SW must not intercept them.
+  if (url.origin !== self.location.origin) return;
+
   // API calls → network-first (try live, fall back to cached)
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(networkFirst(request));

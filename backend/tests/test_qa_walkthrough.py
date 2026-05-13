@@ -31,17 +31,25 @@ class TestWalkthroughLogic:
         assert data["ollama_running"] is True
         assert data["model_ready"] is False
 
-    def test_setup_status_cloud_mode_bypass(self, client):
-        # Set mode to cloud
+    @patch("backend.routers.setup.shutil.which")
+    @patch("backend.routers.setup._check_ollama_running")
+    @patch("backend.routers.setup._check_model_ready")
+    def test_setup_status_cloud_mode_returns_real_checks(self, mock_ready, mock_running, mock_which, client):
+        # Even in cloud mode, status endpoint now returns actual Ollama state
+        mock_which.return_value = None
+        mock_running.return_value = False
+        mock_ready.return_value = False
+
         client.post("/api/setup/mode", json={"mode": "cloud"})
-        
+
         r = client.get("/api/setup/status")
         assert r.status_code == 200
         data = r.json()
         assert data["mode"] == "cloud"
-        assert data["model_ready"] is True  # Bypassed
-        
-        # Reset back to local for other tests (though setup_database fixture should handle it if mode_state was in DB, but it's in memory)
+        # Real checks run — Ollama not installed in this mock
+        assert data["ollama_installed"] is False
+        assert data["model_ready"] is False
+
         client.post("/api/setup/mode", json={"mode": "local"})
 
     def test_vessel_info_cycle(self, client):
