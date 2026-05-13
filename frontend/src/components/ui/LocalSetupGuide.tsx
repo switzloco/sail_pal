@@ -21,6 +21,7 @@ interface LocalSetupGuideProps {
     model_ready: boolean;
     model_name: string;
     install_url: string;
+    server_is_local: boolean;
   };
 }
 
@@ -38,7 +39,7 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
           </div>
           <h2 className="text-xl font-bold mb-2">Offline Power</h2>
           <p className="text-ocean-300 text-sm leading-relaxed">
-            Switching to Local mode lets Sail Pal work even in the middle of the ocean with zero internet.
+            Switching to Local mode lets Vessel Ops work even in the middle of the ocean with zero internet.
           </p>
         </div>
 
@@ -103,7 +104,7 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-slate-900">Download the {status.model_name} Model</h4>
-                <p className="text-sm text-slate-500 mb-3">Sail Pal needs this 8GB file to speak to you.</p>
+                <p className="text-sm text-slate-500 mb-3">Vessel Ops needs this model file to run locally.</p>
                 {!status.model_ready && status.ollama_running && (
                   <button 
                     onClick={() => window.location.href = "/welcome/setup"}
@@ -117,9 +118,16 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
             </div>
           </div>
 
-          <p className="mt-6 text-center text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-            Ollama runs on desktop/laptop computers only — not available on phones or tablets.
-          </p>
+          {!status.server_is_local ? (
+            <div className="mt-6 text-center text-[12px] text-sky-700 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed">
+              <strong>Using the web version?</strong> The cloud server can&apos;t reach Ollama on your device — that&apos;s expected.
+              To run Vessel Ops fully offline, run the backend locally on the same machine as Ollama.
+            </div>
+          ) : (
+            <p className="mt-6 text-center text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+              Ollama runs on desktop/laptop computers only — not available on phones or tablets.
+            </p>
+          )}
           <p className="mt-3 text-center text-[11px] text-slate-400">
             Need more help? Check the <a href="https://ollama.com" target="_blank" rel="noreferrer" className="underline hover:text-ocean-600">Ollama Documentation</a>.
           </p>

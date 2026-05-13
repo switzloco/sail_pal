@@ -26,6 +26,7 @@ class SetupStatus(BaseModel):
     install_url: str = "https://ollama.com/download"
     mode: str = "local"  # "local" | "cloud"
     data_dir: str = ""
+    server_is_local: bool = True  # False when backend runs in cloud (can't reach user's Ollama)
 
 
 
@@ -81,6 +82,7 @@ async def setup_status():
         model_name=settings.model_primary,
         mode=current_mode,
         data_dir=settings.data_dir,
+        server_is_local=not settings.cloud_mode,  # False on Cloud Run (CLOUD_MODE=true)
     )
 
 
