@@ -18,8 +18,6 @@ import {
   Trash2,
   AlertCircle,
   Download,
-  Terminal,
-  Play,
   Globe
 } from "lucide-react";
 import type { Vessel, CrewMember } from "@/lib/types";
