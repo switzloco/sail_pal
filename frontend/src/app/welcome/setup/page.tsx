@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  fetchSetupStatus, 
-  streamModelPull, 
-  type PullProgress, 
-  type SetupStatus 
+import {
+  fetchSetupStatus,
+  setMode,
+  streamModelPull,
+  type PullProgress,
+  type SetupStatus
 } from "@/lib/setup";
 import { apiFetch } from "@/lib/api";
 import { 
@@ -83,8 +84,15 @@ export default function SetupChecklistPage() {
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     localStorage.setItem("vessel_ops_onboarded", "true");
+    if (status?.model_ready) {
+      try {
+        await setMode("local");
+      } catch {
+        // If switching to local fails, proceed in cloud mode
+      }
+    }
     router.push("/");
   };
 
