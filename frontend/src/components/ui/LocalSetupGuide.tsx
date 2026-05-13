@@ -119,9 +119,56 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
           </div>
 
           {!status.server_is_local ? (
-            <div className="mt-6 text-center text-[12px] text-sky-700 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed">
-              <strong>Using the web version?</strong> The cloud server can&apos;t reach Ollama on your device — that&apos;s expected.
-              To run Vessel Ops fully offline, run the backend locally on the same machine as Ollama.
+            <div className="mt-6 text-[12px] text-sky-900 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed">
+              <p className="font-bold mb-2">Want to use this offline at sea?</p>
+              <p className="mb-2">
+                The web version can&apos;t reach Ollama on your device. Install the
+                <strong> desktop companion</strong> (one-time, while you have internet):
+              </p>
+              <ol className="list-decimal list-inside space-y-1 mb-2">
+                <li>
+                  Download the source:{" "}
+                  <a
+                    href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
+                    className="underline font-semibold hover:text-sky-700"
+                  >
+                    sail_pal-main.zip
+                  </a>{" "}
+                  → unzip
+                </li>
+                <li>
+                  Install Python 3.11+, Node.js LTS, and{" "}
+                  <a
+                    href="https://ollama.com/download"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline font-semibold hover:text-sky-700"
+                  >
+                    Ollama
+                  </a>
+                </li>
+                <li>
+                  In the unzipped folder, run <code className="bg-sky-100 px-1 rounded">scripts/install.ps1</code> (Windows) or{" "}
+                  <code className="bg-sky-100 px-1 rounded">bash scripts/install.sh</code> (Mac/Linux)
+                </li>
+                <li>
+                  Then run <code className="bg-sky-100 px-1 rounded">scripts/start.bat</code> or{" "}
+                  <code className="bg-sky-100 px-1 rounded">bash scripts/start.sh</code> and open{" "}
+                  <code className="bg-sky-100 px-1 rounded">http://localhost:8000</code>
+                </li>
+              </ol>
+              <p className="text-[11px] text-sky-700">
+                <strong>Important:</strong> the installer saves an offline-ready quickstart guide to your
+                Desktop. Keep it — you&apos;ll need it if you lose internet.{" "}
+                <a
+                  href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline font-semibold"
+                >
+                  Preview it here.
+                </a>
+              </p>
             </div>
           ) : (
             <p className="mt-6 text-center text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
