@@ -38,6 +38,10 @@ class ModeRequest(BaseModel):
     mode: str  # "cloud" | "local"
 
 
+def _is_ollama_installed() -> bool:
+    return shutil.which("ollama") is not None
+
+
 async def _check_ollama_running() -> bool:
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
@@ -71,7 +75,7 @@ async def _check_model_ready(model_name: str) -> bool:
 async def setup_status():
     current_mode = mode_state.get_mode()
 
-    installed = shutil.which("ollama") is not None
+    installed = _is_ollama_installed()
     running = await _check_ollama_running() if installed else False
     model_ready = await _check_model_ready(settings.model_primary) if running else False
 
@@ -104,7 +108,7 @@ async def set_mode(payload: ModeRequest):
             ),
         )
     if payload.mode == "local":
-        installed = shutil.which("ollama") is not None
+        installed = _is_ollama_installed()
         running = await _check_ollama_running() if installed else False
         model_ready = await _check_model_ready(settings.model_primary) if running else False
 
