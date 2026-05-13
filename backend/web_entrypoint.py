@@ -64,6 +64,16 @@ def main() -> None:
     print(f"Starting Vessel Ops AI on 0.0.0.0:{port}...")
     print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}")
     
+    # Debug: Print if API key is present (length only for safety)
+    api_key = os.environ.get("GOOGLE_API_KEY", "")
+    if not api_key:
+        # Check settings object too (loads from .env or secret volume)
+        from backend.config import settings
+        api_key = settings.google_api_key
+        
+    print(f"GOOGLE_API_KEY: {'[SET, len=' + str(len(api_key)) + ']' if api_key else '[MISSING]'}")
+    print(f"CLOUD_MODE: {os.environ.get('CLOUD_MODE', 'false')}")
+    
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
 
 

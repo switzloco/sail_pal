@@ -112,6 +112,8 @@ async def set_mode(payload: ModeRequest):
                 detail="Cannot switch to local: Ollama is not running or the model is not pulled yet.",
             )
     elif payload.mode == "cloud":
+        from backend.logger import logger
+        logger.info(f"Attempting to switch to cloud mode. google_api_key length: {len(settings.google_api_key)}")
         if not settings.google_api_key:
             raise HTTPException(
                 status_code=409,

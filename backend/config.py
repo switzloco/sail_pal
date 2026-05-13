@@ -35,12 +35,11 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     model_primary: str = "gemma4:e2b"
     model_scale: str = "gemma4:e4b"
-    cors_origins: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # In production, we'll allow all origins to bypass CORS issues with direct Cloud Run URLs.
+    cors_origins: List[str] = ["*"]
 
     # ── Cloud simulation mode ─────────────────────────────────────────────────
     # When True, all LLM calls go to Google AI Studio instead of local Ollama.
-    # Useful for testing without the ~8 GB model download.
-    # The Ollama setup wizard is bypassed; a cloud-mode banner appears in the UI.
     cloud_mode: bool = False
     
     # Turn this on to enable verbose debug logging to backend/data/logs/vessel_debug.log
@@ -48,10 +47,27 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     cloud_model: str = "gemma-4-26b-a4b-it"
 
+    @field_validator("google_api_key", mode="before")
+    @classmethod
+    def load_api_key(cls, v):
+        if v: return v
+        # Try secret mount path (Cloud Run volume mount)
+        secret_path = "/secrets/GOOGLE_API_KEY"
+        if os.path.exists(secret_path):
+            try:
+                with open(secret_path, "r") as f:
+                    val = f.read().strip()
+                    if val:
+                        return val
+            except Exception:
+                pass
+        return v
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
+            if v == "*": return ["*"]
             return [origin.strip() for origin in v.split(",")]
         return v
 

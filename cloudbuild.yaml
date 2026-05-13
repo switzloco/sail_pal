@@ -34,9 +34,9 @@ steps:
       - --cpu=1
       - --min-instances=0
       - --max-instances=5
-      # GOOGLE_API_KEY is set separately in Cloud Run env vars via the console
-      # so it never appears in source. Set CLOUD_MODE here since it's not secret.
+      # Map the GOOGLE_API_KEY secret to an environment variable.
       - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data
+      - --set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest
 
   # Capture the live Cloud Run URL so the frontend bakes in the exact right base.
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
