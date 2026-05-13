@@ -46,27 +46,9 @@ Runs on every push to `main`. Steps:
 
 **Build time: ~20 minutes.** This is expensive and slow.
 
-### TODO: Add Docker layer caching to cut build time
+### Build caching (implemented)
 
-The Docker build step currently rebuilds from scratch every time (~7 minutes).
-Add `--cache-from` to reuse the previous image and cut this to ~1–2 minutes:
-
-```yaml
-# In cloudbuild.yaml, replace the docker build step with:
-- name: gcr.io/cloud-builders/docker
-  args:
-    - build
-    - --cache-from=gcr.io/$PROJECT_ID/vessel-ops-backend:latest
-    - -t
-    - gcr.io/$PROJECT_ID/vessel-ops-backend:$BUILD_ID
-    - -t
-    - gcr.io/$PROJECT_ID/vessel-ops-backend:latest
-    - -f
-    - Dockerfile
-    - .
-```
-
-Also cache `npm ci` in the frontend build step by mounting node_modules between builds (or use a custom builder image with deps pre-installed). Expected savings: **10–12 minutes per build**, reducing GCP Cloud Build costs by ~50%.
+`cloudbuild.yaml` pulls `:latest` before each Docker build (`allowFailure: true` for the first run) and passes `--cache-from` to reuse unchanged layers. The frontend `npm ci` uses a mounted cache volume. Expected savings: **10–12 minutes per build** (~50% cost reduction).
 
 ---
 
