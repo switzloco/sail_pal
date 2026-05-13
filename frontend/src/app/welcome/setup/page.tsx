@@ -198,8 +198,8 @@ export default function SetupChecklistPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
       <div className="max-w-xl w-full">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">🚀 Getting Started</h1>
-          <p className="text-slate-500 mt-2">Set up your vessel and AI for local operations.</p>
+          <h1 className="text-2xl font-bold text-slate-900">⚓ Offline Setup</h1>
+          <p className="text-slate-500 mt-2">Approximately 15 minutes to complete local AI configuration for disconnected maritime operations.</p>
         </div>
 
         <div className="space-y-4 mb-10">

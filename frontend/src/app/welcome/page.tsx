@@ -70,14 +70,14 @@ export default function WelcomePage() {
                 <div className="bg-blue-100 text-blue-600 p-2 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
                   <Globe size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">Try It Now</h2>
+                <h2 className="text-xl font-bold text-slate-900">Cloud Access</h2>
               </div>
               <p className="text-sm text-slate-500 mb-4 leading-relaxed">
-                Experience the AI immediately using Google&apos;s cloud infrastructure. 
-                Perfect for quick testing or exploring the interface.
+                Always available with an active internet connection. High-performance cloud 
+                processing with persistent storage for your logs and data.
               </p>
               <span className="text-ocean-600 text-sm font-semibold flex items-center gap-1">
-                {loading === "cloud" ? "Connecting..." : "Launch Cloud Demo →"}
+                {loading === "cloud" ? "Connecting..." : "Launch Online Mode →"}
               </span>
             </button>
 
@@ -90,14 +90,14 @@ export default function WelcomePage() {
                 <div className="bg-green-100 text-green-600 p-2 rounded-lg group-hover:bg-green-600 group-hover:text-white transition-colors">
                   <Shield size={24} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">Get Started</h2>
+                <h2 className="text-xl font-bold text-slate-900">Offline Setup</h2>
               </div>
               <p className="text-sm text-slate-500 mb-4 leading-relaxed">
-                Set up Gemma 4 to run locally on your machine. Everything stays private 
-                and fully operational even when you lose connection.
+                Requires a 15-minute setup and installation of Ollama. Run Gemma 4 
+                entirely on your hardware for 100% privacy and mission-critical reliability at sea.
               </p>
               <span className="text-green-600 text-sm font-semibold">
-                Start Local Onboarding →
+                Begin Local Onboarding →
               </span>
             </button>
           </div>
