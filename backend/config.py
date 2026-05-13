@@ -35,8 +35,19 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     model_primary: str = "gemma4:e2b"
     model_scale: str = "gemma4:e4b"
-    # In production, we'll allow all origins to bypass CORS issues with direct Cloud Run URLs.
     cors_origins: List[str] = ["*"]
+
+    @field_validator("model_primary", mode="before")
+    @classmethod
+    def load_primary_model(cls, v):
+        # If explicitly set in environment as MODEL_PRIMARY, Pydantic handles it.
+        # Otherwise, check OLLAMA_MODEL as a fallback.
+        return v or os.getenv("OLLAMA_MODEL") or "gemma4:e2b"
+
+    @field_validator("model_scale", mode="before")
+    @classmethod
+    def load_scale_model(cls, v):
+        return v or os.getenv("OLLAMA_MODEL_SCALE") or "gemma4:e4b"
 
     # ── Cloud simulation mode ─────────────────────────────────────────────────
     # When True, all LLM calls go to Google AI Studio instead of local Ollama.

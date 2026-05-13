@@ -1,14 +1,25 @@
 import { useEffect, useState } from "react";
 import { pingBackend } from "@/lib/api";
 import { processQueue, getQueue } from "@/lib/offlineQueue";
+import { fetchSetupStatus } from "@/lib/setup";
 
 export function OfflineBanner() {
   const [backendDown, setBackendDown] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [isCloud, setIsCloud] = useState(false);
 
   useEffect(() => {
     async function check() {
       const ok = await pingBackend();
+      
+      // Also check the mode to see if we should suppress the red banner
+      try {
+        const status = await fetchSetupStatus();
+        setIsCloud(status.mode === "cloud");
+      } catch (err) {
+        // If we can't even fetch status, we stick with the last known isCloud value
+      }
+
       if (ok && backendDown) {
         // Just came back online!
         processQueue().then(count => {
@@ -26,7 +37,7 @@ export function OfflineBanner() {
 
   if (!backendDown && pendingCount === 0) return null;
 
-  if (backendDown) {
+  if (backendDown && !isCloud) {
     return (
       <div className="sticky top-0 z-50 bg-red-600 text-white text-xs font-bold px-4 py-2 text-center shadow-lg animate-in slide-in-from-top duration-300">
         ⚠ Backend unreachable — Working offline. 
