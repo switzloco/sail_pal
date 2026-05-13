@@ -142,7 +142,9 @@ class TestSyncRouter:
 
     def test_sync_now_not_implemented(self, client):
         r = client.post("/api/sync/now")
-        assert r.status_code == 501
+        assert r.status_code == 200
+        assert r.json()["status"] == "success"
+        assert r.json()["synced_items"] == 0  # No pending items
 
 
 class TestSetupRouter:

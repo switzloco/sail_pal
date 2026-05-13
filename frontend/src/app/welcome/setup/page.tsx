@@ -16,10 +16,150 @@ import {
   ArrowRight,
   ExternalLink,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Download,
+  Terminal,
+  Play,
+  Globe
 } from "lucide-react";
 import type { Vessel, CrewMember } from "@/lib/types";
 
+// ── Web-version guide (server_is_local=false) ─────────────────────────────────
+function WebUserGuide() {
+  const router = useRouter();
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans">
+      <div className="max-w-2xl w-full">
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-sky-100 text-sky-700 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
+            <Globe size={14} /> Web Version
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">Set Up Offline Mode</h1>
+          <p className="text-slate-500 mt-2 max-w-lg mx-auto">
+            The web app can&apos;t reach Ollama on your device — that&apos;s a browser security limit.
+            To run offline at sea, install the <strong>desktop companion</strong> on your laptop.
+          </p>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-4 mb-8">
+
+          {/* Step 1 */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">1</div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-900 mb-1">Install Python 3.11+ and Node.js LTS</h3>
+              <div className="flex flex-wrap gap-3">
+                <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
+                  <Download size={14} /> Python (python.org)
+                </a>
+                <a href="https://nodejs.org/" target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
+                  <Download size={14} /> Node.js (nodejs.org)
+                </a>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Windows: check &ldquo;Add Python to PATH&rdquo; during install.</p>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">2</div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-900 mb-1">Install Ollama</h3>
+              <a href="https://ollama.com/download" target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
+                <Download size={14} /> ollama.com/download <ExternalLink size={12} />
+              </a>
+              <p className="text-xs text-slate-400 mt-1">Open it after installing — wait for the llama icon in your system tray / menu bar.</p>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">3</div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-900 mb-1">Download Vessel Ops AI</h3>
+              <a href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
+                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
+                <Download size={14} /> Download ZIP from GitHub
+              </a>
+              <p className="text-xs text-slate-400 mt-1">Unzip the folder anywhere on your laptop.</p>
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">4</div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-900 mb-2">Run the Installer</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Windows</p>
+                  <p className="text-xs text-slate-600 mb-1.5">Open the <code className="bg-white px-1 rounded border">scripts</code> folder → click the address bar → type <code className="bg-white px-1 rounded border">powershell</code> → Enter:</p>
+                  <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700 break-all">
+                    powershell -ExecutionPolicy Bypass -File install.ps1
+                  </code>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mac / Linux</p>
+                  <p className="text-xs text-slate-600 mb-1.5">Open Terminal in the project folder:</p>
+                  <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700">
+                    bash scripts/install.sh
+                  </code>
+                </div>
+              </div>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
+                ⏱ This downloads the Gemma 4 AI model (~8 GB). Allow 15–30 minutes on a good connection.
+                If interrupted, just re-run — it resumes from where it left off.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 5 */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">5</div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-900 mb-1">Launch the App</h3>
+              <div className="flex gap-4 text-sm">
+                <span><strong>Windows:</strong> double-click <code className="bg-slate-100 px-1 rounded text-xs">scripts\start.bat</code></span>
+                <span><strong>Mac/Linux:</strong> <code className="bg-slate-100 px-1 rounded text-xs">bash scripts/start.sh</code></span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Then open <strong>http://localhost:8000</strong> in your browser. The AI runs 100% on your device.</p>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Offline quickstart note */}
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-8 text-sm text-green-900">
+          <p className="font-bold mb-1">Save the offline quickstart</p>
+          <p className="text-green-700 text-xs">
+            The installer copies <strong>Vessel-Ops-Quickstart.md</strong> to your Desktop. Print it or screenshot it before you leave port — you&apos;ll need it if you lose internet at sea.{" "}
+            <a href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
+              target="_blank" rel="noreferrer"
+              className="underline font-semibold">Preview it here →</a>
+          </p>
+        </div>
+
+        {/* Continue in cloud */}
+        <div className="text-center">
+          <p className="text-xs text-slate-400 mb-3">Not ready to install yet? Use the cloud version in the meantime:</p>
+          <button
+            onClick={() => { localStorage.setItem("vessel_ops_onboarded", "true"); router.push("/"); }}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl font-semibold text-sm transition-all"
+          >
+            Continue with Cloud Mode <ArrowRight size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Local server checklist (server_is_local=true) ──────────────────────────────
 export default function SetupChecklistPage() {
   const router = useRouter();
   const [status, setStatus] = useState<SetupStatus | null>(null);
@@ -62,7 +202,7 @@ export default function SetupChecklistPage() {
         if (success) {
           fetchSetupStatus().then(setStatus);
         } else {
-          alert("Download failed or was interrupted. Re-click 'Start Download' — Ollama will resume from where it left off.");
+          alert("Download failed or was interrupted. Re-click ‘Start Download’ — Ollama will resume from where it left off.");
         }
       }
     );
@@ -104,6 +244,9 @@ export default function SetupChecklistPage() {
       <Loader2 className="animate-spin text-ocean-600" size={32} />
     </div>
   );
+
+  // Web users get a completely different, focused guide
+  if (!status.server_is_local) return <WebUserGuide />;
 
   const steps = [
     {
@@ -213,59 +356,6 @@ export default function SetupChecklistPage() {
           <h1 className="text-2xl font-bold text-slate-900">⚓ Offline Setup</h1>
           <p className="text-slate-500 mt-2">Approximately 15 minutes to complete local AI configuration for disconnected maritime operations.</p>
         </div>
-
-        {!status.server_is_local && (
-          <div className="mb-6 bg-sky-50 border border-sky-200 rounded-2xl p-5 text-sm text-sky-900">
-            <p className="font-bold text-base mb-1">You&apos;re using the web version</p>
-            <p className="text-sky-700 mb-3">
-              To run offline at sea, install the <strong>desktop companion</strong> on your laptop while you still have internet. It runs Vessel Ops entirely on your device — no cloud needed.
-            </p>
-            <ol className="list-decimal list-inside space-y-2 text-sky-800">
-              <li>
-                Install{" "}
-                <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer" className="font-semibold underline">Python 3.11+</a>
-                {" "}and{" "}
-                <a href="https://nodejs.org/" target="_blank" rel="noreferrer" className="font-semibold underline">Node.js LTS</a>
-              </li>
-              <li>
-                Install{" "}
-                <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className="font-semibold underline">Ollama</a>
-                {" "}and open it so it&apos;s running in the background
-              </li>
-              <li>
-                <a
-                  href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
-                  className="font-semibold underline"
-                >
-                  Download Vessel Ops AI
-                </a>
-                {" "}→ unzip it
-              </li>
-              <li>
-                Inside the folder, run{" "}
-                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">scripts\install.ps1</code> (Windows) or{" "}
-                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">bash scripts/install.sh</code> (Mac/Linux)
-              </li>
-              <li>
-                Then run{" "}
-                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">scripts\start.bat</code> (Windows) or{" "}
-                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">bash scripts/start.sh</code> and open{" "}
-                <code className="bg-sky-100 px-1.5 py-0.5 rounded text-xs">http://localhost:8000</code>
-              </li>
-            </ol>
-            <p className="mt-3 text-xs text-sky-600">
-              The installer saves an offline quickstart guide to your Desktop — keep it for use at sea.{" "}
-              <a
-                href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
-                target="_blank"
-                rel="noreferrer"
-                className="font-semibold underline"
-              >
-                Preview it here →
-              </a>
-            </p>
-          </div>
-        )}
 
         <div className="space-y-4 mb-10">
           {steps.map((step, idx) => (
