@@ -142,7 +142,7 @@ export default function SetupChecklistPage() {
                 style={{ width: `${(progress?.total && progress?.completed !== undefined) ? (progress.completed / progress.total) * 100 : 0}%` }}
               />
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">If interrupted, re-click "Start Download" to resume.</p>
+            <p className="text-[10px] text-slate-400 mt-1">If interrupted, re-click &ldquo;Start Download&rdquo; to resume.</p>
           </div>
         ) : (
           <button
