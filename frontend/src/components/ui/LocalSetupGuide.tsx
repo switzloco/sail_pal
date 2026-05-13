@@ -117,7 +117,10 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
             </div>
           </div>
 
-          <p className="mt-8 text-center text-[11px] text-slate-400">
+          <p className="mt-6 text-center text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+            Ollama runs on desktop/laptop computers only — not available on phones or tablets.
+          </p>
+          <p className="mt-3 text-center text-[11px] text-slate-400">
             Need more help? Check the <a href="https://ollama.com" target="_blank" rel="noreferrer" className="underline hover:text-ocean-600">Ollama Documentation</a>.
           </p>
         </div>
