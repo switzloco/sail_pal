@@ -44,7 +44,7 @@ def _is_ollama_installed() -> bool:
 
 async def _check_ollama_running() -> bool:
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=2.0) as client:
             r = await client.get(f"{settings.ollama_host}/api/tags")
             return r.status_code == 200
     except Exception:
@@ -53,20 +53,28 @@ async def _check_ollama_running() -> bool:
 
 async def _check_model_ready(model_name: str) -> bool:
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=2.0) as client:
             r = await client.get(f"{settings.ollama_host}/api/tags")
             if r.status_code != 200:
                 return False
             tags = r.json().get("models", [])
-            # Ollama model names may include digest suffix — match on prefix
-            return any(
-                t.get("name", "").split(":")[0] == model_name.split(":")[0]
-                and (
-                    ":" not in model_name
-                    or t.get("name", "").endswith(model_name.split(":")[1])
-                )
-                for t in tags
-            )
+            
+            # Match exact name, or match prefix/suffix for robustness
+            target_base = model_name.split(":")[0]
+            target_tag = model_name.split(":")[1] if ":" in model_name else "latest"
+            
+            for t in tags:
+                name = t.get("name", "")
+                if name == model_name:
+                    return True
+                
+                # Check for digest-style names or alternate tags
+                t_base = name.split(":")[0]
+                t_tag = name.split(":")[1] if ":" in name else "latest"
+                
+                if t_base == target_base and t_tag == target_tag:
+                    return True
+            return False
     except Exception:
         return False
 
@@ -74,6 +82,20 @@ async def _check_model_ready(model_name: str) -> bool:
 @router.get("/status", response_model=SetupStatus)
 async def setup_status():
     current_mode = mode_state.get_mode()
+    if current_mode == "cloud":
+        # Bypass all Ollama checks — app is ready immediately.
+        return SetupStatus(
+            ollama_installed=True,
+            ollama_running=True,
+            model_ready=True,
+            model_name=settings.cloud_model,
+            mode="cloud",
+            data_dir=settings.data_dir,
+        )
+
+    # Check running first - if it's running, it's definitely installed
+    running = await _check_ollama_running()
+    installed = running or (shutil.which("ollama") is not None)
 
     installed = _is_ollama_installed()
     running = await _check_ollama_running() if installed else False
