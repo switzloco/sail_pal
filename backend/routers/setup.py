@@ -93,12 +93,33 @@ async def get_mode():
 @router.post("/mode", response_model=ModeResponse)
 async def set_mode(payload: ModeRequest):
     if payload.mode == "local":
-        running = await _check_ollama_running()
+        installed = shutil.which("ollama") is not None
+        running = await _check_ollama_running() if installed else False
         model_ready = await _check_model_ready(settings.model_primary) if running else False
+
+        if not installed:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Cannot switch to local: Ollama is not installed on this server. "
+                    f"Install it from https://ollama.com/download, then try again."
+                ),
+            )
+        if not running:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"Cannot switch to local: Ollama is installed but not reachable at "
+                    f"{settings.ollama_host}. Start the Ollama app (or `ollama serve`) and try again."
+                ),
+            )
         if not model_ready:
             raise HTTPException(
                 status_code=409,
-                detail="Cannot switch to local: Ollama is not running or the model is not pulled yet.",
+                detail=(
+                    f"Cannot switch to local: Ollama is running but the '{settings.model_primary}' "
+                    f"model is not pulled. Run `ollama pull {settings.model_primary}` and try again."
+                ),
             )
     elif payload.mode == "cloud":
         from backend.logger import logger
@@ -106,7 +127,10 @@ async def set_mode(payload: ModeRequest):
         if not settings.google_api_key:
             raise HTTPException(
                 status_code=409,
-                detail="Cannot switch to cloud: GOOGLE_API_KEY is not configured on this server.",
+                detail=(
+                    "Cannot switch to cloud: GOOGLE_API_KEY is not configured on this server. "
+                    "Set the GOOGLE_API_KEY environment variable (or mount the secret) and restart."
+                ),
             )
     try:
         mode_state.set_mode(payload.mode)
