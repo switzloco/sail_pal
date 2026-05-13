@@ -49,9 +49,12 @@ export function CloudBanner() {
       <div className="sticky top-0 z-50 bg-amber-400 text-amber-950 text-sm font-semibold px-4 py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
         <span>☁ Cloud — running <strong>Gemma</strong> via Google AI Studio.</span>
         {!status.server_is_local ? (
-          <span className="text-xs text-amber-800">
-            Local AI requires running the backend on your own machine.
-          </span>
+          <a
+            href="/welcome/setup"
+            className="px-3 py-0.5 rounded bg-amber-800 text-white text-xs font-bold hover:bg-amber-900 transition-colors"
+          >
+            Get Offline Setup Guide →
+          </a>
         ) : ollamaReady ? (
           <button
             onClick={() => handleSwitch("local")}

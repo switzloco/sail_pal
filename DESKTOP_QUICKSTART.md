@@ -1,95 +1,134 @@
 # Vessel Ops AI — Offline Quickstart
 
-Keep this file. **Print it, save it to your Desktop, screenshot it.** If you
-lose internet at sea, you'll need it to start the app.
+Keep this file. **Print it, save it to your Desktop, screenshot it.**
+If you lose internet at sea, you'll need it to start the app.
+
+---
+
+## Before You Leave Port (checklist)
+
+Do all of these **while you still have internet**:
+
+- [ ] Run the installer (`install.ps1` / `install.sh`) until it says "Install complete!"
+- [ ] Run `start.bat` / `bash scripts/start.sh` and confirm `http://localhost:8000` opens
+- [ ] In the app: complete the Offline Setup wizard (Ollama + Gemma 4 downloaded)
+- [ ] Add your crew in the app
+- [ ] Copy this file to your Desktop AND print a copy
+
+---
+
+## First-Time Install (do this with internet)
+
+Set aside 20–30 minutes for the model download (~8 GB).
+
+### Windows
+
+1. Install **Python 3.11+**: <https://www.python.org/downloads/windows/>
+   During install, check **"Add Python to PATH"**.
+   *(Use the python.org installer — not the Microsoft Store version.)*
+
+2. Install **Node.js LTS** (20+): <https://nodejs.org/>
+
+3. Install **Ollama**: <https://ollama.com/download/windows>
+   Open it and wait for the llama icon in your system tray (bottom-right corner).
+
+4. Download Vessel Ops AI: <https://github.com/switzloco/sail_pal>
+   Click the green **Code** button → **Download ZIP** → unzip it.
+
+5. Open the unzipped folder. Open the `scripts` subfolder.
+   In the address bar at the top of File Explorer, type `powershell` and press Enter.
+   In the PowerShell window, type:
+   ```
+   powershell -ExecutionPolicy Bypass -File install.ps1
+   ```
+   If Windows shows a SmartScreen warning, click **More info → Run anyway**.
+
+6. When it finishes ("Install complete!"), go to **Every-Day Use** below.
+
+### macOS / Linux
+
+1. Install **Python 3.11+**:
+   - macOS: <https://www.python.org/downloads/macos/>
+   - Linux: `sudo apt install python3 python3-venv` (or your package manager)
+
+2. Install **Node.js LTS** (20+): <https://nodejs.org/>
+
+3. Install **Ollama**:
+   - macOS: <https://ollama.com/download/mac> — open the app, wait for the llama icon in your menu bar
+   - Linux: `curl -fsSL https://ollama.com/install.sh | sh`
+
+4. Download and unzip Vessel Ops AI from <https://github.com/switzloco/sail_pal>.
+
+5. Open Terminal in the unzipped folder and run:
+   ```
+   bash scripts/install.sh
+   ```
+
+6. When it finishes ("Install complete!"), go to **Every-Day Use** below.
 
 ---
 
 ## Every-Day Use (after first install)
 
 ### Windows
-1. Open the **Ollama** app from your Start menu. Wait for the llama icon to
-   appear in the system tray (bottom-right corner).
-2. Double-click **`start.bat`** inside the `vessel-ops-ai\scripts\` folder.
+
+1. Open the **Ollama** app from your Start menu.
+   Wait for the llama icon in your system tray (bottom-right corner).
+2. Double-click **`start.bat`** inside the `scripts\` folder.
 3. A browser window opens at `http://localhost:8000`. That's the app.
-4. To stop: close the black terminal window (or press `Ctrl+C` inside it).
+4. To stop: press `Ctrl+C` in the black terminal window.
 
 ### macOS / Linux
-1. Open the **Ollama** app from Applications (macOS) or run `ollama serve`
-   (Linux). Wait for the llama icon in the menu bar.
+
+1. Open the **Ollama** app from Applications (macOS) or run `ollama serve` (Linux).
+   Wait for the llama icon in the menu bar.
 2. Open Terminal in the `vessel-ops-ai` folder and run:
    ```
    bash scripts/start.sh
    ```
-3. Open your browser to `http://localhost:8000`.
+3. Your browser opens automatically to `http://localhost:8000`.
 4. To stop: press `Ctrl+C` in Terminal.
-
----
-
-## First-Time Install (do this with internet)
-
-You need a one-time setup while you still have internet. Set aside 20–30
-minutes for the model download (~8 GB).
-
-### Windows
-1. Install **Python 3.11+**: <https://www.python.org/downloads/windows/>
-   (during install, check **"Add Python to PATH"**).
-2. Install **Node.js LTS**: <https://nodejs.org/>
-3. Install **Ollama**: <https://ollama.com/download/windows>
-4. Download the Vessel Ops AI source: <https://github.com/switzloco/sail_pal>
-   (click the green **Code** button → **Download ZIP**, then unzip).
-5. Open the unzipped folder, then open the `scripts` subfolder.
-   Right-click **`install.ps1`** → **Run with PowerShell**.
-   (If Windows blocks it, open PowerShell and run:
-   `powershell -ExecutionPolicy Bypass -File scripts\install.ps1`)
-6. When it finishes, use the **Every-Day Use** instructions above.
-
-### macOS / Linux
-1. Install **Python 3.11+** (macOS: <https://www.python.org/downloads/macos/>;
-   Linux: use your package manager, e.g. `sudo apt install python3 python3-venv`).
-2. Install **Node.js LTS** from <https://nodejs.org/>.
-3. Install **Ollama** from <https://ollama.com/download> (or on Linux:
-   `curl -fsSL https://ollama.com/install.sh | sh`).
-4. Open Terminal in the project folder and run:
-   ```
-   bash scripts/install.sh
-   ```
-5. When it finishes, use the **Every-Day Use** instructions above.
 
 ---
 
 ## Troubleshooting (no internet, things broke)
 
-**The browser shows "site can't be reached":**
+**Browser shows "site can't be reached":**
 The server isn't running. Re-run `start.bat` (Windows) or `bash scripts/start.sh`
-(Mac/Linux). Watch the terminal — it should say `Uvicorn running on
-http://127.0.0.1:8000`.
+(Mac/Linux). The terminal should say `Uvicorn running on http://127.0.0.1:8000`.
 
-**The app loads but AI replies say "Cannot switch to local: ...":**
-Ollama isn't running. Open the Ollama app from your Start menu / Applications.
-You should see a llama icon in your system tray / menu bar within ~10 seconds.
-Then refresh the browser.
+**App loads but AI replies say "Ollama is not running" or similar:**
+Open the Ollama app from Start menu / Applications. You should see the llama
+icon within ~10 seconds. Then refresh the browser.
 
-**Ollama is running but the model isn't there:**
-You probably never finished `ollama pull gemma4:e2b`. You'll need internet
-once to grab it (~8 GB). At sea with no internet, the AI features won't work
-until you can run that pull again.
+**AI replies say "model is not pulled":**
+You need internet to download the model (~8 GB). Run the installer again
+once you have connectivity: `install.ps1` or `bash scripts/install.sh`.
 
 **`start.bat` says "Virtual environment not found":**
-The first-time install never completed. Connect to internet and re-run
-`install.ps1` (Windows) or `install.sh` (Mac/Linux).
+The installer never completed. Connect to internet and re-run the installer.
+
+**Download was interrupted mid-way:**
+Just re-run the installer — Ollama automatically resumes from where it left off.
 
 **Where are my files?**
-The database lives in `backend/data/vessel.db`. Back this up before long trips
-if you've added a lot of crew, logs, or maintenance entries.
+The database lives in `backend/data/vessel.db`. Back this up before long
+voyages if you've entered crew, logs, or maintenance records.
 
 ---
 
-## Quick Reference Card (rip this off and tape it to the laptop)
+## Quick Reference Card
 
 ```
-START:   Ollama app  →  scripts\start.bat (Windows) or bash scripts/start.sh
-OPEN:    http://localhost:8000
-STOP:    Close the terminal window (or Ctrl+C)
-MODEL:   gemma4:e2b  (run `ollama pull gemma4:e2b` once with internet)
+═══════════════════════════════════════════════════
+  VESSEL OPS AI — QUICK REFERENCE
+═══════════════════════════════════════════════════
+  START (Windows): Ollama app → double-click scripts\start.bat
+  START (Mac/Lin): Ollama app → bash scripts/start.sh
+  OPEN:            http://localhost:8000
+  STOP:            Ctrl+C in the terminal window
+───────────────────────────────────────────────────
+  AI MODEL: gemma4:e2b  (downloaded by installer)
+  DATABASE: backend/data/vessel.db  (back this up!)
+═══════════════════════════════════════════════════
 ```
