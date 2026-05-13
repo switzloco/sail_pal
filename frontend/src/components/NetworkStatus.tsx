@@ -8,6 +8,7 @@ export const NetworkStatus = () => {
   const [isLocalOnline, setIsLocalOnline] = useState<boolean | null>(null);
   const [isInternetOnline, setIsInternetOnline] = useState<boolean>(true);
   const [isModelReady, setIsModelReady] = useState<boolean | null>(null);
+  const [mode, setMode] = useState<string | null>(null);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -19,6 +20,7 @@ export const NetworkStatus = () => {
       if (status) {
         try {
           const setupStatus = await fetchSetupStatus();
+          setMode(setupStatus.mode);
           setIsModelReady(setupStatus.model_ready);
         } catch (e) {
           setIsModelReady(false);
@@ -69,11 +71,11 @@ export const NetworkStatus = () => {
           <div className="flex items-center gap-2">
              <span
               className={`w-2 h-2 rounded-full ${
-                isModelReady ? "bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"
+                (mode === "cloud" || isModelReady) ? "bg-green-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"
               }`}
             />
-            <span className={`text-[10px] font-bold tracking-widest uppercase ${isModelReady ? 'text-green-400' : 'text-yellow-400'}`}>
-              {isModelReady ? "Ready for Sea" : "Missing Model"}
+            <span className={`text-[10px] font-bold tracking-widest uppercase ${(mode === "cloud" || isModelReady) ? 'text-green-400' : 'text-yellow-400'}`}>
+              {(mode === "cloud" || isModelReady) ? "Ready for Sea" : "Missing Model"}
             </span>
           </div>
         </>

@@ -69,17 +69,6 @@ async def _check_model_ready(model_name: str) -> bool:
 @router.get("/status", response_model=SetupStatus)
 async def setup_status():
     current_mode = mode_state.get_mode()
-    if current_mode == "cloud":
-        # Bypass all Ollama checks — app is ready immediately.
-        return SetupStatus(
-            ollama_installed=True,
-            ollama_running=True,
-            model_ready=True,
-            model_name=settings.cloud_model,
-            mode="cloud",
-            data_dir=settings.data_dir,
-        )
-
 
     installed = shutil.which("ollama") is not None
     running = await _check_ollama_running() if installed else False
@@ -90,7 +79,7 @@ async def setup_status():
         ollama_running=running,
         model_ready=model_ready,
         model_name=settings.model_primary,
-        mode="local",
+        mode=current_mode,
         data_dir=settings.data_dir,
     )
 
