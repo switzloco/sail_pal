@@ -14,6 +14,7 @@ export interface SetupStatus {
   install_url: string;
   mode: "local" | "cloud";
   data_dir: string;
+  server_is_local: boolean;
 }
 
 

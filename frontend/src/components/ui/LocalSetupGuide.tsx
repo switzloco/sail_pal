@@ -21,6 +21,7 @@ interface LocalSetupGuideProps {
     model_ready: boolean;
     model_name: string;
     install_url: string;
+    server_is_local: boolean;
   };
 }
 
@@ -38,7 +39,7 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
           </div>
           <h2 className="text-xl font-bold mb-2">Offline Power</h2>
           <p className="text-ocean-300 text-sm leading-relaxed">
-            Switching to Local mode lets Sail Pal work even in the middle of the ocean with zero internet.
+            Switching to Local mode lets Vessel Ops work even in the middle of the ocean with zero internet.
           </p>
         </div>
 
@@ -103,7 +104,7 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-slate-900">Download the {status.model_name} Model</h4>
-                <p className="text-sm text-slate-500 mb-3">Sail Pal needs this 8GB file to speak to you.</p>
+                <p className="text-sm text-slate-500 mb-3">Vessel Ops needs this model file to run locally.</p>
                 {!status.model_ready && status.ollama_running && (
                   <button 
                     onClick={() => window.location.href = "/welcome/setup"}
@@ -117,9 +118,63 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
             </div>
           </div>
 
-          <p className="mt-6 text-center text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-            Ollama runs on desktop/laptop computers only — not available on phones or tablets.
-          </p>
+          {!status.server_is_local ? (
+            <div className="mt-6 text-[12px] text-sky-900 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed">
+              <p className="font-bold mb-2">Want to use this offline at sea?</p>
+              <p className="mb-2">
+                The web version can&apos;t reach Ollama on your device. Install the
+                <strong> desktop companion</strong> (one-time, while you have internet):
+              </p>
+              <ol className="list-decimal list-inside space-y-1 mb-2">
+                <li>
+                  Download the source:{" "}
+                  <a
+                    href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
+                    className="underline font-semibold hover:text-sky-700"
+                  >
+                    sail_pal-main.zip
+                  </a>{" "}
+                  → unzip
+                </li>
+                <li>
+                  Install Python 3.11+, Node.js LTS, and{" "}
+                  <a
+                    href="https://ollama.com/download"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline font-semibold hover:text-sky-700"
+                  >
+                    Ollama
+                  </a>
+                </li>
+                <li>
+                  In the unzipped folder, run <code className="bg-sky-100 px-1 rounded">scripts/install.ps1</code> (Windows) or{" "}
+                  <code className="bg-sky-100 px-1 rounded">bash scripts/install.sh</code> (Mac/Linux)
+                </li>
+                <li>
+                  Then run <code className="bg-sky-100 px-1 rounded">scripts/start.bat</code> or{" "}
+                  <code className="bg-sky-100 px-1 rounded">bash scripts/start.sh</code> and open{" "}
+                  <code className="bg-sky-100 px-1 rounded">http://localhost:8000</code>
+                </li>
+              </ol>
+              <p className="text-[11px] text-sky-700">
+                <strong>Important:</strong> the installer saves an offline-ready quickstart guide to your
+                Desktop. Keep it — you&apos;ll need it if you lose internet.{" "}
+                <a
+                  href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline font-semibold"
+                >
+                  Preview it here.
+                </a>
+              </p>
+            </div>
+          ) : (
+            <p className="mt-6 text-center text-[11px] text-amber-600 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+              Ollama runs on desktop/laptop computers only — not available on phones or tablets.
+            </p>
+          )}
           <p className="mt-3 text-center text-[11px] text-slate-400">
             Need more help? Check the <a href="https://ollama.com" target="_blank" rel="noreferrer" className="underline hover:text-ocean-600">Ollama Documentation</a>.
           </p>
