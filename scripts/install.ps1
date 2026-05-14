@@ -24,18 +24,48 @@ $Model = "gemma4:e2b"
 
 # ── Python ────────────────────────────────────────────────────────────────────
 Info "Checking Python..."
-$pythonCmd = Get-Command python -ErrorAction SilentlyContinue
-if (-not $pythonCmd) {
-  Fail "Python is not installed. Install Python 3.11+ from https://www.python.org/downloads/windows/ (check 'Add Python to PATH'), then re-run."
+
+# Resolve a real Python interpreter, avoiding the MS Store stub at
+# %LOCALAPPDATA%\Microsoft\WindowsApps\python.exe. Strategy:
+#   1. Prefer the py launcher (installed by python.org installer; bypasses the stub).
+#   2. Otherwise scan every python/python3 on PATH and pick the first non-WindowsApps one.
+$pythonExe = $null
+
+$pyLauncher = Get-Command py -ErrorAction SilentlyContinue
+if ($pyLauncher) {
+  $verLine = & py -3 --version 2>&1
+  if ($LASTEXITCODE -eq 0 -and $verLine -match "Python (\d+)\.(\d+)") {
+    $pythonExe = @("py", "-3")
+  }
 }
 
-# Detect Microsoft Store stub (opens the Store instead of running Python)
-$pythonPath = $pythonCmd.Source
-if ($pythonPath -match "WindowsApps" -or $pythonPath -match "Microsoft\\WindowsApps") {
-  Fail "The 'python' command points to the Microsoft Store stub, not a real Python install.`nPlease install Python 3.11+ from https://www.python.org/downloads/windows/ (check 'Add Python to PATH'), then re-run."
+if (-not $pythonExe) {
+  $candidates = @()
+  $candidates += Get-Command python  -All -ErrorAction SilentlyContinue
+  $candidates += Get-Command python3 -All -ErrorAction SilentlyContinue
+  foreach ($c in $candidates) {
+    if ($c.Source -notmatch "WindowsApps") {
+      $pythonExe = @($c.Source)
+      break
+    }
+  }
 }
 
-$pyVerLine = & python --version 2>&1
+if (-not $pythonExe) {
+  Fail @"
+No real Python interpreter found. The 'python' command on this PATH points to
+the Microsoft Store stub (or nothing at all).
+
+Fix one of these and re-run install.bat:
+  A) Install Python 3.11+ from https://www.python.org/downloads/windows/
+     and check 'Add Python to PATH' during install.
+  B) If you've already installed it, disable the Store stub:
+     Settings -> Apps -> Advanced app settings -> App execution aliases ->
+     turn OFF 'App Installer  python.exe' and 'App Installer  python3.exe'.
+"@
+}
+
+$pyVerLine = & $pythonExe[0] $pythonExe[1..($pythonExe.Length-1)] --version 2>&1
 if ($pyVerLine -notmatch "Python (\d+)\.(\d+)") {
   Fail "Could not parse Python version: $pyVerLine"
 }
@@ -43,7 +73,32 @@ $pyMajor = [int]$Matches[1]; $pyMinor = [int]$Matches[2]
 if ($pyMajor -lt 3 -or ($pyMajor -eq 3 -and $pyMinor -lt 11)) {
   Fail "Python $pyMajor.$pyMinor is too old. Install 3.11+ from https://www.python.org/downloads/windows/."
 }
-Info "Python $pyMajor.$pyMinor ✓"
+
+# Warn about very-new Python where ML deps may not have Windows wheels yet.
+# If pip can't find wheels for chromadb / sentence-transformers / pymupdf on
+# this version, it falls back to source builds which need a C++ toolchain
+# the user almost certainly doesn't have.
+if ($pyMajor -eq 3 -and $pyMinor -ge 13) {
+  Warn "Python $pyMajor.$pyMinor is newer than what some dependencies"
+  Warn "(chromadb, sentence-transformers, pymupdf) currently ship Windows wheels for."
+  Warn "If pip install fails below, install Python 3.11 or 3.12 from"
+  Warn "https://www.python.org/downloads/windows/ and re-run install.bat."
+  Warn "(The 'py' launcher will pick the newest installed Python by default;"
+  Warn " we'll try 'py -3.12' first if it exists.)"
+
+  # Prefer an older interpreter if the user has one installed alongside.
+  foreach ($preferred in @("3.12","3.11")) {
+    $check = & py "-$preferred" --version 2>&1
+    if ($LASTEXITCODE -eq 0 -and $check -match "Python (\d+)\.(\d+)") {
+      $pythonExe = @("py", "-$preferred")
+      $pyMajor = [int]$Matches[1]; $pyMinor = [int]$Matches[2]
+      Info "Switched to Python $pyMajor.$pyMinor via 'py -$preferred'"
+      break
+    }
+  }
+}
+
+Info "Python $pyMajor.$pyMinor ($($pythonExe -join ' ')) ✓"
 
 # ── Node.js ───────────────────────────────────────────────────────────────────
 Info "Checking Node.js..."
@@ -74,7 +129,7 @@ Info "Ollama detected ✓"
 # ── Python venv + backend deps ───────────────────────────────────────────────
 if (-not (Test-Path ".venv")) {
   Info "Creating Python virtual environment..."
-  & python -m venv .venv
+  & $pythonExe[0] $pythonExe[1..($pythonExe.Length-1)] -m venv .venv
 }
 $venvPython = "$RepoRoot\.venv\Scripts\python.exe"
 Info "Installing backend dependencies..."
