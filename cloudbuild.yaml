@@ -70,9 +70,6 @@ steps:
         cd frontend
         npm ci --cache /workspace/.npm-cache
         NEXT_PUBLIC_API_BASE="$$BACKEND_URL" WEB_EXPORT=1 npm run build
-    volumes:
-      - name: npm-cache
-        path: /workspace/.npm-cache
     waitFor: [get-backend-url]
 
   # Deploy the static export to Firebase Hosting.
