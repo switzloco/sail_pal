@@ -60,6 +60,15 @@ _env_file = os.path.join(_project_root, ".env")
 if os.path.isfile(_env_file):
     datas += [(_env_file, ".")]
 
+# Bundled RAG knowledge chunks (read-only). The FTS5 engine in
+# backend/ai/rag_engine.py expects to find these at <bundle>/backend/data/knowledge/
+# relative to its own __file__, which PyInstaller resolves under _MEIPASS at
+# runtime. Without this datas entry the desktop build ships with an empty RAG
+# index and Ask Gemma loses WHO IMGS grounding.
+_knowledge_dir = os.path.join(_project_root, "backend", "data", "knowledge")
+if os.path.isdir(_knowledge_dir):
+    datas += [(_knowledge_dir, os.path.join("backend", "data", "knowledge"))]
+
 
 a = Analysis(
     [os.path.join(_spec_dir, "entrypoint.py")],
