@@ -25,51 +25,64 @@ $Model = "gemma4:e2b"
 # ── Python ────────────────────────────────────────────────────────────────────
 Info "Checking Python..."
 
-# Resolve a real Python interpreter, avoiding the MS Store stub at
-# %LOCALAPPDATA%\Microsoft\WindowsApps\python.exe. Strategy:
-#   1. Prefer the py launcher (installed by python.org installer; bypasses the stub).
-#   2. Otherwise scan every python/python3 on PATH and pick the first non-WindowsApps one.
-$pythonExe = $null
+# Resolve a real Python interpreter by probing behavior, not by checking paths.
+# Modern Windows complicates this:
+#   - Old MS Store stub: python.exe under WindowsApps that opens the Store.
+#   - New Python Install Manager (pymanager): python.exe under WindowsApps that
+#     IS a real interpreter routed through pymanager. Same path, opposite truth.
+# So we just run --version on each candidate and accept the first one that
+# returns a parseable "Python X.Y".
 
-$pyLauncher = Get-Command py -ErrorAction SilentlyContinue
-if ($pyLauncher) {
-  $verLine = & py -3 --version 2>&1
-  if ($LASTEXITCODE -eq 0 -and $verLine -match "Python (\d+)\.(\d+)") {
-    $pythonExe = @("py", "-3")
-  }
+function Try-Python {
+  param([string[]]$Cmd)
+  try {
+    $out = & $Cmd[0] $Cmd[1..($Cmd.Length-1)] --version 2>&1
+    if ($LASTEXITCODE -eq 0 -and $out -match "Python (\d+)\.(\d+)") {
+      return @{ Cmd = $Cmd; Major = [int]$Matches[1]; Minor = [int]$Matches[2] }
+    }
+  } catch { }
+  return $null
 }
 
-if (-not $pythonExe) {
-  $candidates = @()
-  $candidates += Get-Command python  -All -ErrorAction SilentlyContinue
-  $candidates += Get-Command python3 -All -ErrorAction SilentlyContinue
-  foreach ($c in $candidates) {
-    if ($c.Source -notmatch "WindowsApps") {
-      $pythonExe = @($c.Source)
-      break
-    }
+$pythonExe = $null
+$pyMajor = 0; $pyMinor = 0
+
+# Try in order of preference. py -3 first (works for python.org and pymanager
+# installs), then bare commands, then explicit python3.
+$probeList = @(
+  @("py","-3"),
+  @("python"),
+  @("python3")
+)
+
+# Also probe every python/python3 on PATH in case the first match is a broken
+# stub but a later one works.
+foreach ($name in @("python","python3")) {
+  $all = Get-Command $name -All -ErrorAction SilentlyContinue
+  foreach ($c in $all) { $probeList += ,@($c.Source) }
+}
+
+foreach ($cmd in $probeList) {
+  $r = Try-Python -Cmd $cmd
+  if ($r) {
+    $pythonExe = $r.Cmd; $pyMajor = $r.Major; $pyMinor = $r.Minor
+    break
   }
 }
 
 if (-not $pythonExe) {
   Fail @"
-No real Python interpreter found. The 'python' command on this PATH points to
-the Microsoft Store stub (or nothing at all).
+No working Python interpreter found.
 
-Fix one of these and re-run install.bat:
-  A) Install Python 3.11+ from https://www.python.org/downloads/windows/
-     and check 'Add Python to PATH' during install.
-  B) If you've already installed it, disable the Store stub:
-     Settings -> Apps -> Advanced app settings -> App execution aliases ->
-     turn OFF 'App Installer  python.exe' and 'App Installer  python3.exe'.
+Install Python 3.11+ from https://www.python.org/downloads/windows/ (check
+'Add Python to PATH' during install), then re-run install.bat.
+
+If you're using the new Python Install Manager (pymanager) and 'python' still
+doesn't work, open:
+  Settings -> Apps -> Advanced app settings -> App execution aliases
+and make sure 'py.exe' or 'python.exe' under 'Python install manager' is ON.
 "@
 }
-
-$pyVerLine = & $pythonExe[0] $pythonExe[1..($pythonExe.Length-1)] --version 2>&1
-if ($pyVerLine -notmatch "Python (\d+)\.(\d+)") {
-  Fail "Could not parse Python version: $pyVerLine"
-}
-$pyMajor = [int]$Matches[1]; $pyMinor = [int]$Matches[2]
 if ($pyMajor -lt 3 -or ($pyMajor -eq 3 -and $pyMinor -lt 11)) {
   Fail "Python $pyMajor.$pyMinor is too old. Install 3.11+ from https://www.python.org/downloads/windows/."
 }
