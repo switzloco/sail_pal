@@ -94,19 +94,53 @@ if ($pyMajor -lt 3 -or ($pyMajor -eq 3 -and $pyMinor -lt 11)) {
 if ($pyMajor -eq 3 -and $pyMinor -ge 13) {
   Warn "Python $pyMajor.$pyMinor is newer than what some dependencies"
   Warn "(chromadb, sentence-transformers, pymupdf) currently ship Windows wheels for."
-  Warn "If pip install fails below, install Python 3.11 or 3.12 from"
-  Warn "https://www.python.org/downloads/windows/ and re-run install.bat."
-  Warn "(The 'py' launcher will pick the newest installed Python by default;"
-  Warn " we'll try 'py -3.12' first if it exists.)"
+  Warn "Looking for an older Python (3.12 or 3.11) to use instead..."
 
   # Prefer an older interpreter if the user has one installed alongside.
+  # Wrap each probe so 'py' writing [ERROR] to stderr (when a version isn't
+  # installed) doesn't trip $ErrorActionPreference='Stop' and abort the script.
   foreach ($preferred in @("3.12","3.11")) {
-    $check = & py "-$preferred" --version 2>&1
-    if ($LASTEXITCODE -eq 0 -and $check -match "Python (\d+)\.(\d+)") {
-      $pythonExe = @("py", "-$preferred")
-      $pyMajor = [int]$Matches[1]; $pyMinor = [int]$Matches[2]
+    $r = Try-Python -Cmd @("py","-$preferred")
+    if ($r) {
+      $pythonExe = $r.Cmd; $pyMajor = $r.Major; $pyMinor = $r.Minor
       Info "Switched to Python $pyMajor.$pyMinor via 'py -$preferred'"
       break
+    }
+  }
+
+  # Still on 3.13+? Offer pymanager auto-install if available.
+  if ($pyMajor -ge 3 -and $pyMinor -ge 13) {
+    $hasPyManager = $false
+    try {
+      $help = & py install --help 2>&1
+      if ($LASTEXITCODE -eq 0) { $hasPyManager = $true }
+    } catch { }
+
+    if ($hasPyManager) {
+      Warn ""
+      Warn "Your 'py' launcher is the new Python Install Manager (pymanager),"
+      Warn "which can install Python 3.12 in ~30 seconds, no admin needed."
+      $resp = Read-Host "Run 'py install 3.12' now? (Y/n)"
+      if ($resp -eq "" -or $resp -match "^[Yy]") {
+        Info "Installing Python 3.12 via pymanager..."
+        & py install 3.12
+        if ($LASTEXITCODE -eq 0) {
+          $r = Try-Python -Cmd @("py","-3.12")
+          if ($r) {
+            $pythonExe = $r.Cmd; $pyMajor = $r.Major; $pyMinor = $r.Minor
+            Info "Switched to Python $pyMajor.$pyMinor via 'py -3.12'"
+          }
+        }
+      }
+    }
+
+    if ($pyMinor -ge 13) {
+      Warn ""
+      Warn "Proceeding with Python $pyMajor.$pyMinor. If pip install fails below"
+      Warn "(missing wheels for chromadb/sentence-transformers/pymupdf), install"
+      Warn "Python 3.12 from https://www.python.org/downloads/windows/ or run:"
+      Warn "    py install 3.12"
+      Warn "then re-run install.bat."
     }
   }
 }
