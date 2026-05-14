@@ -1,11 +1,11 @@
-# Vessel Ops AI — Desktop Companion Installer (Windows)
+﻿# Vessel Ops AI - Desktop Companion Installer (Windows)
 #
 # HOW TO RUN THIS:
-#   1. Open the scripts folder in File Explorer
-#   2. Click the address bar at the top, type "powershell", press Enter
-#   3. In the PowerShell window that opens, type:
-#         powershell -ExecutionPolicy Bypass -File install.ps1
-#      and press Enter.
+#   Easiest: in File Explorer, double-click "install.bat" in this folder.
+#   That wrapper invokes this script with the right flags.
+#
+#   Manual fallback: open cmd in the scripts folder and run:
+#         powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
 #
 #   If Windows shows a blue "SmartScreen" warning, click "More info" -> "Run anyway".
 #

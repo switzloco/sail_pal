@@ -12,7 +12,7 @@ cd /d "%~dp0\.."
 if not exist ".venv\Scripts\python.exe" (
   echo.
   echo ERROR: Virtual environment not found.
-  echo Run scripts\install.ps1 first to set up the desktop companion.
+  echo Double-click scripts\install.bat first to set up the desktop companion.
   echo.
   pause
   exit /b 1

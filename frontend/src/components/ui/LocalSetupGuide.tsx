@@ -148,11 +148,11 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
                   </a>
                 </li>
                 <li>
-                  In the unzipped folder, run <code className="bg-sky-100 px-1 rounded">scripts/install.ps1</code> (Windows) or{" "}
+                  In the unzipped folder, double-click <code className="bg-sky-100 px-1 rounded">scripts\install.bat</code> (Windows) or run{" "}
                   <code className="bg-sky-100 px-1 rounded">bash scripts/install.sh</code> (Mac/Linux)
                 </li>
                 <li>
-                  Then run <code className="bg-sky-100 px-1 rounded">scripts/start.bat</code> or{" "}
+                  Then double-click <code className="bg-sky-100 px-1 rounded">scripts\start.bat</code> or run{" "}
                   <code className="bg-sky-100 px-1 rounded">bash scripts/start.sh</code> and open{" "}
                   <code className="bg-sky-100 px-1 rounded">http://localhost:8000</code>
                 </li>

@@ -9,7 +9,7 @@ If you lose internet at sea, you'll need it to start the app.
 
 Do all of these **while you still have internet**:
 
-- [ ] Run the installer (`install.ps1` / `install.sh`) until it says "Install complete!"
+- [ ] Run the installer (`install.bat` / `install.sh`) until it says "Install complete!"
 - [ ] Run `start.bat` / `bash scripts/start.sh` and confirm `http://localhost:8000` opens
 - [ ] In the app: complete the Offline Setup wizard (Ollama + Gemma 4 downloaded)
 - [ ] Add your crew in the app
@@ -36,12 +36,11 @@ Set aside 20–30 minutes for the model download (~8 GB).
    Click the green **Code** button → **Download ZIP** → unzip it.
 
 5. Open the unzipped folder. Open the `scripts` subfolder.
-   In the address bar at the top of File Explorer, type `powershell` and press Enter.
-   In the PowerShell window, type:
-   ```
-   powershell -ExecutionPolicy Bypass -File install.ps1
-   ```
+   **Double-click `install.bat`.** A console window will open and run the installer.
    If Windows shows a SmartScreen warning, click **More info → Run anyway**.
+
+   *(Fallback: open `cmd` in the scripts folder and run
+   `powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1`.)*
 
 6. When it finishes ("Install complete!"), go to **Every-Day Use** below.
 
