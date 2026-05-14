@@ -96,10 +96,11 @@ function WebUserGuide() {
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Windows</p>
-                  <p className="text-xs text-slate-600 mb-1.5">Open the <code className="bg-white px-1 rounded border">scripts</code> folder → click the address bar → type <code className="bg-white px-1 rounded border">powershell</code> → Enter:</p>
+                  <p className="text-xs text-slate-600 mb-1.5">Open the <code className="bg-white px-1 rounded border">scripts</code> folder and double-click:</p>
                   <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700 break-all">
-                    powershell -ExecutionPolicy Bypass -File install.ps1
+                    install.bat
                   </code>
+                  <p className="text-[11px] text-slate-400 mt-1.5">SmartScreen warning? Click &ldquo;More info&rdquo; → &ldquo;Run anyway&rdquo;. If that fails, open <code className="bg-white px-1 rounded border">cmd</code> in the scripts folder and run <code className="bg-white px-1 rounded border">powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1</code>.</p>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mac / Linux</p>
