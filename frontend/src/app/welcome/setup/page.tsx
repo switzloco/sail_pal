@@ -83,15 +83,29 @@ function WebUserGuide() {
 
         </div>
 
-        {/* Offline quickstart note */}
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-8 text-sm text-green-900">
-          <p className="font-bold mb-1">Save the offline quickstart</p>
-          <p className="text-green-700 text-xs">
-            The installer copies <strong>Vessel-Ops-Quickstart.md</strong> to your Desktop. Print it or screenshot it before you leave port — you&apos;ll need it if you lose internet at sea.{" "}
-            <a href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
-              target="_blank" rel="noreferrer"
-              className="underline font-semibold">Preview it here →</a>
+        {/* Mac / Linux demand signal */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8">
+          <p className="text-sm font-bold text-slate-800 mb-1">Not on Windows?</p>
+          <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+            v1 ships Windows-only. macOS and Linux installers will be added if there&apos;s enough demand —
+            click below to open a pre-filled GitHub issue, then 👍 existing requests from other users.
           </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="https://github.com/switzloco/sail_pal/issues/new?title=Add%20macOS%20installer&labels=enhancement%2Cplatform-request&body=I%27d%20use%20Vessel%20Ops%20AI%20on%20macOS.%0A%0A-%20Mac%20model%20(e.g.%2C%20M2%20MacBook%20Pro)%3A%20%0A-%20Use%20case%2Fvessel%20type%3A%20%0A-%20Roughly%20when%20you%27d%20use%20it%3A%20%0A%0A%F0%9F%91%8D%20this%20issue%20to%20upvote%20macOS%20support."
+              target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              🍎 Request macOS support
+            </a>
+            <a
+              href="https://github.com/switzloco/sail_pal/issues/new?title=Add%20Linux%20installer&labels=enhancement%2Cplatform-request&body=I%27d%20use%20Vessel%20Ops%20AI%20on%20Linux.%0A%0A-%20Distro%20%2F%20version%3A%20%0A-%20Use%20case%2Fvessel%20type%3A%20%0A-%20Roughly%20when%20you%27d%20use%20it%3A%20%0A%0A%F0%9F%91%8D%20this%20issue%20to%20upvote%20Linux%20support."
+              target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              🐧 Request Linux support
+            </a>
+          </div>
         </div>
 
         {/* Continue in cloud */}
