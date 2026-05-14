@@ -19,6 +19,8 @@ router = APIRouter()
 
 
 class SetupStatus(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
     ollama_installed: bool
     ollama_running: bool
     model_ready: bool

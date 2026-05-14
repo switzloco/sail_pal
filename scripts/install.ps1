@@ -24,26 +24,128 @@ $Model = "gemma4:e2b"
 
 # ── Python ────────────────────────────────────────────────────────────────────
 Info "Checking Python..."
-$pythonCmd = Get-Command python -ErrorAction SilentlyContinue
-if (-not $pythonCmd) {
-  Fail "Python is not installed. Install Python 3.11+ from https://www.python.org/downloads/windows/ (check 'Add Python to PATH'), then re-run."
+
+# Resolve a real Python interpreter by probing behavior, not by checking paths.
+# Modern Windows complicates this:
+#   - Old MS Store stub: python.exe under WindowsApps that opens the Store.
+#   - New Python Install Manager (pymanager): python.exe under WindowsApps that
+#     IS a real interpreter routed through pymanager. Same path, opposite truth.
+# So we just run --version on each candidate and accept the first one that
+# returns a parseable "Python X.Y".
+
+function Try-Python {
+  param([string[]]$Cmd)
+  try {
+    $out = & $Cmd[0] $Cmd[1..($Cmd.Length-1)] --version 2>&1
+    if ($LASTEXITCODE -eq 0 -and $out -match "Python (\d+)\.(\d+)") {
+      return @{ Cmd = $Cmd; Major = [int]$Matches[1]; Minor = [int]$Matches[2] }
+    }
+  } catch { }
+  return $null
 }
 
-# Detect Microsoft Store stub (opens the Store instead of running Python)
-$pythonPath = $pythonCmd.Source
-if ($pythonPath -match "WindowsApps" -or $pythonPath -match "Microsoft\\WindowsApps") {
-  Fail "The 'python' command points to the Microsoft Store stub, not a real Python install.`nPlease install Python 3.11+ from https://www.python.org/downloads/windows/ (check 'Add Python to PATH'), then re-run."
+$pythonExe = $null
+$pyMajor = 0; $pyMinor = 0
+
+# Try in order of preference. py -3 first (works for python.org and pymanager
+# installs), then bare commands, then explicit python3.
+$probeList = @(
+  @("py","-3"),
+  @("python"),
+  @("python3")
+)
+
+# Also probe every python/python3 on PATH in case the first match is a broken
+# stub but a later one works.
+foreach ($name in @("python","python3")) {
+  $all = Get-Command $name -All -ErrorAction SilentlyContinue
+  foreach ($c in $all) { $probeList += ,@($c.Source) }
 }
 
-$pyVerLine = & python --version 2>&1
-if ($pyVerLine -notmatch "Python (\d+)\.(\d+)") {
-  Fail "Could not parse Python version: $pyVerLine"
+foreach ($cmd in $probeList) {
+  $r = Try-Python -Cmd $cmd
+  if ($r) {
+    $pythonExe = $r.Cmd; $pyMajor = $r.Major; $pyMinor = $r.Minor
+    break
+  }
 }
-$pyMajor = [int]$Matches[1]; $pyMinor = [int]$Matches[2]
+
+if (-not $pythonExe) {
+  Fail @"
+No working Python interpreter found.
+
+Install Python 3.11+ from https://www.python.org/downloads/windows/ (check
+'Add Python to PATH' during install), then re-run install.bat.
+
+If you're using the new Python Install Manager (pymanager) and 'python' still
+doesn't work, open:
+  Settings -> Apps -> Advanced app settings -> App execution aliases
+and make sure 'py.exe' or 'python.exe' under 'Python install manager' is ON.
+"@
+}
 if ($pyMajor -lt 3 -or ($pyMajor -eq 3 -and $pyMinor -lt 11)) {
   Fail "Python $pyMajor.$pyMinor is too old. Install 3.11+ from https://www.python.org/downloads/windows/."
 }
-Info "Python $pyMajor.$pyMinor ✓"
+
+# Warn about very-new Python where ML deps may not have Windows wheels yet.
+# If pip can't find wheels for chromadb / sentence-transformers / pymupdf on
+# this version, it falls back to source builds which need a C++ toolchain
+# the user almost certainly doesn't have.
+if ($pyMajor -eq 3 -and $pyMinor -ge 13) {
+  Warn "Python $pyMajor.$pyMinor is newer than what some dependencies"
+  Warn "(chromadb, sentence-transformers, pymupdf) currently ship Windows wheels for."
+  Warn "Looking for an older Python (3.12 or 3.11) to use instead..."
+
+  # Prefer an older interpreter if the user has one installed alongside.
+  # Wrap each probe so 'py' writing [ERROR] to stderr (when a version isn't
+  # installed) doesn't trip $ErrorActionPreference='Stop' and abort the script.
+  foreach ($preferred in @("3.12","3.11")) {
+    $r = Try-Python -Cmd @("py","-$preferred")
+    if ($r) {
+      $pythonExe = $r.Cmd; $pyMajor = $r.Major; $pyMinor = $r.Minor
+      Info "Switched to Python $pyMajor.$pyMinor via 'py -$preferred'"
+      break
+    }
+  }
+
+  # Still on 3.13+? Offer pymanager auto-install if available.
+  if ($pyMajor -ge 3 -and $pyMinor -ge 13) {
+    $hasPyManager = $false
+    try {
+      $help = & py install --help 2>&1
+      if ($LASTEXITCODE -eq 0) { $hasPyManager = $true }
+    } catch { }
+
+    if ($hasPyManager) {
+      Warn ""
+      Warn "Your 'py' launcher is the new Python Install Manager (pymanager),"
+      Warn "which can install Python 3.12 in ~30 seconds, no admin needed."
+      $resp = Read-Host "Run 'py install 3.12' now? (Y/n)"
+      if ($resp -eq "" -or $resp -match "^[Yy]") {
+        Info "Installing Python 3.12 via pymanager..."
+        & py install 3.12
+        if ($LASTEXITCODE -eq 0) {
+          $r = Try-Python -Cmd @("py","-3.12")
+          if ($r) {
+            $pythonExe = $r.Cmd; $pyMajor = $r.Major; $pyMinor = $r.Minor
+            Info "Switched to Python $pyMajor.$pyMinor via 'py -3.12'"
+          }
+        }
+      }
+    }
+
+    if ($pyMinor -ge 13) {
+      Warn ""
+      Warn "Proceeding with Python $pyMajor.$pyMinor. If pip install fails below"
+      Warn "(missing wheels for chromadb/sentence-transformers/pymupdf), install"
+      Warn "Python 3.12 from https://www.python.org/downloads/windows/ or run:"
+      Warn "    py install 3.12"
+      Warn "then re-run install.bat."
+    }
+  }
+}
+
+Info "Python $pyMajor.$pyMinor ($($pythonExe -join ' ')) ✓"
 
 # ── Node.js ───────────────────────────────────────────────────────────────────
 Info "Checking Node.js..."
@@ -74,7 +176,7 @@ Info "Ollama detected ✓"
 # ── Python venv + backend deps ───────────────────────────────────────────────
 if (-not (Test-Path ".venv")) {
   Info "Creating Python virtual environment..."
-  & python -m venv .venv
+  & $pythonExe[0] $pythonExe[1..($pythonExe.Length-1)] -m venv .venv
 }
 $venvPython = "$RepoRoot\.venv\Scripts\python.exe"
 Info "Installing backend dependencies..."
@@ -98,7 +200,7 @@ $tags = & ollama list 2>$null
 if ($tags -match [regex]::Escape($Model.Split(':')[0])) {
   Info "Model $Model already pulled ✓"
 } else {
-  Info "Pulling $Model (~8 GB, one-time download — this may take 15-30 minutes)..."
+  Info "Pulling $Model (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   Info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   & ollama pull $Model
 }

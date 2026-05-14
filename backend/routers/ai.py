@@ -377,12 +377,9 @@ async def upload_manual(
 @router.get("/knowledge-stats")
 async def get_knowledge_stats():
     stats = {}
+    engine = get_rag_engine()
     for coll in ["medical_protocols", "engine_manuals"]:
-        try:
-            collection = get_rag_engine().client.get_collection(coll)
-            stats[coll] = collection.count()
-        except Exception:
-            stats[coll] = 0
+        stats[coll] = engine.collection_stats(coll)
     return stats
 
 

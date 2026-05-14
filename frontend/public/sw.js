@@ -121,7 +121,7 @@ async function staleWhileRevalidate(request) {
       }
       return response;
     })
-    .catch(() => cached);
+    .catch(() => cached || new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } }));
 
   return cached || fetchPromise;
 }

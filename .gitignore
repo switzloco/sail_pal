@@ -1,4 +1,10 @@
-/backend/data/
+# Ignore per-install runtime data under backend/data/ (SQLite DBs, ChromaDB
+# remnants, etc.) but keep the read-only assets we ship with the app: source
+# PDFs and pre-processed knowledge chunks. Note: git cannot un-ignore files
+# inside a fully-ignored directory, so we glob at the top level here.
+/backend/data/*
+!/backend/data/manuals/
+!/backend/data/knowledge/
 /backend/rag/manuals/
 .env
 __pycache__/

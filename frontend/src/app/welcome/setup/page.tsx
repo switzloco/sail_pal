@@ -47,18 +47,16 @@ function WebUserGuide() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
             <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">1</div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Install Python 3.11+ and Node.js LTS</h3>
-              <div className="flex flex-wrap gap-3">
-                <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                  <Download size={14} /> Python (python.org)
-                </a>
-                <a href="https://nodejs.org/" target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                  <Download size={14} /> Node.js (nodejs.org)
-                </a>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">Windows: check &ldquo;Add Python to PATH&rdquo; during install.</p>
+              <h3 className="font-bold text-slate-900 mb-1">Download the Vessel Ops AI installer</h3>
+              <a href="https://github.com/switzloco/sail_pal/releases/latest"
+                target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
+                <Download size={14} /> Latest Release on GitHub <ExternalLink size={12} />
+              </a>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Grab <code className="bg-slate-100 px-1 rounded">Vessel-Ops-AI_x64-setup.exe</code> (Windows, ~40 MB).
+                No admin password required — installs to your user folder.
+              </p>
             </div>
           </div>
 
@@ -66,81 +64,48 @@ function WebUserGuide() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
             <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">2</div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Install Ollama</h3>
-              <a href="https://ollama.com/download" target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                <Download size={14} /> ollama.com/download <ExternalLink size={12} />
-              </a>
-              <p className="text-xs text-slate-400 mt-1">Open it after installing — wait for the llama icon in your system tray / menu bar.</p>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">3</div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Download Vessel Ops AI</h3>
-              <a href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
-                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                <Download size={14} /> Download ZIP from GitHub
-              </a>
-              <p className="text-xs text-slate-400 mt-1">Unzip the folder anywhere on your laptop.</p>
-            </div>
-          </div>
-
-          {/* Step 4 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">4</div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-2">Run the Installer</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Windows</p>
-                  <p className="text-xs text-slate-600 mb-1.5">Open the <code className="bg-white px-1 rounded border">scripts</code> folder and double-click:</p>
-                  <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700 break-all">
-                    install.bat
-                  </code>
-                  <p className="text-[11px] text-slate-400 mt-1.5">SmartScreen warning? Click &ldquo;More info&rdquo; → &ldquo;Run anyway&rdquo;. If that fails, open <code className="bg-white px-1 rounded border">cmd</code> in the scripts folder and run <code className="bg-white px-1 rounded border">powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1</code>.</p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mac / Linux</p>
-                  <p className="text-xs text-slate-600 mb-1.5">Open Terminal in the project folder:</p>
-                  <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700">
-                    bash scripts/install.sh
-                  </code>
-                </div>
-              </div>
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
-                ⏱ This downloads the Gemma 4 AI model (~8 GB). Allow 15–30 minutes on a good connection.
-                If interrupted, just re-run — it resumes from where it left off.
+              <h3 className="font-bold text-slate-900 mb-1">Run the installer, then launch the app</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Double-click the downloaded <code className="bg-slate-100 px-1 rounded">.exe</code>. When Windows shows
+                a SmartScreen warning, click <strong>More info → Run anyway</strong> (we&apos;re not yet code-signed).
+                After install completes, open <strong>Vessel Ops AI</strong> from your Start Menu.
               </p>
-            </div>
-          </div>
-
-          {/* Step 5 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">5</div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Launch the App</h3>
-              <div className="flex gap-4 text-sm">
-                <span><strong>Windows:</strong> double-click <code className="bg-slate-100 px-1 rounded text-xs">scripts\start.bat</code></span>
-                <span><strong>Mac/Linux:</strong> <code className="bg-slate-100 px-1 rounded text-xs">bash scripts/start.sh</code></span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">Then open <strong>http://localhost:8000</strong> in your browser. The AI runs 100% on your device.</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                The app will guide you through installing <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className="text-ocean-600 font-semibold hover:underline">Ollama</a> and downloading
+                the Gemma 4 AI model (~8 GB, one-time) from inside the app.
+              </p>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
+                ⏱ Total setup: ~1 hour, mostly the Gemma 4 model download. Speed depends on your internet.
+                If the download is interrupted, just retry — Ollama resumes from where it left off.
+              </p>
             </div>
           </div>
 
         </div>
 
-        {/* Offline quickstart note */}
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-8 text-sm text-green-900">
-          <p className="font-bold mb-1">Save the offline quickstart</p>
-          <p className="text-green-700 text-xs">
-            The installer copies <strong>Vessel-Ops-Quickstart.md</strong> to your Desktop. Print it or screenshot it before you leave port — you&apos;ll need it if you lose internet at sea.{" "}
-            <a href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
-              target="_blank" rel="noreferrer"
-              className="underline font-semibold">Preview it here →</a>
+        {/* Mac / Linux demand signal */}
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8">
+          <p className="text-sm font-bold text-slate-800 mb-1">Not on Windows?</p>
+          <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+            v1 ships Windows-only. macOS and Linux installers will be added if there&apos;s enough demand —
+            click below to open a pre-filled GitHub issue, then 👍 existing requests from other users.
           </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="https://github.com/switzloco/sail_pal/issues/new?title=Add%20macOS%20installer&labels=enhancement%2Cplatform-request&body=I%27d%20use%20Vessel%20Ops%20AI%20on%20macOS.%0A%0A-%20Mac%20model%20(e.g.%2C%20M2%20MacBook%20Pro)%3A%20%0A-%20Use%20case%2Fvessel%20type%3A%20%0A-%20Roughly%20when%20you%27d%20use%20it%3A%20%0A%0A%F0%9F%91%8D%20this%20issue%20to%20upvote%20macOS%20support."
+              target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              🍎 Request macOS support
+            </a>
+            <a
+              href="https://github.com/switzloco/sail_pal/issues/new?title=Add%20Linux%20installer&labels=enhancement%2Cplatform-request&body=I%27d%20use%20Vessel%20Ops%20AI%20on%20Linux.%0A%0A-%20Distro%20%2F%20version%3A%20%0A-%20Use%20case%2Fvessel%20type%3A%20%0A-%20Roughly%20when%20you%27d%20use%20it%3A%20%0A%0A%F0%9F%91%8D%20this%20issue%20to%20upvote%20Linux%20support."
+              target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              🐧 Request Linux support
+            </a>
+          </div>
         </div>
 
         {/* Continue in cloud */}
@@ -353,7 +318,7 @@ export default function SetupChecklistPage() {
       <div className="max-w-xl w-full">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-slate-900">⚓ Offline Setup</h1>
-          <p className="text-slate-500 mt-2">Approximately 15 minutes to complete local AI configuration for disconnected maritime operations.</p>
+          <p className="text-slate-500 mt-2">Approximately 1 hour to complete local AI configuration, depending on internet speed (most of that is downloading the 8 GB Gemma 4 model).</p>
         </div>
 
         <div className="space-y-4 mb-10">

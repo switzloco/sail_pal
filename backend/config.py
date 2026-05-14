@@ -5,6 +5,8 @@ from typing import List
 
 
 class Settings(BaseSettings):
+    model_config = {"protected_namespaces": ()}
+
     # Use VESSEL_OPS_DATA_DIR if set (e.g. /tmp/data in Cloud Run), otherwise local default
     vessel_ops_data_dir: str = "./backend/data"
     database_url: str = ""
