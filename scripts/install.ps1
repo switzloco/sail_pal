@@ -200,7 +200,7 @@ $tags = & ollama list 2>$null
 if ($tags -match [regex]::Escape($Model.Split(':')[0])) {
   Info "Model $Model already pulled ✓"
 } else {
-  Info "Pulling $Model (~8 GB, one-time download — this may take 15-30 minutes)..."
+  Info "Pulling $Model (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   Info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   & ollama pull $Model
 }

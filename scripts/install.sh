@@ -110,7 +110,7 @@ fi
 if ollama list 2>/dev/null | grep -q "${MODEL%:*}"; then
   info "Model ${MODEL} already pulled ✓"
 else
-  info "Pulling ${MODEL} (~8 GB, one-time download — this may take 15–30 minutes)..."
+  info "Pulling ${MODEL} (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   ollama pull "${MODEL}"
 fi

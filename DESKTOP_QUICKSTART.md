@@ -19,7 +19,7 @@ Do all of these **while you still have internet**:
 
 ## First-Time Install (do this with internet)
 
-Set aside 20–30 minutes for the model download (~8 GB).
+Set aside ~1 hour for the full setup (most of that is downloading the Gemma 4 model, ~8 GB). Speed depends on your internet.
 
 ### Windows
 

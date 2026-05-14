@@ -93,7 +93,7 @@ export default function WelcomePage() {
                 if (serverIsLocal === false) {
                   const proceed = confirm(
                     "You're using the hosted web version.\n\n" +
-                    "Running offline at sea requires installing Vessel Ops AI on your own laptop — a one-time 15-minute setup.\n\n" +
+                    "Running offline at sea requires installing Vessel Ops AI on your own laptop — a one-time ~1 hour setup (mostly downloading the AI model).\n\n" +
                     "The next page shows exactly what to download. Continue?"
                   );
                   if (!proceed) return;
@@ -110,7 +110,7 @@ export default function WelcomePage() {
                 <h2 className="text-xl font-bold text-slate-900">Offline Setup</h2>
               </div>
               <p className="text-sm text-slate-500 mb-4 leading-relaxed">
-                Requires a 15-minute setup and installation of Ollama. Run Gemma 4 
+                Requires ~1 hour setup (mainly for downloading the 8 GB Gemma 4 model) and installation of Ollama. Run Gemma 4
                 entirely on your hardware for 100% privacy and mission-critical reliability at sea.
               </p>
               <span className="text-green-600 text-sm font-semibold">

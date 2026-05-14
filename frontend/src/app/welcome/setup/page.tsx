@@ -111,7 +111,7 @@ function WebUserGuide() {
                 </div>
               </div>
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
-                ⏱ This downloads the Gemma 4 AI model (~8 GB). Allow 15–30 minutes on a good connection.
+                ⏱ This downloads the Gemma 4 AI model (~8 GB). Allow up to 1 hour depending on your internet speed.
                 If interrupted, just re-run — it resumes from where it left off.
               </p>
             </div>
@@ -353,7 +353,7 @@ export default function SetupChecklistPage() {
       <div className="max-w-xl w-full">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-slate-900">⚓ Offline Setup</h1>
-          <p className="text-slate-500 mt-2">Approximately 15 minutes to complete local AI configuration for disconnected maritime operations.</p>
+          <p className="text-slate-500 mt-2">Approximately 1 hour to complete local AI configuration, depending on internet speed (most of that is downloading the 8 GB Gemma 4 model).</p>
         </div>
 
         <div className="space-y-4 mb-10">
