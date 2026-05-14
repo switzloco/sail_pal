@@ -1,5 +1,5 @@
 @echo off
-REM Vessel Ops AI — Start Server (Windows)
+REM Vessel Ops AI - Start Server (Windows)
 REM
 REM Double-click this file to launch the local server, or run from cmd.exe:
 REM   scripts\start.bat
@@ -31,7 +31,7 @@ if errorlevel 1 (
 
 echo.
 echo ====================================================
-echo   Vessel Ops AI — starting on http://localhost:8000
+echo   Vessel Ops AI - starting on http://localhost:8000
 echo   Press Ctrl+C to stop.
 echo ====================================================
 echo.
