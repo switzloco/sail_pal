@@ -123,51 +123,33 @@ export function LocalSetupGuide({ isOpen, onClose, status }: LocalSetupGuideProp
               <p className="font-bold mb-2">Want to use this offline at sea?</p>
               <p className="mb-2">
                 The web version can&apos;t reach Ollama on your device. Install the
-                <strong> desktop companion</strong> (one-time, while you have internet):
+                <strong> Vessel Ops AI desktop app</strong> (one-time, while you have internet):
               </p>
               <ol className="list-decimal list-inside space-y-1 mb-2">
                 <li>
-                  Download the source:{" "}
+                  Download{" "}
                   <a
-                    href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
-                    className="underline font-semibold hover:text-sky-700"
-                  >
-                    sail_pal-main.zip
-                  </a>{" "}
-                  → unzip
-                </li>
-                <li>
-                  Install Python 3.11+, Node.js LTS, and{" "}
-                  <a
-                    href="https://ollama.com/download"
+                    href="https://github.com/switzloco/sail_pal/releases/latest"
                     target="_blank"
                     rel="noreferrer"
                     className="underline font-semibold hover:text-sky-700"
                   >
-                    Ollama
-                  </a>
+                    the latest Windows installer
+                  </a>{" "}
+                  (<code className="bg-sky-100 px-1 rounded">.exe</code>, ~40 MB)
                 </li>
                 <li>
-                  In the unzipped folder, double-click <code className="bg-sky-100 px-1 rounded">scripts\install.bat</code> (Windows) or run{" "}
-                  <code className="bg-sky-100 px-1 rounded">bash scripts/install.sh</code> (Mac/Linux)
+                  Double-click the <code className="bg-sky-100 px-1 rounded">.exe</code>. On the SmartScreen warning,
+                  click <strong>More info → Run anyway</strong>. No admin password needed.
                 </li>
                 <li>
-                  Then double-click <code className="bg-sky-100 px-1 rounded">scripts\start.bat</code> or run{" "}
-                  <code className="bg-sky-100 px-1 rounded">bash scripts/start.sh</code> and open{" "}
-                  <code className="bg-sky-100 px-1 rounded">http://localhost:8000</code>
+                  Open <strong>Vessel Ops AI</strong> from your Start Menu. The app will guide you through
+                  installing <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className="underline font-semibold hover:text-sky-700">Ollama</a>{" "}
+                  and pulling the Gemma 4 model (~8 GB) from inside the app.
                 </li>
               </ol>
               <p className="text-[11px] text-sky-700">
-                <strong>Important:</strong> the installer saves an offline-ready quickstart guide to your
-                Desktop. Keep it — you&apos;ll need it if you lose internet.{" "}
-                <a
-                  href="https://github.com/switzloco/sail_pal/blob/main/DESKTOP_QUICKSTART.md"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline font-semibold"
-                >
-                  Preview it here.
-                </a>
+                Total setup: ~1 hour, mostly the model download. Speed depends on your internet.
               </p>
             </div>
           ) : (

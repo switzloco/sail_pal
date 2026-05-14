@@ -47,18 +47,16 @@ function WebUserGuide() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
             <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">1</div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Install Python 3.11+ and Node.js LTS</h3>
-              <div className="flex flex-wrap gap-3">
-                <a href="https://www.python.org/downloads/" target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                  <Download size={14} /> Python (python.org)
-                </a>
-                <a href="https://nodejs.org/" target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                  <Download size={14} /> Node.js (nodejs.org)
-                </a>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">Windows: check &ldquo;Add Python to PATH&rdquo; during install.</p>
+              <h3 className="font-bold text-slate-900 mb-1">Download the Vessel Ops AI installer</h3>
+              <a href="https://github.com/switzloco/sail_pal/releases/latest"
+                target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
+                <Download size={14} /> Latest Release on GitHub <ExternalLink size={12} />
+              </a>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Grab <code className="bg-slate-100 px-1 rounded">Vessel-Ops-AI_x64-setup.exe</code> (Windows, ~40 MB).
+                No admin password required — installs to your user folder.
+              </p>
             </div>
           </div>
 
@@ -66,67 +64,20 @@ function WebUserGuide() {
           <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
             <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">2</div>
             <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Install Ollama</h3>
-              <a href="https://ollama.com/download" target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                <Download size={14} /> ollama.com/download <ExternalLink size={12} />
-              </a>
-              <p className="text-xs text-slate-400 mt-1">Open it after installing — wait for the llama icon in your system tray / menu bar.</p>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">3</div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Download Vessel Ops AI</h3>
-              <a href="https://github.com/switzloco/sail_pal/archive/refs/heads/main.zip"
-                className="inline-flex items-center gap-1.5 text-ocean-600 text-sm font-semibold hover:underline">
-                <Download size={14} /> Download ZIP from GitHub
-              </a>
-              <p className="text-xs text-slate-400 mt-1">Unzip the folder anywhere on your laptop.</p>
-            </div>
-          </div>
-
-          {/* Step 4 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">4</div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-2">Run the Installer</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Windows</p>
-                  <p className="text-xs text-slate-600 mb-1.5">Open the <code className="bg-white px-1 rounded border">scripts</code> folder and double-click:</p>
-                  <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700 break-all">
-                    install.bat
-                  </code>
-                  <p className="text-[11px] text-slate-400 mt-1.5">SmartScreen warning? Click &ldquo;More info&rdquo; → &ldquo;Run anyway&rdquo;. If that fails, open <code className="bg-white px-1 rounded border">cmd</code> in the scripts folder and run <code className="bg-white px-1 rounded border">powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1</code>.</p>
-                </div>
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mac / Linux</p>
-                  <p className="text-xs text-slate-600 mb-1.5">Open Terminal in the project folder:</p>
-                  <code className="text-[11px] bg-white border border-slate-200 rounded px-2 py-1 block text-slate-700">
-                    bash scripts/install.sh
-                  </code>
-                </div>
-              </div>
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
-                ⏱ This downloads the Gemma 4 AI model (~8 GB). Allow up to 1 hour depending on your internet speed.
-                If interrupted, just re-run — it resumes from where it left off.
+              <h3 className="font-bold text-slate-900 mb-1">Run the installer, then launch the app</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Double-click the downloaded <code className="bg-slate-100 px-1 rounded">.exe</code>. When Windows shows
+                a SmartScreen warning, click <strong>More info → Run anyway</strong> (we&apos;re not yet code-signed).
+                After install completes, open <strong>Vessel Ops AI</strong> from your Start Menu.
               </p>
-            </div>
-          </div>
-
-          {/* Step 5 */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 flex gap-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-ocean-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">5</div>
-            <div className="flex-1">
-              <h3 className="font-bold text-slate-900 mb-1">Launch the App</h3>
-              <div className="flex gap-4 text-sm">
-                <span><strong>Windows:</strong> double-click <code className="bg-slate-100 px-1 rounded text-xs">scripts\start.bat</code></span>
-                <span><strong>Mac/Linux:</strong> <code className="bg-slate-100 px-1 rounded text-xs">bash scripts/start.sh</code></span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">Then open <strong>http://localhost:8000</strong> in your browser. The AI runs 100% on your device.</p>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                The app will guide you through installing <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className="text-ocean-600 font-semibold hover:underline">Ollama</a> and downloading
+                the Gemma 4 AI model (~8 GB, one-time) from inside the app.
+              </p>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mt-3">
+                ⏱ Total setup: ~1 hour, mostly the Gemma 4 model download. Speed depends on your internet.
+                If the download is interrupted, just retry — Ollama resumes from where it left off.
+              </p>
             </div>
           </div>
 
