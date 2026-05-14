@@ -91,11 +91,8 @@ async def setup_status():
             model_name=settings.cloud_model,
             mode="cloud",
             data_dir=settings.data_dir,
+            server_is_local=not settings.cloud_mode,
         )
-
-    # Check running first - if it's running, it's definitely installed
-    running = await _check_ollama_running()
-    installed = running or (shutil.which("ollama") is not None)
 
     installed = _is_ollama_installed()
     running = await _check_ollama_running() if installed else False
