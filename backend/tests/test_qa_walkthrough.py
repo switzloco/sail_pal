@@ -3,12 +3,10 @@ from unittest.mock import patch, MagicMock, AsyncMock
 from backend.config import settings
 
 class TestWalkthroughLogic:
-    @patch("backend.routers.setup.shutil.which")
-    @patch("backend.routers.setup._check_ollama_running")
-    @patch("backend.routers.setup._check_model_ready")
-    def test_setup_status_ollama_not_installed(self, mock_ready, mock_running, mock_which, client):
-        mock_which.return_value = None
-        
+    @patch("backend.routers.setup._is_ollama_installed", return_value=False)
+    @patch("backend.routers.setup._check_ollama_running", new_callable=AsyncMock, return_value=False)
+    @patch("backend.routers.setup._check_model_ready", new_callable=AsyncMock, return_value=False)
+    def test_setup_status_ollama_not_installed(self, mock_ready, mock_running, mock_installed, client):
         r = client.get("/api/setup/status")
         assert r.status_code == 200
         data = r.json()
@@ -16,14 +14,10 @@ class TestWalkthroughLogic:
         assert data["ollama_running"] is False
         assert data["model_ready"] is False
 
-    @patch("backend.routers.setup.shutil.which")
-    @patch("backend.routers.setup._check_ollama_running")
-    @patch("backend.routers.setup._check_model_ready")
-    def test_setup_status_ollama_running_no_model(self, mock_ready, mock_running, mock_which, client):
-        mock_which.return_value = "/usr/local/bin/ollama"
-        mock_running.return_value = True
-        mock_ready.return_value = False
-        
+    @patch("backend.routers.setup._is_ollama_installed", return_value=True)
+    @patch("backend.routers.setup._check_ollama_running", new_callable=AsyncMock, return_value=True)
+    @patch("backend.routers.setup._check_model_ready", new_callable=AsyncMock, return_value=False)
+    def test_setup_status_ollama_running_no_model(self, mock_ready, mock_running, mock_installed, client):
         r = client.get("/api/setup/status")
         assert r.status_code == 200
         data = r.json()
@@ -31,22 +25,17 @@ class TestWalkthroughLogic:
         assert data["ollama_running"] is True
         assert data["model_ready"] is False
 
-    @patch("backend.routers.setup.shutil.which")
-    @patch("backend.routers.setup._check_ollama_running")
-    @patch("backend.routers.setup._check_model_ready")
-    def test_setup_status_cloud_mode_returns_real_checks(self, mock_ready, mock_running, mock_which, client):
-        # Even in cloud mode, status endpoint now returns actual Ollama state
-        mock_which.return_value = None
-        mock_running.return_value = False
-        mock_ready.return_value = False
-
+    @patch("backend.routers.setup._is_ollama_installed", return_value=False)
+    @patch("backend.routers.setup._check_ollama_running", new_callable=AsyncMock, return_value=False)
+    @patch("backend.routers.setup._check_model_ready", new_callable=AsyncMock, return_value=False)
+    def test_setup_status_cloud_mode_returns_real_checks(self, mock_ready, mock_running, mock_installed, client):
+        # Even in cloud mode, status endpoint returns actual Ollama state (not bypassed)
         client.post("/api/setup/mode", json={"mode": "cloud"})
 
         r = client.get("/api/setup/status")
         assert r.status_code == 200
         data = r.json()
         assert data["mode"] == "cloud"
-        # Real checks run — Ollama not installed in this mock
         assert data["ollama_installed"] is False
         assert data["model_ready"] is False
 
