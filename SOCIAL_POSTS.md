@@ -2,13 +2,13 @@
 
 Paste-and-go drafts for each platform. Each is tuned to that audience's
 norms — don't cross-post verbatim, the framing matters more than the
-content. **Replace `https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213`** with your final Kaggle entry link
+content. **Replace `<KAGGLE_URL>`** with your final Kaggle entry link
 before posting.
 
 **Links to use:**
 - Live app (no install): https://vessel-ops-494701.web.app/
 - Desktop installer + source: https://github.com/switzloco/sail_pal
-- Hackathon entry (for judges): https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213
+- Hackathon entry (for judges): `<KAGGLE_URL>` ← fill in after Kaggle writeup is submitted and public
 
 **Link strategy:** Lead with the live app — it's the lowest-friction way to
 convert a reader into someone who actually tries it and leaves a comment.
@@ -43,7 +43,7 @@ A few things I think this sub will appreciate:
 Stack: Next.js 14 (static export) + Tauri 2 + FastAPI + SQLite (WAL) + Ollama.
 
 GitHub + desktop installer: https://github.com/switzloco/sail_pal
-Kaggle entry: https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213
+Kaggle entry: <KAGGLE_URL>
 
 Happy to dive into any of the bundle-size or sidecar gotchas — the PyInstaller-orphan-process-bound-to-port-8000 saga alone was a journey.
 
@@ -68,7 +68,7 @@ A few engineering choices that might be interesting:
 - **Bundled the WHO PDF (2.2 MB).** The RAG queries chunks, but crew can also open the full source document from the sidebar. Offline-first means everything is local.
 
 Code + desktop installer: https://github.com/switzloco/sail_pal
-Kaggle: https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213
+Kaggle: <KAGGLE_URL>
 
 This is currently v0.1.0-rc7, Windows-only unsigned. Mac is in flight. Feedback very welcome — especially from anyone who's shipped a Tauri + Python sidecar app, since the PyInstaller bootloader process model on Windows took a few iterations to get right.
 
@@ -93,7 +93,7 @@ What I'm hoping for from this sub:
 
 Desktop installer (Windows, Mac coming): https://github.com/switzloco/sail_pal/releases/latest
 
-This is also a Gemma 4 Good Hackathon entry — if you find it useful, a comment or upvote on the Kaggle page helps: https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213
+This is also a Gemma 4 Good Hackathon entry — if you find it useful, a comment or upvote on the Kaggle page helps: <KAGGLE_URL>
 
 ---
 
@@ -117,7 +117,7 @@ Single 75 MB NSIS `.exe`, installs to `%LOCALAPPDATA%` per-user (no admin). Olla
 
 **Hosted preview** (cloud mode, for evaluation): https://vessel-ops-494701.web.app/
 **Desktop installer + source**: https://github.com/switzloco/sail_pal
-**Kaggle entry**: https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213
+**Kaggle entry**: <KAGGLE_URL>
 
 ---
 
@@ -131,7 +131,7 @@ How I cut a 1.2 GB AI installer to 75 MB by killing the embedding model
 **Body:**
 *(Paste the full Kaggle writeup here, with one additional opening hook paragraph framing the bundle-size problem as the through-line. Add a footer with both links:*
 
-*"Try the hosted preview: https://vessel-ops-494701.web.app/ — or download the offline desktop installer from the GitHub releases page. Built for the Gemma 4 Good Hackathon. Full notebook + judging here: https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213")*
+*"Try the hosted preview: https://vessel-ops-494701.web.app/ — or download the offline desktop installer from the GitHub releases page. Built for the Gemma 4 Good Hackathon. Full notebook + judging here: <KAGGLE_URL>")*
 
 The dev.to audience responds to "I shipped X, here's what I learned" framing. Lead with the FTS5-vs-embeddings trade-off, walk through the Tauri + PyInstaller sidecar packaging, and close on the offline-first architecture wins.
 
@@ -139,7 +139,7 @@ The dev.to audience responds to "I shipped X, here's what I learned" framing. Le
 
 ## DM / direct outreach template (for 5–10 well-connected people)
 
-> Hey [name] — long shot but: shipped a side project for the Gemma 4 Good Hackathon. It's an offline-first medical AI for ships, runs entirely on a laptop, bundles the full WHO medical manual. You can try the hosted version instantly here: https://vessel-ops-494701.web.app/ — if you find it interesting, a look at the Kaggle entry helps with judging visibility: https://kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1778881323213. Honest take welcome — I trust your eye on [the technical / maritime / AI] side.
+> Hey [name] — long shot but: shipped a side project for the Gemma 4 Good Hackathon. It's an offline-first medical AI for ships, runs entirely on a laptop, bundles the full WHO medical manual. You can try the hosted version instantly here: https://vessel-ops-494701.web.app/ — if you find it interesting, a look at the Kaggle entry helps with judging visibility: <KAGGLE_URL>. Honest take welcome — I trust your eye on [the technical / maritime / AI] side.
 
 Personalize one line per recipient. Five thoughtful DMs beat fifty broadcast.
 
