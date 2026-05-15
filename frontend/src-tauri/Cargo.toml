@@ -11,7 +11,11 @@ rust-version = "1.77"
 tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
-tauri = { version = "2.0", features = [] }
+# devtools: enables right-click → Inspect Element in release builds.
+# Critical for field diagnosis on Windows where stdout/stderr are
+# discarded (windows_subsystem = "windows"). We're still in beta — leave
+# it on. Strip the feature for v1.0 GA.
+tauri = { version = "2.0", features = ["devtools"] }
 tauri-plugin-shell = "2.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

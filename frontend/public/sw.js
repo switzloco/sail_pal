@@ -10,7 +10,18 @@
  * while always preferring fresh data for API responses.
  */
 
-const CACHE_NAME = "vessel-ops-v1";
+// Bumped from v1 → v2 to invalidate stale caches on upgrade. Next.js
+// hashes its chunk filenames, so an old cached index.html paired with
+// new bundle chunks blanks the screen — the HTML references hashes that
+// no longer exist on disk.
+const CACHE_NAME = "vessel-ops-v2";
+
+// Tauri's WebView serves assets from the local protocol — no offline
+// edge case to harden against. A SW registered against tauri://localhost
+// outlives app upgrades and is the #1 source of post-update blank screens,
+// so we actively self-destruct when we detect that origin.
+const IS_TAURI = self.location.protocol === "tauri:" ||
+  self.location.hostname === "tauri.localhost";
 
 // Core shell assets to precache on install.
 // Next.js hashes chunk filenames, so we cache them on first fetch instead.
@@ -23,6 +34,10 @@ const PRECACHE_URLS = [
 
 // ─── Install: precache the shell ─────────────────────────────────────────────
 self.addEventListener("install", (event) => {
+  if (IS_TAURI) {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
   event.waitUntil(
     caches
       .open(CACHE_NAME)
@@ -33,6 +48,20 @@ self.addEventListener("install", (event) => {
 
 // ─── Activate: clean old caches ──────────────────────────────────────────────
 self.addEventListener("activate", (event) => {
+  if (IS_TAURI) {
+    event.waitUntil(
+      (async () => {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+        await self.registration.unregister();
+        const clients = await self.clients.matchAll({ type: "window" });
+        clients.forEach((client) => {
+          if ("navigate" in client) client.navigate(client.url);
+        });
+      })()
+    );
+    return;
+  }
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
@@ -46,6 +75,10 @@ self.addEventListener("activate", (event) => {
 
 // ─── Fetch: route requests by strategy ───────────────────────────────────────
 self.addEventListener("fetch", (event) => {
+  // In Tauri, pass everything through unmodified. The activate handler
+  // will unregister us shortly — until then, no caching shenanigans.
+  if (IS_TAURI) return;
+
   const { request } = event;
   const url = new URL(request.url);
 
