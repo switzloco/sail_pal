@@ -2,11 +2,36 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen } from "lucide-react";
+import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen, Share2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, getApiBase } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
 import Image from "next/image";
+
+const SHARE_URL = "https://www.kaggle.com/competitions/google-gemma-4-good-hackathon";
+const SHARE_TEXT = "Vessel Ops AI — offline-first maritime medical & engineering assistant, powered by Gemma. Built for the Gemma 4 Good Hackathon.";
+
+async function handleShare() {
+  const payload = { title: "Vessel Ops AI", text: SHARE_TEXT, url: SHARE_URL };
+  if (typeof navigator !== "undefined" && "share" in navigator) {
+    try {
+      await navigator.share(payload);
+      return;
+    } catch {
+      // User cancelled or share unsupported — fall through to clipboard.
+    }
+  }
+  if (typeof navigator !== "undefined" && navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(`${SHARE_TEXT}\n${SHARE_URL}`);
+      alert("Share link copied to clipboard!");
+    } catch {
+      window.prompt("Copy this link:", SHARE_URL);
+    }
+  } else {
+    window.prompt("Copy this link:", SHARE_URL);
+  }
+}
 
 export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const path = usePathname();
@@ -107,6 +132,13 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
               <BookOpen size={18} />
               WHO Medical Manual
             </a>
+            <button
+              onClick={handleShare}
+              className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium text-ocean-100 hover:bg-ocean-800 hover:text-white transition-colors text-left"
+            >
+              <Share2 size={18} />
+              Share Vessel Ops AI
+            </button>
           </div>
 
           <div>
