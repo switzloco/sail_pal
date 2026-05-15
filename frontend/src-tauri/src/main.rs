@@ -1,11 +1,42 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::net::TcpStream;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::Manager;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
+
+/// Append a timestamped line to logs/launcher.log. On Windows release
+/// builds stdout/stderr are discarded (windows_subsystem = "windows"),
+/// so without this we'd have no record of backend spawn errors or
+/// sidecar crash output. Best-effort: failures are silently swallowed.
+fn launcher_log(line: &str) {
+    let dir = vessel_ops_logs_dir();
+    if std::fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+    let path = dir.join("launcher.log");
+    let Ok(mut f) = OpenOptions::new().create(true).append(true).open(&path) else {
+        return;
+    };
+    let ts = chrono_like_timestamp();
+    let _ = writeln!(f, "{ts} {line}");
+}
+
+/// ISO-ish timestamp without pulling in chrono. Good enough to correlate
+/// against the Python backend's vessel_debug.log entries.
+fn chrono_like_timestamp() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    format!("[{}s]", secs)
+}
 
 const BACKEND_PORT: u16 = 8000;
 const BACKEND_READY_TIMEOUT_SECS: u64 = 30;
@@ -73,13 +104,18 @@ fn spawn_backend(app: &tauri::AppHandle) -> Result<CommandChild, String> {
         while let Some(event) = rx.recv().await {
             match event {
                 CommandEvent::Stdout(line) => {
-                    println!("[backend] {}", String::from_utf8_lossy(&line));
+                    let s = String::from_utf8_lossy(&line);
+                    println!("[backend] {}", s);
+                    launcher_log(&format!("[backend stdout] {}", s.trim_end()));
                 }
                 CommandEvent::Stderr(line) => {
-                    eprintln!("[backend] {}", String::from_utf8_lossy(&line));
+                    let s = String::from_utf8_lossy(&line);
+                    eprintln!("[backend] {}", s);
+                    launcher_log(&format!("[backend stderr] {}", s.trim_end()));
                 }
                 CommandEvent::Terminated(payload) => {
                     eprintln!("[backend] exited with {:?}", payload.code);
+                    launcher_log(&format!("[backend exited] code={:?}", payload.code));
                     break;
                 }
                 _ => {}
@@ -95,17 +131,28 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![open_logs_dir])
         .setup(|app| {
+            launcher_log("[tauri] launcher starting");
             let dev = cfg!(debug_assertions);
             if dev {
-                // In dev, the developer runs backend via scripts/start.sh or uvicorn.
                 println!("[tauri] dev mode — expecting backend on :{}", BACKEND_PORT);
+                launcher_log("[tauri] dev mode — skipping sidecar spawn");
                 return Ok(());
             }
 
-            let child = spawn_backend(&app.handle())?;
-            app.manage(BackendProcess(std::sync::Mutex::new(Some(child))));
+            launcher_log("[tauri] spawning backend sidecar");
+            let child = match spawn_backend(&app.handle()) {
+                Ok(c) => c,
+                Err(e) => {
+                    launcher_log(&format!("[tauri] spawn_backend FAILED: {}", e));
+                    return Err(e.into());
+                }
+            };
+            app.manage(BackendProcess(Mutex::new(Some(child))));
 
-            if !wait_for_backend(BACKEND_PORT, Duration::from_secs(BACKEND_READY_TIMEOUT_SECS)) {
+            if wait_for_backend(BACKEND_PORT, Duration::from_secs(BACKEND_READY_TIMEOUT_SECS)) {
+                launcher_log("[tauri] backend ready on :8000");
+            } else {
+                launcher_log("[tauri] backend did NOT become ready within timeout");
                 eprintln!("[tauri] backend did not become ready within timeout");
             }
             Ok(())
@@ -122,6 +169,7 @@ fn main() {
             if should_kill {
                 if let Some(state) = window.app_handle().try_state::<BackendProcess>() {
                     if let Some(child) = state.0.lock().unwrap().take() {
+                        launcher_log("[tauri] window closing — killing sidecar");
                         let _ = child.kill();
                     }
                 }
