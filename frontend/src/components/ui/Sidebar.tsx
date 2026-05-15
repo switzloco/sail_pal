@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap } from "lucide-react";
+import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getApiBase } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
 import Image from "next/image";
 
@@ -94,6 +94,19 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 </Link>
               );
             })}
+          </div>
+
+          <div>
+            <p className="px-5 text-[10px] font-bold text-ocean-400 uppercase tracking-widest mb-2">Reference</p>
+            <a
+              href={`${getApiBase()}/api/setup/who-manual`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-ocean-100 hover:bg-ocean-800 hover:text-white transition-colors"
+            >
+              <BookOpen size={18} />
+              WHO Medical Manual
+            </a>
           </div>
 
           <div>

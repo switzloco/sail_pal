@@ -69,6 +69,14 @@ _knowledge_dir = os.path.join(_project_root, "backend", "data", "knowledge")
 if os.path.isdir(_knowledge_dir):
     datas += [(_knowledge_dir, os.path.join("backend", "data", "knowledge"))]
 
+# Bundle the WHO IMGS PDF itself so users can browse/print the full manual
+# offline at sea. ~2.2 MB, negligible vs the rest of the bundle. The RAG
+# engine queries the chunked JSON for speed; this PDF is the source of
+# truth users open via the "WHO Manual" button in the UI.
+_who_pdf = os.path.join(_project_root, "backend", "data", "manuals", "WHO_IMGS_3rd_Edition.pdf")
+if os.path.isfile(_who_pdf):
+    datas += [(_who_pdf, os.path.join("backend", "data", "manuals"))]
+
 
 a = Analysis(
     [os.path.join(_spec_dir, "entrypoint.py")],
