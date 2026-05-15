@@ -111,7 +111,15 @@ fn main() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
+            // Kill the backend on close. CloseRequested fires reliably on
+            // Windows before the process tears down; Destroyed sometimes
+            // doesn't run if the app exits first, which leaves the sidecar
+            // orphaned in Task Manager.
+            let should_kill = matches!(
+                event,
+                tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed
+            );
+            if should_kill {
                 if let Some(state) = window.app_handle().try_state::<BackendProcess>() {
                     if let Some(child) = state.0.lock().unwrap().take() {
                         let _ = child.kill();
