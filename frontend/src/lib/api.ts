@@ -1,4 +1,4 @@
-const getApiBase = () => {
+export const getApiBase = () => {
   if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
   if (typeof window !== "undefined") {
     // In the Tauri shell, window.location.origin is tauri://localhost (or

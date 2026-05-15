@@ -1,11 +1,13 @@
 import asyncio
 import json
 import shutil
+import sys
+from pathlib import Path
 from typing import AsyncIterator
 
 import httpx
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -110,6 +112,29 @@ async def setup_status():
         server_is_local=not settings.cloud_mode,  # False on Cloud Run (CLOUD_MODE=true)
     )
 
+
+
+@router.get("/who-manual")
+async def get_who_manual():
+    """Serve the bundled WHO International Medical Guide for Ships (3rd ed.) PDF.
+
+    Public-domain document; we bundle it for offline browsing alongside the
+    chunked JSON used by the RAG engine.
+    """
+    # Frozen: PyInstaller extracts to _MEIPASS/backend/data/manuals/
+    # Dev: backend/data/manuals/
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        pdf = Path(sys._MEIPASS) / "backend" / "data" / "manuals" / "WHO_IMGS_3rd_Edition.pdf"
+    else:
+        pdf = Path(__file__).resolve().parent.parent / "data" / "manuals" / "WHO_IMGS_3rd_Edition.pdf"
+
+    if not pdf.exists():
+        raise HTTPException(status_code=404, detail="WHO manual not bundled with this build")
+    return FileResponse(
+        path=str(pdf),
+        media_type="application/pdf",
+        filename="WHO_IMGS_3rd_Edition.pdf",
+    )
 
 
 @router.get("/mode", response_model=ModeResponse)

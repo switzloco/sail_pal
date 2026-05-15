@@ -225,24 +225,34 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
 
     has_rag = False
     rag_query_text = payload.messages[-1].content
-    if payload.crew_id:
-        rag_results = rag_engine.query("medical_protocols", rag_query_text, k=2)
-        if rag_results:
-            has_rag = True
-            context_lines.append("\nRelevant Protocol Excerpts:")
-            for r in rag_results:
-                source = r['metadata'].get('source', 'Unknown Document')
-                page = r['metadata'].get('page', '?')
-                context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
-    elif payload.component_id:
-        rag_results = rag_engine.query("engine_manuals", rag_query_text, k=2)
-        if rag_results:
+
+    # Always pull WHO medical context for any chat — sailors at sea may not
+    # have a crew member "selected" but still need grounded answers. The
+    # FTS5 query is ~5ms and BM25 ranks irrelevant chunks low, so the cost
+    # of an off-topic miss is negligible.
+    medical_rag = rag_engine.query("medical_protocols", rag_query_text, k=3)
+    if medical_rag:
+        has_rag = True
+        # Promote to MEDICAL_SYSTEM if no crew/component context already
+        # pushed us there — RAG matches mean the user is asking medical.
+        if not payload.crew_id and not payload.component_id:
+            system = MEDICAL_SYSTEM
+        context_lines.append("\nRelevant WHO IMGS Excerpts:")
+        for r in medical_rag:
+            source = r['metadata'].get('source', 'WHO IMGS')
+            page = r['metadata'].get('page', '?')
+            context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
+
+    if payload.component_id:
+        engine_rag = rag_engine.query("engine_manuals", rag_query_text, k=2)
+        if engine_rag:
             has_rag = True
             context_lines.append("\nRelevant Manual Excerpts:")
-            for r in rag_results:
+            for r in engine_rag:
                 source = r['metadata'].get('source', 'Unknown Manual')
                 page = r['metadata'].get('page', '?')
                 context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
+
 
     if context_lines:
         system = system + "\n\nContext for this conversation:\n" + "\n".join(context_lines)
