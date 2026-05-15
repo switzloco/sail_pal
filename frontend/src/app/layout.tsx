@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/ui/Sidebar";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { CloudBanner } from "@/components/ui/CloudBanner";
 import { SetupGate } from "@/components/setup/SetupGate";
+import { isTauri } from "@/lib/platform";
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -21,14 +22,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  // Register service worker for offline PWA support
+  // Register service worker for offline PWA support — web only.
+  //
+  // In Tauri the WebView serves the bundle from the local asset protocol;
+  // there is no offline edge case. Worse, a SW registered against
+  // tauri://localhost survives app upgrades: it keeps serving the old
+  // cached index.html, which references chunk hashes that no longer exist
+  // in the new install, blanking the screen. So on Tauri we actively
+  // unregister any stale SW and clear its caches.
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((reg) => console.log("SW registered, scope:", reg.scope))
-        .catch((err) => console.warn("SW registration failed:", err));
+    if (!("serviceWorker" in navigator)) return;
+    if (isTauri()) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((reg) => reg.unregister());
+      });
+      if ("caches" in window) {
+        caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+      }
+      return;
     }
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => console.log("SW registered, scope:", reg.scope))
+      .catch((err) => console.warn("SW registration failed:", err));
   }, []);
 
   const isWelcomePage = pathname?.startsWith("/welcome");
