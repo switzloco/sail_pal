@@ -9,9 +9,10 @@ from fastapi.staticfiles import StaticFiles
 from backend.config import settings
 from backend.db.database import Base, engine
 from backend.routers import crew, health, vessel, maintenance, ai, sync, setup, uploads
+from backend.middleware.auth import require_api_key
 from backend.logger import logger
 import time
-from fastapi import Request
+from fastapi import Depends, Request
 
 app = FastAPI(
     title="Vessel Ops AI",
@@ -33,9 +34,9 @@ Base.metadata.create_all(bind=engine)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Api-Key"],
 )
 
 @app.middleware("http")
@@ -60,14 +61,16 @@ def healthcheck():
     return {"status": "ok", "service": "vessel-ops-ai", "version": "0.1.2"}
 
 
-app.include_router(crew.router, prefix="/api/crew", tags=["crew"])
-app.include_router(health.router, prefix="/api/health", tags=["health"])
-app.include_router(vessel.router, prefix="/api/components", tags=["vessel"])
-app.include_router(maintenance.router, prefix="/api/maintenance", tags=["maintenance"])
-app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
-app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
-app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
-app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
+_auth = [Depends(require_api_key)]
+
+app.include_router(crew.router, prefix="/api/crew", tags=["crew"], dependencies=_auth)
+app.include_router(health.router, prefix="/api/health", tags=["health"], dependencies=_auth)
+app.include_router(vessel.router, prefix="/api/components", tags=["vessel"], dependencies=_auth)
+app.include_router(maintenance.router, prefix="/api/maintenance", tags=["maintenance"], dependencies=_auth)
+app.include_router(ai.router, prefix="/api/ai", tags=["ai"], dependencies=_auth)
+app.include_router(sync.router, prefix="/api/sync", tags=["sync"], dependencies=_auth)
+app.include_router(setup.router, prefix="/api/setup", tags=["setup"], dependencies=_auth)
+app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"], dependencies=_auth)
 
 
 # Serve the embedded Next.js static export when present (Docker / local dev).

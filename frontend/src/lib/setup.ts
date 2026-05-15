@@ -12,6 +12,11 @@ const getApiBase = () => {
 
 const API_BASE = getApiBase() + "/api";
 
+const apiHeaders = (): Record<string, string> => {
+  const key = typeof window !== "undefined" ? localStorage.getItem("apiKey") : null;
+  return key ? { "x-api-key": key } : {};
+};
+
 export interface SetupStatus {
   ollama_installed: boolean;
   ollama_running: boolean;
@@ -26,6 +31,7 @@ export interface SetupStatus {
 
 export async function fetchSetupStatus(): Promise<SetupStatus> {
   const res = await fetch(`${API_BASE}/setup/status`, {
+    headers: apiHeaders(),
     signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error("Backend unreachable");
@@ -42,6 +48,7 @@ export interface PullProgress {
 
 export async function fetchMode(): Promise<"cloud" | "local"> {
   const res = await fetch(`${API_BASE}/setup/mode`, {
+    headers: apiHeaders(),
     signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error("Could not fetch mode");
@@ -52,7 +59,7 @@ export async function fetchMode(): Promise<"cloud" | "local"> {
 export async function setMode(mode: "cloud" | "local"): Promise<void> {
   const res = await fetch(`${API_BASE}/setup/mode`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...apiHeaders() },
     body: JSON.stringify({ mode }),
     signal: AbortSignal.timeout(5000),
   });
@@ -72,6 +79,7 @@ export function streamModelPull(
     try {
       const res = await fetch(`${API_BASE}/setup/pull-model`, {
         method: "POST",
+        headers: apiHeaders(),
         signal: ctrl.signal,
       });
       const reader = res.body?.getReader();

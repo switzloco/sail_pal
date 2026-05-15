@@ -54,9 +54,13 @@ class Settings(BaseSettings):
     # ── Cloud simulation mode ─────────────────────────────────────────────────
     # When True, all LLM calls go to Google AI Studio instead of local Ollama.
     cloud_mode: bool = False
-    
+
+    # Shared API key. If set, all /api/* requests must include X-Api-Key header.
+    # Leave empty (default) for the desktop companion — auth is then disabled.
+    api_key: str = ""
+
     # Turn this on to enable verbose debug logging to backend/data/logs/vessel_debug.log
-    debug_mode: bool = True
+    debug_mode: bool = False
     google_api_key: str = ""
     cloud_model: str = "gemma-4-26b-a4b-it"
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch, getUploadUrl } from "@/lib/api";
+import { apiFetch, getApiKey, getUploadUrl } from "@/lib/api";
 import type { Component } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
@@ -37,8 +37,10 @@ export default function VesselPage() {
     setIsUploading(true);
     try {
       const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
+      const key = getApiKey();
       const res = await fetch(`${API_BASE}/ai/upload-manual`, {
         method: "POST",
+        headers: key ? { "x-api-key": key } : {},
         body: formData,
       });
       if (!res.ok) throw new Error("Upload failed");

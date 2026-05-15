@@ -21,9 +21,15 @@ export const getUploadUrl = (path: string) => {
   return `${getApiBase()}/uploads/${path}`;
 };
 
+export const getApiKey = (): string =>
+  (typeof window !== "undefined" && localStorage.getItem("apiKey")) || "";
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { ...init?.headers } as Record<string, string>;
-  
+
+  const key = getApiKey();
+  if (key) headers["x-api-key"] = key;
+
   if (!(init?.body instanceof FormData) && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }

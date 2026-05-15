@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, Gamepad2, User, Bot, Sparkles, Trophy, Anchor, RotateCcw } from "lucide-react";
+import { getApiKey } from "@/lib/api";
 import ReactMarkdown from 'react-markdown';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
@@ -54,9 +55,10 @@ export default function TriviaPage() {
     setMessages((m) => [...m, { role: "assistant", content: "" }]);
 
     try {
+      const key = getApiKey();
       const res = await fetch(`${API_BASE}/ai/trivia`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(key ? { "x-api-key": key } : {}) },
         body: JSON.stringify({ messages: next, succinct: false }),
       });
 

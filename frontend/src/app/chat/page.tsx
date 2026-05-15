@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getApiKey } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
 import { Send, Sparkles, User, Bot, Mic, MicOff } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
@@ -109,9 +109,10 @@ export default function ChatPage() {
       if (crewContext) body.crew_id = crewContext;
       if (componentContext) body.component_id = componentContext;
 
+      const key = getApiKey();
       const res = await fetch(`${API_BASE}/ai/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(key ? { "x-api-key": key } : {}) },
         body: JSON.stringify(body),
       });
 

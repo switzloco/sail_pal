@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, GraduationCap, User, Bot, Sparkles, Star, Trophy, Target, ShieldAlert, CheckCircle2, Award } from "lucide-react";
+import { getApiKey } from "@/lib/api";
 import ReactMarkdown from 'react-markdown';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
@@ -71,9 +72,10 @@ export default function StudyPage() {
     setMessages((m) => [...m, { role: "assistant", content: "" }]);
 
     try {
+      const key = getApiKey();
       const res = await fetch(`${API_BASE}/ai/study`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(key ? { "x-api-key": key } : {}) },
         body: JSON.stringify({ messages: next, succinct: false }),
       });
 
