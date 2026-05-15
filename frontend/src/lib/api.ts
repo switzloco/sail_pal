@@ -1,6 +1,15 @@
 const getApiBase = () => {
   if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
-  if (typeof window !== "undefined") return window.location.origin;
+  if (typeof window !== "undefined") {
+    // In the Tauri shell, window.location.origin is tauri://localhost (or
+    // https://tauri.localhost on Windows) — a custom protocol with no /api
+    // handler. The PyInstaller sidecar listens on 127.0.0.1:8000, so target
+    // that directly when we detect Tauri.
+    if ("__TAURI_INTERNALS__" in window) {
+      return "http://127.0.0.1:8000";
+    }
+    return window.location.origin;
+  }
   return "http://localhost:8000";
 };
 

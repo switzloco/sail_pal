@@ -1,6 +1,12 @@
 const getApiBase = () => {
   if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
-  if (typeof window !== "undefined") return window.location.origin;
+  if (typeof window !== "undefined") {
+    // Mirror lib/api.ts: in the Tauri shell, target the sidecar directly.
+    if ("__TAURI_INTERNALS__" in window) {
+      return "http://127.0.0.1:8000";
+    }
+    return window.location.origin;
+  }
   return "http://localhost:8000";
 };
 
