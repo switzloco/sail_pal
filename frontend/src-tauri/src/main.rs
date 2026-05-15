@@ -79,6 +79,36 @@ fn open_logs_dir() -> Result<(), String> {
     Ok(())
 }
 
+/// Kill any orphan vessel-ops-backend processes left over from previous
+/// launches. PyInstaller --onefile builds run a bootloader that exec's
+/// the real Python interpreter as a child; on Windows, killing the
+/// bootloader doesn't propagate to that child, so uvicorn keeps the
+/// port 8000 bind alive after the GUI closes. Next launch's freshly-
+/// spawned backend then fails with errno 10048 ("address already in use")
+/// and exits — wait_for_backend() succeeds anyway because it's talking
+/// to the orphan, so the launcher thinks everything is fine.
+///
+/// Best-effort: we shell out to the platform's native task killer and
+/// swallow any "process not found" errors.
+fn kill_orphan_backends() {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/IM", "vessel-ops-backend.exe"])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("pkill")
+            .args(["-f", "vessel-ops-backend"])
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+    }
+}
+
 fn wait_for_backend(port: u16, timeout: Duration) -> bool {
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {
@@ -139,6 +169,16 @@ fn main() {
                 return Ok(());
             }
 
+            // Reap any orphan from a previous launch before claiming :8000.
+            // Without this, the new sidecar fails to bind, exits, and the
+            // launcher mistakenly reports "ready" because wait_for_backend
+            // is just connecting to the orphan.
+            launcher_log("[tauri] reaping orphan vessel-ops-backend processes");
+            kill_orphan_backends();
+            // Brief settle so Windows actually releases the port before
+            // uvicorn tries to grab it.
+            std::thread::sleep(Duration::from_millis(500));
+
             launcher_log("[tauri] spawning backend sidecar");
             let child = match spawn_backend(&app.handle()) {
                 Ok(c) => c,
@@ -173,6 +213,11 @@ fn main() {
                         let _ = child.kill();
                     }
                 }
+                // child.kill() only kills the PyInstaller bootloader on
+                // Windows; the real Python interpreter it exec'd lives
+                // on. Mop it up too so the next launch starts clean.
+                launcher_log("[tauri] window closing — reaping any backend orphans");
+                kill_orphan_backends();
             }
         })
         .run(tauri::generate_context!())

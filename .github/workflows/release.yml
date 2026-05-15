@@ -62,10 +62,13 @@ jobs:
           GOOGLE_API_KEY_PREVIEW: ${{ secrets.GOOGLE_API_KEY_PREVIEW }}
         run: |
           if [ -n "$GOOGLE_API_KEY_PREVIEW" ]; then
-            echo "CLOUD_MODE=true" >> .env
+            # Bake the key so users CAN switch to cloud mode from the UI,
+            # but do NOT set CLOUD_MODE=true — the desktop app defaults to
+            # local and the user chooses. Forcing cloud here blocks
+            # setMode("local") with a 409 and shows "Cloud Mode" banner.
             echo "GOOGLE_API_KEY=${GOOGLE_API_KEY_PREVIEW}" >> .env
             echo "CLOUD_MODEL=gemma-4-26b-a4b-it" >> .env
-            echo "✓ Cloud preview key baked into .env"
+            echo "✓ Cloud preview key baked into .env (CLOUD_MODE left unset — defaults to local)"
           else
             echo "⚠ GOOGLE_API_KEY_PREVIEW not set — building without cloud preview key"
           fi
