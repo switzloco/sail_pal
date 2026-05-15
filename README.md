@@ -51,7 +51,7 @@ the browser — no installation required.
 
 **Backend:** Python 3.11+ · FastAPI · SQLAlchemy 2.0 · Alembic · Pydantic v2 · SQLite (WAL)
 
-**AI:** Gemma 4 via Ollama · ChromaDB RAG · sentence-transformers
+**AI:** Gemma via Ollama (local) or Google AI Studio (cloud preview) · SQLite FTS5 RAG with BM25 ranking
 
 **Knowledge Source:** Full offline integration of the *World Health Organization (WHO) International Medical Guide for Ships (IMGS, 3rd Edition)* for RAG-grounded medical guidance.
 

@@ -98,7 +98,7 @@ You can add your own PDFs to the AI's knowledge base before departure:
 1. Navigate to **Settings → Knowledge Base** in the app.
 2. Upload a PDF (e.g., your vessel's engine manual or SOLAS addendum).
 3. Choose the category: **Medical Protocols** or **Engine Manuals**.
-4. The AI will chunk and index the PDF locally via ChromaDB.
+4. The AI will chunk and index the PDF locally into the SQLite FTS5 store.
 5. Future queries will cite your uploaded manuals alongside the built-in WHO
    IMGS protocols.
 

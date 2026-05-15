@@ -88,12 +88,12 @@ if ($pyMajor -lt 3 -or ($pyMajor -eq 3 -and $pyMinor -lt 11)) {
 }
 
 # Warn about very-new Python where ML deps may not have Windows wheels yet.
-# If pip can't find wheels for chromadb / sentence-transformers / pymupdf on
-# this version, it falls back to source builds which need a C++ toolchain
-# the user almost certainly doesn't have.
+# pymupdf is the main wheel-sensitive dep we still pull; if pip can't find
+# a wheel it falls back to a source build that needs a C++ toolchain the
+# user almost certainly doesn't have.
 if ($pyMajor -eq 3 -and $pyMinor -ge 13) {
   Warn "Python $pyMajor.$pyMinor is newer than what some dependencies"
-  Warn "(chromadb, sentence-transformers, pymupdf) currently ship Windows wheels for."
+  Warn "(notably pymupdf) currently ship Windows wheels for."
   Warn "Looking for an older Python (3.12 or 3.11) to use instead..."
 
   # Prefer an older interpreter if the user has one installed alongside.
@@ -137,7 +137,7 @@ if ($pyMajor -eq 3 -and $pyMinor -ge 13) {
     if ($pyMinor -ge 13) {
       Warn ""
       Warn "Proceeding with Python $pyMajor.$pyMinor. If pip install fails below"
-      Warn "(missing wheels for chromadb/sentence-transformers/pymupdf), install"
+      Warn "(missing wheels for pymupdf), install"
       Warn "Python 3.12 from https://www.python.org/downloads/windows/ or run:"
       Warn "    py install 3.12"
       Warn "then re-run install.bat."

@@ -12,13 +12,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # v1 ships Windows-only. macOS and Linux builds can be re-added
-          # later by uncommenting matrix entries below — the rest of this
-          # workflow already supports them and was tested with that matrix.
-          # See PR #21 history for the Linux/macOS legs.
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             sidecar_ext: ".exe"
+          # macOS Apple Silicon. GitHub's macos-latest runners are now M-series
+          # by default, which matches the dominant install base. The build is
+          # UNSIGNED — first launch will hit Gatekeeper and the user has to
+          # right-click → Open once. Code signing requires an Apple Developer
+          # cert ($99/yr) which we'll add once we ship to TestFlight / outside
+          # the hackathon. The PyInstaller spec + Tauri config already support
+          # macOS targets; only the matrix needed re-enabling.
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            sidecar_ext: ""
 
     runs-on: ${{ matrix.os }}
 
@@ -127,6 +133,7 @@ jobs:
           name: vessel-ops-ai-${{ matrix.target }}
           path: |
             frontend/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+            frontend/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
             portable/*.zip
           if-no-files-found: ignore
 
