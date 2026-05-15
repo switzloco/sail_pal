@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for the main window. Allows custom Rust commands registered in invoke_handler to be called from the frontend.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

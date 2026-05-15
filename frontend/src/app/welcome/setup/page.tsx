@@ -134,9 +134,11 @@ export default function SetupChecklistPage() {
   const [isResetting, setIsResetting] = useState(false);
   const [finishError, setFinishError] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       try {
         const [s, v, c] = await Promise.all([
@@ -144,16 +146,24 @@ export default function SetupChecklistPage() {
           apiFetch<Vessel>("/setup/vessel-info"),
           apiFetch<CrewMember[]>("/crew")
         ]);
+        if (cancelled) return;
         setStatus(s);
         setVessel(v);
         setCrewCount(c.length);
+        setFetchError(null);
       } catch (err) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : String(err);
         console.error("Failed to fetch setup data", err);
+        setFetchError(msg);
       }
     };
     fetchData();
-    const id = setInterval(fetchData, 5000);
-    return () => clearInterval(id);
+    const id = setInterval(fetchData, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   const handleStartPull = () => {
@@ -204,8 +214,35 @@ export default function SetupChecklistPage() {
   };
 
   if (!status) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <Loader2 className="animate-spin text-ocean-600" size={32} />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
+      <Loader2 className="animate-spin text-ocean-600 mb-4" size={32} />
+      <p className="text-sm text-slate-600 font-medium">Checking your local setup…</p>
+      {fetchError && (
+        <div className="mt-6 max-w-md text-center">
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            Can&apos;t reach the local backend: <code className="bg-white px-1 rounded">{fetchError}</code>
+          </p>
+          <p className="text-xs text-slate-500 mt-3">
+            The Vessel Ops AI desktop app starts a small server on
+            <code className="bg-slate-100 px-1 rounded mx-1">127.0.0.1:8000</code>
+            when it launches. If you see this for more than ~30 seconds, the server
+            likely crashed during startup — open the log folder to investigate.
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                const { tauriInvoke } = await import("@/lib/platform");
+                await tauriInvoke("open_logs_dir");
+              } catch {
+                alert("Logs live in %APPDATA%\\VesselOpsAI\\logs\\ (Windows) or ~/Library/Application Support/VesselOpsAI/logs (Mac).");
+              }
+            }}
+            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Open log folder →
+          </button>
+        </div>
+      )}
     </div>
   );
 
