@@ -8,8 +8,8 @@ import { apiFetch, getApiBase } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
 import Image from "next/image";
 
-const SHARE_URL = "https://www.kaggle.com/competitions/google-gemma-4-good-hackathon";
-const SHARE_TEXT = "Vessel Ops AI — offline-first maritime medical & engineering assistant, powered by Gemma. Built for the Gemma 4 Good Hackathon.";
+const SHARE_URL = "https://vessel-ops-494701.web.app/";
+const SHARE_TEXT = "Vessel Ops AI — offline-first maritime medical & engineering assistant, powered by Gemma. Try it free:";
 
 async function handleShare() {
   const payload = { title: "Vessel Ops AI", text: SHARE_TEXT, url: SHARE_URL };
