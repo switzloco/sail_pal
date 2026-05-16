@@ -35,16 +35,15 @@ class Settings(BaseSettings):
 
 
     ollama_host: str = "http://localhost:11434"
-    model_primary: str = "gemma4:e2b"
+    model_primary: str = "vessel-ops:maritime"
+    model_fallback: str = "gemma4:e2b"
     model_scale: str = "gemma4:e4b"
     cors_origins: List[str] = ["*"]
 
     @field_validator("model_primary", mode="before")
     @classmethod
     def load_primary_model(cls, v):
-        # If explicitly set in environment as MODEL_PRIMARY, Pydantic handles it.
-        # Otherwise, check OLLAMA_MODEL as a fallback.
-        return v or os.getenv("OLLAMA_MODEL") or "gemma4:e2b"
+        return v or os.getenv("OLLAMA_MODEL") or "vessel-ops:maritime"
 
     @field_validator("model_scale", mode="before")
     @classmethod

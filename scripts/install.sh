@@ -27,6 +27,8 @@ PY_MIN_MAJOR=3
 PY_MIN_MINOR=11
 NODE_MIN=20
 MODEL="gemma4:e2b"
+FINE_TUNED_MODEL="vessel-ops:maritime"
+FINE_TUNED_HF="hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF"
 
 # ── curl ──────────────────────────────────────────────────────────────────────
 if ! command -v curl &>/dev/null; then
@@ -106,13 +108,35 @@ if ! curl -fsS http://localhost:11434/api/tags >/dev/null 2>&1; then
   fail "Ollama not running."
 fi
 
-# ── Pull model ────────────────────────────────────────────────────────────────
+# ── Pull base model ───────────────────────────────────────────────────────────
 if ollama list 2>/dev/null | grep -q "${MODEL%:*}"; then
   info "Model ${MODEL} already pulled ✓"
 else
   info "Pulling ${MODEL} (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   ollama pull "${MODEL}"
+fi
+
+# ── Pull fine-tuned maritime medical model (optional) ─────────────────────────
+if ollama list 2>/dev/null | grep -q "${FINE_TUNED_MODEL%:*}"; then
+  info "Maritime medical model already registered ✓"
+else
+  info "Attempting to download the WHO IMGS fine-tuned maritime medical model (~1.8 GB)..."
+  info "This is optional — the app works with the base model if this fails."
+  MODELFILE_PATH="$(mktemp)"
+  cat > "${MODELFILE_PATH}" <<MODELFILE
+FROM ${FINE_TUNED_HF}
+SYSTEM """You are an expert maritime medicine assistant trained on the WHO International Medical Guide for Ships (3rd Edition). You provide accurate, concise medical guidance to ship officers managing emergencies at sea with no doctor available. Always cite the relevant WHO IMGS page number when referencing specific protocols."""
+PARAMETER temperature 0.7
+PARAMETER num_ctx 4096
+MODELFILE
+  if ollama create "${FINE_TUNED_MODEL}" -f "${MODELFILE_PATH}" 2>/dev/null; then
+    info "Maritime medical model registered as '${FINE_TUNED_MODEL}' ✓"
+  else
+    warn "Could not pull fine-tuned model (network issue or model not yet published)."
+    warn "The app will use the base '${MODEL}' model instead — fully functional."
+  fi
+  rm -f "${MODELFILE_PATH}"
 fi
 
 # ── Frontend build ───────────────────────────────────────────────────────────

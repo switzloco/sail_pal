@@ -21,6 +21,8 @@ function Warn($msg)  { Write-Host "⚠ $msg" -ForegroundColor Yellow }
 function Fail($msg)  { Write-Host "✗ $msg" -ForegroundColor Red; exit 1 }
 
 $Model = "gemma4:e2b"
+$FineTunedModel = "vessel-ops:maritime"
+$FineTunedHF = "hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF"
 
 # ── Python ────────────────────────────────────────────────────────────────────
 Info "Checking Python..."
@@ -195,7 +197,7 @@ try {
   Fail "Ollama not running."
 }
 
-# ── Pull model ────────────────────────────────────────────────────────────────
+# ── Pull base model ───────────────────────────────────────────────────────────
 $tags = & ollama list 2>$null
 if ($tags -match [regex]::Escape($Model.Split(':')[0])) {
   Info "Model $Model already pulled ✓"
@@ -203,6 +205,35 @@ if ($tags -match [regex]::Escape($Model.Split(':')[0])) {
   Info "Pulling $Model (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   Info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   & ollama pull $Model
+}
+
+# ── Pull fine-tuned maritime medical model (optional) ─────────────────────────
+$fineTunedTags = & ollama list 2>$null
+if ($fineTunedTags -match [regex]::Escape($FineTunedModel.Split(':')[0])) {
+  Info "Maritime medical model already registered ✓"
+} else {
+  Info "Attempting to download the WHO IMGS fine-tuned maritime medical model (~1.8 GB)..."
+  Info "This is optional — the app works with the base model if this fails."
+  $modelfilePath = [System.IO.Path]::GetTempFileName()
+  @"
+FROM $FineTunedHF
+SYSTEM """You are an expert maritime medicine assistant trained on the WHO International Medical Guide for Ships (3rd Edition). You provide accurate, concise medical guidance to ship officers managing emergencies at sea with no doctor available. Always cite the relevant WHO IMGS page number when referencing specific protocols."""
+PARAMETER temperature 0.7
+PARAMETER num_ctx 4096
+"@ | Set-Content -Path $modelfilePath -Encoding UTF8
+  try {
+    & ollama create $FineTunedModel -f $modelfilePath 2>$null
+    if ($LASTEXITCODE -eq 0) {
+      Info "Maritime medical model registered as '$FineTunedModel' ✓"
+    } else {
+      throw "non-zero exit"
+    }
+  } catch {
+    Warn "Could not pull fine-tuned model (network issue or model not yet published)."
+    Warn "The app will use the base '$Model' model instead — fully functional."
+  } finally {
+    Remove-Item -Path $modelfilePath -ErrorAction SilentlyContinue
+  }
 }
 
 # ── Frontend build ───────────────────────────────────────────────────────────

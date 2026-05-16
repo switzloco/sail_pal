@@ -68,6 +68,7 @@ async def _llm_tokens(
             host=settings.ollama_host,
             model_primary=settings.model_primary,
             model_scale=settings.model_scale,
+            model_fallback=settings.model_fallback,
         )
         async for token in router.chat_stream(
             system, user_prompt, severity=severity, images=images

@@ -40,6 +40,7 @@ async def parse_component_image(image_bytes: bytes, component_name: str) -> Opti
             host=settings.ollama_host,
             model_primary=settings.model_primary,
             model_scale=settings.model_scale,
+            model_fallback=settings.model_fallback,
         )
         try:
             async for chunk in client.chat_stream(
