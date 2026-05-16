@@ -165,8 +165,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           </div>
         </nav>
 
-        <div className="px-5 py-6 border-t border-ocean-800">
-          <div className="flex items-center gap-3">
+        <div className="px-5 py-4 border-t border-ocean-800">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-ocean-800 flex items-center justify-center text-ocean-400">
               <Anchor size={16} />
             </div>
@@ -174,6 +174,11 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
               <p className="text-[10px] font-bold text-ocean-500 uppercase tracking-widest leading-none mb-1">Status</p>
               <p className="text-xs font-bold text-green-400">Vessel Online</p>
             </div>
+          </div>
+          <div className="flex gap-3 text-[10px] text-ocean-500">
+            <Link href="/terms" className="hover:text-ocean-300 transition-colors">Terms</Link>
+            <span>·</span>
+            <Link href="/privacy" className="hover:text-ocean-300 transition-colors">Privacy</Link>
           </div>
         </div>
       </aside>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { fetchSetupStatus, setMode } from "@/lib/setup";
 import { isTauri, tauriInvoke } from "@/lib/platform";
+import Link from "next/link";
 import { Globe, Shield, Anchor, Rocket, FolderOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -202,6 +203,11 @@ export default function WelcomePage() {
       <p className="mt-8 text-slate-400 text-sm">
         When using the local setup (via Ollama), Vessel Ops AI runs entirely in your browser and on your local machine.
       </p>
+      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-400">
+        <Link href="/terms" className="hover:text-ocean-600 transition-colors">Terms of Use</Link>
+        <span>·</span>
+        <Link href="/privacy" className="hover:text-ocean-600 transition-colors">Privacy Policy</Link>
+      </div>
     </div>
   );
 }
