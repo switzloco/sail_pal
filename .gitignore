@@ -5,6 +5,7 @@
 /backend/data/*
 !/backend/data/manuals/
 !/backend/data/knowledge/
+!/backend/data/training/
 /backend/rag/manuals/
 .env
 __pycache__/

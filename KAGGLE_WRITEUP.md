@@ -2,7 +2,7 @@
 
 **Title:** Vessel Ops AI: Precision Assistance for Remote Operations
 **Subtitle:** Bringing life-saving Gemma intelligence to austere, disconnected maritime environments.
-**Tracks:** Main Track, Global Resilience, Health & Sciences, Ollama
+**Tracks:** Main Track, Global Resilience, Health & Sciences, Ollama, Unsloth
 
 ## 1. The Problem: Isolation at Sea
 When a crew member is injured 200 miles offshore, there is no internet connection, no doctor, and no opportunity for a second opinion. Vessels operate in environments where bandwidth is either non-existent or prohibitively expensive — a satellite call to shore-side telemedicine (TMAS) is the last line of defense, not the first. In an emergency, the Medical Person In Charge (MPIC) relies on static textbooks, prior training, and intuition. The same isolation extends to the engine room, where the Chief Engineer must diagnose complex machinery faults without OEM support or a search engine.
@@ -27,12 +27,27 @@ Gemma is the core intelligence of Vessel Ops AI. We use it in three ways:
 * **Multimodal injury & component analysis:** When a crew member uploads a photo of an injury or a failing engine part, Gemma's multimodal capability classifies the observation and feeds the result back into the RAG step as additional query context.
 * **Domain-specific personas:** Different code paths (medical chat, engine chat, MPIC study mode, trivia) apply different system prompts, all built on the same Gemma model. The MPIC study mode in particular acts as an interactive examiner that scores the user's responses 1–10 against established maritime medical protocols.
 
-## 5. Challenges Overcame
+## 5. Domain Fine-tuning with Unsloth
+
+The RAG layer grounds Gemma's responses in the WHO IMGS at inference time, but a general-purpose base model still has to *interpret* maritime medical prose it has never been optimised for. We address this with a purpose-built fine-tune targeting the Unsloth Special Technology Prize.
+
+**Dataset generation (`backend/scripts/generate_training_data.py`):** We convert the 938 WHO IMGS chunks into clinical Q&A pairs. Each chunk is passed to Gemini (acting as a subject-matter expert) with a prompt that asks for two realistic questions a ship officer might ask during an emergency, along with grounded answers that cite the source page. After filtering TOC and header-only chunks, this yields ~1,400 high-quality training examples in ShareGPT conversation format.
+
+**Fine-tuning (`notebooks/unsloth_finetune.ipynb`):** We fine-tune `gemma-4-2b` using Unsloth + QLoRA (rank 16, RSLoRA scaling) on a Kaggle T4 GPU — the same class of hardware available on many modern vessels. Key choices:
+* **4-bit quantised base + fp16 LoRA** — fits comfortably in 16 GB VRAM with sequence packing enabled
+* **3 epochs, cosine LR schedule, effective batch 8** — enough to converge without overfitting on ~1,400 examples
+* **GGUF export (Q4_K_M)** — the merged model is quantised and pushed to HuggingFace in a format Ollama can pull directly, keeping the end-user install path unchanged
+
+**What the fine-tune adds:** The model internalises the WHO IMGS vocabulary, drug names, dosage patterns, and protocol structure. With RAG still enabled on top, the combination dramatically reduces hallucination on specific dosages and page-cited protocols compared to the base model. Without RAG, the fine-tuned model alone still outperforms the base on maritime medical Q&A — useful if the FTS5 index is unavailable or the query is too ambiguous for good retrieval.
+
+**Reproducibility:** Weights and the training dataset are both public on HuggingFace. The Kaggle notebook is attached to this writeup and can be re-run end-to-end on a free T4 session in under 3 hours.
+
+## 6. Challenges Overcame
 * **Running frontier AI on "potato" hardware.** Many vessels run older laptops. `gemma4:e2b` was chosen specifically for its capability-to-size ratio — responses generate fast enough to be useful in an emergency on hardware that wouldn't fit a 12B+ model in RAM alongside the application.
 * **Deployment for non-technical crews.** Installing Python, Node, and Ollama is beyond a typical crew member. We wrap the entire environment — Python interpreter, all dependencies, the FTS5 index, the WHO PDF — into a single NSIS-installed `.exe` that runs without admin rights. Ollama itself remains a separate one-time install, but the rest of the stack is invisible.
 * **PyInstaller orphan processes.** PyInstaller `--onefile` builds run a bootloader that exec's the real Python interpreter; on Windows, killing the bootloader doesn't propagate to the child, so uvicorn keeps port 8000 bound after the GUI window closes. We reap orphan `vessel-ops-backend.exe` processes on every launch (`taskkill /F /IM`) before spawning, with a 500ms settle to let Windows release the port. Without this, the second launch silently fails to bind and the launcher would mistakenly report success because it's connecting to the orphan.
 * **Service Worker survives app upgrades.** A service worker registered against `tauri://localhost` (actually `https://tauri.localhost` on Windows) survives across installer versions and serves cached HTML referencing chunk hashes that no longer exist in the new bundle. We had the new SW detect the Tauri origin and self-destruct on activate — clearing all caches, unregistering, and force-reloading any open windows — so users self-heal on first launch of the new version.
 * **Sidecar packaging size.** Stripping torch, transformers, sentence-transformers, and ChromaDB from the PyInstaller spec cut the sidecar from ~1.2 GB to ~75 MB — small enough to ship without a code-signing certificate spend.
 
-## 6. Conclusion
-Vessel Ops AI proves that frontier intelligence doesn't have to be tethered to a data center. By bringing Gemma directly to the laptop in the wheelhouse — with a grounded medical knowledge base, a fully bundled installer, and a UI built for the realities of life at sea — we are giving maritime crews a second opinion they can trust when there is no one else to ask.
+## 7. Conclusion
+Vessel Ops AI proves that frontier intelligence doesn't have to be tethered to a data center. By bringing Gemma directly to the laptop in the wheelhouse — with a purpose fine-tuned maritime medical model, a WHO IMGS grounded RAG layer, a fully bundled installer, and a UI built for the realities of life at sea — we are giving maritime crews a second opinion they can trust when there is no one else to ask.
