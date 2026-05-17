@@ -25,8 +25,9 @@ Prize targets:
 
 ```
 Laptop (MacBook, Windows, Linux)
-  └── Ollama  →  vessel-ops-ai/gemma4-maritime-medical-GGUF (Unsloth fine-tune, default)
-                  with gemma4:e2b / gemma4:e4b as fallbacks
+  └── Ollama  →  gemma4:e2b (general / engine / maintenance / trivia)
+              +  vessel-ops-ai/gemma4-maritime-medical-GGUF (Unsloth fine-tune,
+                 used automatically for medical routes)
   └── FastAPI backend  →  SQLite (WAL mode)
   └── Next.js frontend  →  http://localhost:3000
 
@@ -39,11 +40,11 @@ the browser — no installation required.
 
 **Model selection by hardware:**
 
-| RAM | Recommended model | Notes |
-|-----|------------------|-------|
-| 8–16 GB | `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF` *(installer default)* | Our Unsloth-finetuned Gemma 4 on the WHO IMGS, Q4_K_M (~2 GB) |
-| 8–16 GB | `gemma4:e2b` *(fallback)* | Vanilla Gemma 4 E2B — pulled automatically as a guaranteed fallback |
-| 32 GB+ | `gemma4:e4b` | Vanilla Gemma 4 E4B — noticeably better general reasoning |
+| RAM | Model | Used for |
+|-----|-------|----------|
+| 8–16 GB | `gemma4:e2b` *(primary, always installed)* | General chat, engine fault analysis, maintenance, MPIC study, trivia |
+| 8–16 GB | `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF` *(medical, installer pulls)* | `/medical-query` and any chat turn that hits the WHO IMGS RAG index — our Unsloth fine-tune, Q4_K_M (~2 GB) |
+| 32 GB+ | `gemma4:e4b` | Optional scale model for `critical`/`serious` severity escalations |
 
 ---
 

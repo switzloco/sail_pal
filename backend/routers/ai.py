@@ -52,8 +52,13 @@ async def _llm_tokens(
     user_prompt: str,
     images: Optional[list[bytes]] = None,
     severity: str = "minor",
+    model_override: Optional[str] = None,
 ) -> AsyncIterator[str]:
-    """Route to cloud (Google) or local (Ollama) depending on runtime mode."""
+    """Route to cloud (Google) or local (Ollama) depending on runtime mode.
+
+    `model_override` lets medical routes pin to the Unsloth WHO fine-tune
+    without affecting engine/maintenance/trivia traffic.
+    """
     if mode_state.is_cloud():
         from backend.ai.google_client import GoogleSimulationClient
         client = GoogleSimulationClient(
@@ -70,7 +75,11 @@ async def _llm_tokens(
             model_scale=settings.model_scale,
         )
         async for token in router.chat_stream(
-            system, user_prompt, severity=severity, images=images
+            system,
+            user_prompt,
+            severity=severity,
+            images=images,
+            model_override=model_override,
         ):
             yield token
 
@@ -120,7 +129,12 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
         system += SUCCINCT_MODIFIER
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(system, user_prompt, severity=payload.severity)),
+        _tokens_to_sse(_llm_tokens(
+            system,
+            user_prompt,
+            severity=payload.severity,
+            model_override=settings.effective_medical_model,
+        )),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -224,6 +238,7 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             system = ENGINE_SYSTEM
 
     has_rag = False
+    is_medical_turn = False
     rag_query_text = payload.messages[-1].content
 
     # Always pull WHO medical context for any chat — sailors at sea may not
@@ -237,6 +252,9 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         # pushed us there — RAG matches mean the user is asking medical.
         if not payload.crew_id and not payload.component_id:
             system = MEDICAL_SYSTEM
+            is_medical_turn = True
+        if payload.crew_id and not payload.component_id:
+            is_medical_turn = True
         context_lines.append("\nRelevant WHO IMGS Excerpts:")
         for r in medical_rag:
             source = r['metadata'].get('source', 'WHO IMGS')
@@ -269,8 +287,12 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     )
     transcript += "\n\nAssistant:"
 
+    chat_model_override = settings.effective_medical_model if is_medical_turn else None
+
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(system, transcript)),
+        _tokens_to_sse(_llm_tokens(
+            system, transcript, model_override=chat_model_override,
+        )),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

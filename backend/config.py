@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     model_primary: str = "gemma4:e2b"
     model_scale: str = "gemma4:e4b"
+    # Unsloth-finetuned Gemma 4 for medical routes. Empty string means "same
+    # as model_primary" so the app works out-of-the-box with no .env entry.
+    # The installer writes MODEL_MEDICAL=hf.co/vessel-ops-ai/... when the
+    # Unsloth GGUF pull succeeds.
+    model_medical: str = ""
     cors_origins: List[str] = ["*"]
 
     @field_validator("model_primary", mode="before")
@@ -50,6 +55,16 @@ class Settings(BaseSettings):
     @classmethod
     def load_scale_model(cls, v):
         return v or os.getenv("OLLAMA_MODEL_SCALE") or "gemma4:e4b"
+
+    @field_validator("model_medical", mode="before")
+    @classmethod
+    def load_medical_model(cls, v):
+        return v or os.getenv("MODEL_MEDICAL") or ""
+
+    @property
+    def effective_medical_model(self) -> str:
+        """Unsloth fine-tune when installed, vanilla primary otherwise."""
+        return self.model_medical or self.model_primary
 
     # ── Cloud simulation mode ─────────────────────────────────────────────────
     # When True, all LLM calls go to Google AI Studio instead of local Ollama.

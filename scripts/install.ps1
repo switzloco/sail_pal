@@ -231,18 +231,22 @@ if ($tags -match [regex]::Escape($UnslothModel)) {
   }
 }
 
-# ── Select the Unsloth model as default when available ──────────────────────
+# ── Pin the Unsloth model for medical routes when available ─────────────────
+# Only medical traffic (medical-query + chat turns that hit WHO RAG) uses the
+# fine-tune. Engine, maintenance, trivia, and MPIC study keep using vanilla
+# gemma4:e2b — the fine-tune is specialised for the WHO IMGS and would
+# regress on those domains.
 if ($UnslothOk) {
   $EnvFile = Join-Path $RepoRoot ".env"
   if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Null }
   $lines = Get-Content $EnvFile -ErrorAction SilentlyContinue
-  if ($lines -match '^MODEL_PRIMARY=') {
-    $lines = $lines -replace '^MODEL_PRIMARY=.*$', "MODEL_PRIMARY=$UnslothModel"
+  if ($lines -match '^MODEL_MEDICAL=') {
+    $lines = $lines -replace '^MODEL_MEDICAL=.*$', "MODEL_MEDICAL=$UnslothModel"
     Set-Content -Path $EnvFile -Value $lines
   } else {
-    Add-Content -Path $EnvFile -Value "MODEL_PRIMARY=$UnslothModel"
+    Add-Content -Path $EnvFile -Value "MODEL_MEDICAL=$UnslothModel"
   }
-  Info "Default model set to $UnslothModel"
+  Info "Medical routes pinned to $UnslothModel; engine/maintenance/trivia keep $Model"
 }
 
 # ── Frontend build ───────────────────────────────────────────────────────────

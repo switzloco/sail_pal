@@ -138,19 +138,22 @@ else
   fi
 fi
 
-# ── Select the Unsloth model as default when available ──────────────────────
+# ── Pin the Unsloth model for medical routes when available ─────────────────
+# Only medical traffic (medical-query + chat turns that hit WHO RAG) uses the
+# fine-tune. Engine, maintenance, trivia, and MPIC study keep using vanilla
+# gemma4:e2b — the fine-tune is specialised for the WHO IMGS and would
+# regress on those domains.
 if [ "${UNSLOTH_OK:-false}" = "true" ]; then
   ENV_FILE="$REPO_ROOT/.env"
   touch "$ENV_FILE"
-  if grep -q "^MODEL_PRIMARY=" "$ENV_FILE" 2>/dev/null; then
-    # POSIX-portable in-place rewrite
+  if grep -q "^MODEL_MEDICAL=" "$ENV_FILE" 2>/dev/null; then
     tmp="$(mktemp)"
-    awk -v m="MODEL_PRIMARY=${UNSLOTH_MODEL}" '/^MODEL_PRIMARY=/{print m; next} {print}' "$ENV_FILE" > "$tmp"
+    awk -v m="MODEL_MEDICAL=${UNSLOTH_MODEL}" '/^MODEL_MEDICAL=/{print m; next} {print}' "$ENV_FILE" > "$tmp"
     mv "$tmp" "$ENV_FILE"
   else
-    printf 'MODEL_PRIMARY=%s\n' "${UNSLOTH_MODEL}" >> "$ENV_FILE"
+    printf 'MODEL_MEDICAL=%s\n' "${UNSLOTH_MODEL}" >> "$ENV_FILE"
   fi
-  info "Default model set to ${UNSLOTH_MODEL}"
+  info "Medical routes pinned to ${UNSLOTH_MODEL}; engine/maintenance/trivia keep ${MODEL}"
 fi
 
 # ── Frontend build ───────────────────────────────────────────────────────────
