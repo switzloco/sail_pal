@@ -21,6 +21,10 @@ function Warn($msg)  { Write-Host "⚠ $msg" -ForegroundColor Yellow }
 function Fail($msg)  { Write-Host "✗ $msg" -ForegroundColor Red; exit 1 }
 
 $Model = "gemma4:e2b"
+# Unsloth-finetuned Gemma 4 on the WHO International Medical Guide for Ships
+# (Q4_K_M GGUF, served via Ollama's HuggingFace passthrough). Preferred default;
+# vanilla Gemma 4 above is always pulled as a fallback.
+$UnslothModel = "hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF"
 
 # ── Python ────────────────────────────────────────────────────────────────────
 Info "Checking Python..."
@@ -195,14 +199,50 @@ try {
   Fail "Ollama not running."
 }
 
-# ── Pull model ────────────────────────────────────────────────────────────────
+# ── Pull base model (guaranteed fallback) ────────────────────────────────────
 $tags = & ollama list 2>$null
 if ($tags -match [regex]::Escape($Model.Split(':')[0])) {
-  Info "Model $Model already pulled ✓"
+  Info "Base model $Model already pulled ✓"
 } else {
   Info "Pulling $Model (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   Info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   & ollama pull $Model
+}
+
+# ── Pull Unsloth-finetuned WHO medical GGUF (preferred default) ──────────────
+$UnslothOk = $false
+$tags = & ollama list 2>$null
+if ($tags -match [regex]::Escape($UnslothModel)) {
+  Info "Unsloth WHO medical model $UnslothModel already pulled ✓"
+  $UnslothOk = $true
+} else {
+  Info "Pulling Unsloth-finetuned Gemma 4 (WHO medical guide), ~2 GB..."
+  try {
+    & ollama pull $UnslothModel
+    if ($LASTEXITCODE -eq 0) {
+      $UnslothOk = $true
+      Info "Unsloth WHO medical model ready ✓"
+    } else {
+      Warn "Could not pull $UnslothModel — staying on vanilla Gemma 4."
+      Warn "  (Re-run this installer later to retry the fine-tuned model.)"
+    }
+  } catch {
+    Warn "Could not pull $UnslothModel — staying on vanilla Gemma 4."
+  }
+}
+
+# ── Select the Unsloth model as default when available ──────────────────────
+if ($UnslothOk) {
+  $EnvFile = Join-Path $RepoRoot ".env"
+  if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Null }
+  $lines = Get-Content $EnvFile -ErrorAction SilentlyContinue
+  if ($lines -match '^MODEL_PRIMARY=') {
+    $lines = $lines -replace '^MODEL_PRIMARY=.*$', "MODEL_PRIMARY=$UnslothModel"
+    Set-Content -Path $EnvFile -Value $lines
+  } else {
+    Add-Content -Path $EnvFile -Value "MODEL_PRIMARY=$UnslothModel"
+  }
+  Info "Default model set to $UnslothModel"
 }
 
 # ── Frontend build ───────────────────────────────────────────────────────────

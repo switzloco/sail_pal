@@ -14,7 +14,8 @@ laptop (the "Hub"):
 |------|----------------|-------|
 | **Vessel Ops AI** | [GitHub Releases](https://github.com/switzloco/sail_pal/releases/latest) | Download the `.exe` (Windows) or `.dmg` (macOS) installer |
 | **Ollama** | [ollama.com/download](https://ollama.com/download) | Installs per-user, no admin needed |
-| **Gemma 4 model weights** | `ollama pull gemma4:e2b` (~8 GB) | Run this once while you have internet |
+| **Vessel Ops Gemma 4 (WHO fine-tune)** | `ollama pull hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF` (~2 GB) | Default model — Unsloth fine-tune on the WHO IMGS |
+| **Vanilla Gemma 4 (fallback)** | `ollama pull gemma4:e2b` (~8 GB) | Pulled by the installer as a guaranteed fallback |
 
 ### Hardware Requirements
 

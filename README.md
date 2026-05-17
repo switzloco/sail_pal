@@ -25,7 +25,8 @@ Prize targets:
 
 ```
 Laptop (MacBook, Windows, Linux)
-  └── Ollama  →  gemma4:e2b or gemma4:e4b
+  └── Ollama  →  vessel-ops-ai/gemma4-maritime-medical-GGUF (Unsloth fine-tune, default)
+                  with gemma4:e2b / gemma4:e4b as fallbacks
   └── FastAPI backend  →  SQLite (WAL mode)
   └── Next.js frontend  →  http://localhost:3000
 
@@ -40,8 +41,9 @@ the browser — no installation required.
 
 | RAM | Recommended model | Notes |
 |-----|------------------|-------|
-| 8–16 GB | `gemma4:e2b` | Gemma 4 E2B — fits most MacBook Air / mid-range laptops |
-| 32 GB+ | `gemma4:e4b` | Gemma 4 E4B — noticeably better medical and engineering reasoning |
+| 8–16 GB | `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF` *(installer default)* | Our Unsloth-finetuned Gemma 4 on the WHO IMGS, Q4_K_M (~2 GB) |
+| 8–16 GB | `gemma4:e2b` *(fallback)* | Vanilla Gemma 4 E2B — pulled automatically as a guaranteed fallback |
+| 32 GB+ | `gemma4:e4b` | Vanilla Gemma 4 E4B — noticeably better general reasoning |
 
 ---
 
