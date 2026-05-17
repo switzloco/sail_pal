@@ -14,7 +14,7 @@ Most offline medical AI demos run in a notebook and simulate everything. This do
 
 | | Vessel Ops AI | Typical hackathon demo |
 |---|---|---|
-| **Knowledge base** | 938 chunks from the actual [WHO IMGS 3rd Ed. PDF](backend/data/manuals/WHO_IMGS_3rd_Edition.pdf) | Manually typed summaries |
+| **Knowledge base** | 938 chunks from the [actual WHO IMGS 3rd Ed. PDF](https://www.kaggle.com/datasets/nswitzer/who-international-medical-guide-for-ships-3rd-ed) — public Kaggle dataset | Manually typed summaries |
 | **Fine-tuned model** | Gemma 4 E2B fine-tuned on 900+ WHO IMGS Q&A pairs via Unsloth — real weights on HuggingFace | Config file saved to disk |
 | **Installer** | Single `.exe` / `.dmg`, no admin rights, no terminal | Gradio link that expires |
 | **Hardware tools** | Real Ollama local inference, real SQLite | `random.randint()` |
@@ -58,6 +58,7 @@ Cloud preview (judges / demo)
 The `vessel-ops:maritime` model is Gemma 4 E2B fine-tuned on ~900 WHO IMGS question-answer pairs generated from the actual 3rd Edition PDF using Unsloth QLoRA on a Kaggle T4 GPU.
 
 - **Notebook:** [`notebooks/unsloth_finetune.ipynb`](notebooks/unsloth_finetune.ipynb)
+- **Dataset:** [WHO International Medical Guide for Ships 3rd Ed.](https://www.kaggle.com/datasets/nswitzer/who-international-medical-guide-for-ships-3rd-ed) (Kaggle public dataset — the actual PDF, not typed summaries)
 - **Weights:** `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF`
 - **Eval:** Page citation accuracy on 50 held-out WHO IMGS questions
 
