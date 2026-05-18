@@ -127,7 +127,9 @@ voyages if you've entered crew, logs, or maintenance records.
   OPEN:            http://localhost:8000
   STOP:            Ctrl+C in the terminal window
 ───────────────────────────────────────────────────
-  AI MODEL: gemma4:e2b  (downloaded by installer)
+  AI MODELS: gemma4:e2b (general / engine / maintenance)
+             + Vessel Ops Gemma 4 WHO medical fine-tune (medical routes)
+             both downloaded by installer
   DATABASE: backend/data/vessel.db  (back this up!)
 ═══════════════════════════════════════════════════
 ```

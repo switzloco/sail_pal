@@ -27,6 +27,10 @@ PY_MIN_MAJOR=3
 PY_MIN_MINOR=11
 NODE_MIN=20
 MODEL="gemma4:e2b"
+# Unsloth-finetuned Gemma 4 on the WHO International Medical Guide for Ships
+# (Q4_K_M GGUF, served via Ollama's HuggingFace passthrough). This is the
+# preferred default; vanilla Gemma 4 above is always pulled as a fallback.
+UNSLOTH_MODEL="hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF"
 
 # ── curl ──────────────────────────────────────────────────────────────────────
 if ! command -v curl &>/dev/null; then
@@ -106,13 +110,50 @@ if ! curl -fsS http://localhost:11434/api/tags >/dev/null 2>&1; then
   fail "Ollama not running."
 fi
 
-# ── Pull model ────────────────────────────────────────────────────────────────
+# ── Pull base model (guaranteed fallback) ────────────────────────────────────
 if ollama list 2>/dev/null | grep -q "${MODEL%:*}"; then
-  info "Model ${MODEL} already pulled ✓"
+  info "Base model ${MODEL} already pulled ✓"
 else
   info "Pulling ${MODEL} (~8 GB, one-time download — this may take up to 1 hour depending on internet speed)..."
   info "If interrupted, just re-run this script — Ollama resumes from where it left off."
   ollama pull "${MODEL}"
+fi
+
+# ── Pull Unsloth-finetuned WHO medical GGUF (preferred default) ──────────────
+# Pulled from HuggingFace via Ollama. If this fails (offline, repo unavailable,
+# old Ollama without hf.co support), we keep vanilla Gemma as the default —
+# the app stays fully functional either way.
+if ollama list 2>/dev/null | grep -qF "${UNSLOTH_MODEL}"; then
+  info "Unsloth WHO medical model ${UNSLOTH_MODEL} already pulled ✓"
+  UNSLOTH_OK=true
+else
+  info "Pulling Unsloth-finetuned Gemma 4 (WHO medical guide), ~2 GB..."
+  if ollama pull "${UNSLOTH_MODEL}"; then
+    UNSLOTH_OK=true
+    info "Unsloth WHO medical model ready ✓"
+  else
+    UNSLOTH_OK=false
+    warn "Could not pull ${UNSLOTH_MODEL} — staying on vanilla Gemma 4."
+    warn "  (Re-run this installer later to retry the fine-tuned model.)"
+  fi
+fi
+
+# ── Pin the Unsloth model for medical routes when available ─────────────────
+# Only medical traffic (medical-query + chat turns that hit WHO RAG) uses the
+# fine-tune. Engine, maintenance, trivia, and MPIC study keep using vanilla
+# gemma4:e2b — the fine-tune is specialised for the WHO IMGS and would
+# regress on those domains.
+if [ "${UNSLOTH_OK:-false}" = "true" ]; then
+  ENV_FILE="$REPO_ROOT/.env"
+  touch "$ENV_FILE"
+  if grep -q "^MODEL_MEDICAL=" "$ENV_FILE" 2>/dev/null; then
+    tmp="$(mktemp)"
+    awk -v m="MODEL_MEDICAL=${UNSLOTH_MODEL}" '/^MODEL_MEDICAL=/{print m; next} {print}' "$ENV_FILE" > "$tmp"
+    mv "$tmp" "$ENV_FILE"
+  else
+    printf 'MODEL_MEDICAL=%s\n' "${UNSLOTH_MODEL}" >> "$ENV_FILE"
+  fi
+  info "Medical routes pinned to ${UNSLOTH_MODEL}; engine/maintenance/trivia keep ${MODEL}"
 fi
 
 # ── Frontend build ───────────────────────────────────────────────────────────

@@ -21,8 +21,9 @@ class OllamaRouter:
         user_prompt: str,
         severity: str = "minor",
         images: Optional[List[bytes]] = None,
+        model_override: Optional[str] = None,
     ) -> AsyncIterator[str]:
-        model = self._pick_model(severity)
+        model = model_override or self._pick_model(severity)
         client = ollama.AsyncClient(host=self.host)
 
         user_msg: dict = {"role": "user", "content": user_prompt}

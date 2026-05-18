@@ -29,7 +29,7 @@ Built an offline-first medical AI for ships — Gemma via Ollama, full WHO manua
 **Body:**
 Spent the last few months on Vessel Ops AI for the Gemma 4 Good Hackathon: an offline-first desktop app for vessels operating beyond shore-side medical and engineering support.
 
-The whole thing runs on a sailor's laptop. No internet at runtime. `gemma4:e2b` via Ollama by default, `gemma4:e4b` available for heavier hardware.
+The whole thing runs on a sailor's laptop. No internet at runtime. Two Gemma models via Ollama: vanilla `gemma4:e2b` for general/engine/maintenance chat, and an Unsloth-finetuned Gemma 4 Q4_K_M GGUF (trained on the WHO International Medical Guide for Ships) that kicks in automatically on medical queries. `gemma4:e4b` available for heavier hardware.
 
 There's also a hosted cloud preview if you want to try it without installing anything: https://vessel-ops-494701.web.app/
 
@@ -107,7 +107,7 @@ Sharing a project that fits the self-hosted ethos pretty hard. Built for the Gem
 
 **The pitch:** a single installer that gives you a local AI assistant for maritime medical and engineering ops. The "self-hosted" angle:
 
-- All inference is local via Ollama (`gemma4:e2b` default, larger models supported).
+- All inference is local via Ollama — `gemma4:e2b` for general routes, Unsloth WHO-medical fine-tune for medical queries, `gemma4:e4b` for heavier hardware.
 - No telemetry. No accounts. No phone-home. Uvicorn binds 127.0.0.1 only.
 - SQLite (WAL mode) for all data; lives in `%APPDATA%/VesselOpsAI/`. Easy to back up, easy to migrate.
 - RAG runs on SQLite FTS5 — no separate vector DB, no embedding service. The 938-chunk WHO medical reference ships in the installer.

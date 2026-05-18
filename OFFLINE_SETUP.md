@@ -14,21 +14,24 @@ laptop (the "Hub"):
 |------|----------------|-------|
 | **Vessel Ops AI** | [GitHub Releases](https://github.com/switzloco/sail_pal/releases/latest) | Download the `.exe` (Windows) or `.dmg` (macOS) installer |
 | **Ollama** | [ollama.com/download](https://ollama.com/download) | Installs per-user, no admin needed |
-| **Gemma 4 model weights** | `ollama pull gemma4:e2b` (~8 GB) | Run this once while you have internet |
+| **Vanilla Gemma 4 (primary)** | `ollama pull gemma4:e2b` (~8 GB) | Used for general chat, engine, maintenance, MPIC study, trivia |
+| **Vessel Ops Gemma 4 (WHO fine-tune)** | `ollama pull hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF` (~2 GB) | Used automatically for medical routes — Unsloth fine-tune on the WHO IMGS |
 
 ### Hardware Requirements
 
-| Laptop RAM | Model to pull | Expected response time |
-|-----------|--------------|----------------------|
-| 8–16 GB | `gemma4:e2b` | 5–15 seconds per response |
+| Laptop RAM | Model | Expected response time |
+|-----------|-------|----------------------|
+| 8–16 GB | `gemma4:e2b` (general) + WHO fine-tune (medical) | 5–15 seconds per response |
 | 32 GB+ | `gemma4:e4b` | 3–8 seconds, stronger reasoning |
 
-> **Verify the model is fully cached before departure:**
+> **Verify both models are cached before departure:**
 > ```
 > ollama list
 > ```
-> You should see `gemma4:e2b` (or `e4b`) in the output. If not, run
-> `ollama pull gemma4:e2b` again.
+> You should see `gemma4:e2b` **and** `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF`
+> in the output. If `gemma4:e2b` is missing, run `ollama pull gemma4:e2b` again.
+> If the medical model is missing, run:
+> `ollama pull hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF`
 
 ---
 
