@@ -40,7 +40,7 @@ MAX_CHUNK_CHARS = 1500
 
 def _chunk_id(text: str, page: int) -> str:
     # Stable id so re-runs are idempotent in FTS5 (delete-then-insert keys on it).
-    digest = hashlib.sha1(f"{page}:{text[:200]}".encode("utf-8")).hexdigest()[:12]
+    digest = hashlib.sha1(f"{page}:{text[:200]}".encode("utf-8"), usedforsecurity=False).hexdigest()[:12]
     return f"who-imgs-p{page}-{digest}"
 
 
