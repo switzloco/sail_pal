@@ -45,11 +45,14 @@ The RAG layer grounds Gemma's responses in the WHO IMGS at inference time, but a
 
 **What the fine-tune adds for the sailor:** The model internalises the WHO IMGS vocabulary, drug names, dosage patterns, and protocol structure. With RAG still enabled on top, the combination dramatically reduces hallucination on specific dosages and page-cited protocols compared to the base model. Without RAG, the fine-tuned model alone still outperforms the base on maritime medical Q&A — useful if the FTS5 index is unavailable or the query is too ambiguous for good retrieval. The resulting Q4_K_M GGUF is ~3× smaller than the fp16 base (~1.3 GB vs ~5 GB), which is what lets it co-resident with the OS + Vessel Ops app on the 8 GB laptops in our target hardware band.
 
+**Promising early eval results.** We wrote a 30-question bake-off ([`notebooks/eval_medical_finetune.ipynb`](notebooks/eval_medical_finetune.ipynb)) pitting `gemma4:e2b` against the Unsloth fine-tune on 20 held-out WHO IMGS medical questions and 10 general maritime questions, judged by Gemma 4 26B via Google AI Studio on accuracy, specificity, citation quality, and anti-hallucination. The fine-tune shows large gains on the medical set — typical scores in our first runs are around 8-10/10 vs 1-3/10 for the base, with the fine-tune also running noticeably faster (the Q4_K_M GGUF is 3.4 GB vs vanilla's 7.2 GB on disk, so it fits in cache better). The eval is not a polished benchmark — it's a single-judge LLM-as-judge setup on a small held-out set, the judge sometimes times out on long responses, and we don't currently shuffle response order to test for position bias. But the directional signal is strong and the script is fully reproducible.
+
 **Reproducibility — full reference links:**
 * Kaggle training notebook: <https://www.kaggle.com/code/nswitzer/vessel-ops-extra-credit>
 * HuggingFace model (GGUF, used by the installer): <https://huggingface.co/nswitzer/gemma4-maritime-medical-GGUF>
 * In-repo notebook: [`notebooks/unsloth_finetune.ipynb`](notebooks/unsloth_finetune.ipynb)
 * Dataset generator: [`backend/scripts/generate_training_data.py`](backend/scripts/generate_training_data.py)
+* Eval script: [`notebooks/eval_medical_finetune.ipynb`](notebooks/eval_medical_finetune.ipynb)
 * Unsloth: <https://unsloth.ai> · <https://github.com/unslothai/unsloth>
 
 The Kaggle notebook re-runs end-to-end on a free T4 session in under 3 hours.
