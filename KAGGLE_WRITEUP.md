@@ -7,6 +7,8 @@
 ## 1. The Problem: Isolation at Sea
 When a crew member is injured 200 miles offshore, there is no internet connection, no doctor, and no opportunity for a second opinion. Vessels operate in environments where bandwidth is either non-existent or prohibitively expensive — a satellite call to shore-side telemedicine (TMAS) is the last line of defense, not the first. In an emergency, the Medical Person In Charge (MPIC) relies on static textbooks, prior training, and intuition. The same isolation extends to the engine room, where the Chief Engineer must diagnose complex machinery faults without OEM support or a search engine.
 
+For a vivid look at the kind of voyages this app is built for — multi-week passages, equipment failures far from any port, the everyday self-reliance of deep-water cruising — see Dr. Michael's [sailing playlist on YouTube](https://www.youtube.com/playlist?list=PLAo18mQiH8HZomYH0nXURxcgQ5NnNvRB5). That world is the design brief.
+
 ## 2. The Solution: Vessel Ops AI
 Vessel Ops AI is an offline-first desktop application designed to serve as that critical second opinion. Powered entirely by Gemma running locally via Ollama on the ship's existing hardware, it requires zero cloud connectivity at sea. It provides AI-assisted medical triage grounded in the *WHO International Medical Guide for Ships* (3rd Edition) and aids engineering operations through intelligent component and maintenance analysis. A hosted preview running on Cloud Run + Firebase Hosting lets reviewers try the app without installing anything.
 
