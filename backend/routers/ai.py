@@ -79,6 +79,43 @@ def _has_medical_intent(text: str) -> bool:
     return any(kw in lowered for kw in _MEDICAL_INTENT_KEYWORDS)
 
 
+# Non-medical keywords that demote a chat turn from the medical fine-tune
+# back to vanilla Gemma. The app's default is medical-first (it is a maritime
+# medical assistant), but engineering, regulatory, navigation, and trivia
+# questions belong on the general model — the fine-tune was deliberately
+# scoped to WHO IMGS prose and would regress on these domains.
+_GENERAL_INTENT_KEYWORDS = {
+    # Engine room / machinery
+    "engine", "diesel", "turbo", "turbocharger", "alternator", "generator",
+    "compressor", "pump", "centrifugal", "bilge", "ballast", "valve",
+    "gasket", "bearing", "shaft", "propeller", "rudder", "winch", "windlass",
+    "hvac", "refrigeration", "freezer", "boiler", "evaporator", "fuel",
+    "lubricat", "oil pressure", "coolant",
+    # Maintenance / inspection
+    "maintenance", "overhaul", "service interval", "inspection",
+    "preventative", "preventive", "replace the", "rebuild",
+    # Regulations / compliance
+    "solas", "ism code", "marpol", "stcw", "colreg", "regulation",
+    "compliance", "flag state", "port state",
+    # Navigation / seamanship (non-medical sailing)
+    "navigation", "navigational", "gps", "ais", "radar", "chart plotter",
+    "ecdis", "course", "bearing", "heading", "knot", "rigging", "halyard",
+    "sheet", "anchor",
+    # Trivia / fun
+    "trivia", "quiz", "fun fact", "joke",
+    # Fire / safety equipment
+    "co2 extinguisher", "fire extinguisher", "lifeboat", "life raft",
+    "epirb", "sart",
+}
+
+
+def _has_general_intent(text: str) -> bool:
+    if not text:
+        return False
+    lowered = text.lower()
+    return any(kw in lowered for kw in _GENERAL_INTENT_KEYWORDS)
+
+
 def _model_label(model_override: Optional[str]) -> str:
     """Friendly badge text for the chat UI.
 
@@ -290,35 +327,37 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             system = ENGINE_SYSTEM
 
     has_rag = False
-    is_medical_turn = False
     rag_query_text = payload.messages[-1].content
 
-    # Always pull WHO medical context for any chat — sailors at sea may not
-    # have a crew member "selected" but still need grounded answers. The
-    # FTS5 query is ~5ms and BM25 ranks irrelevant chunks low, so the cost
-    # of an off-topic miss is negligible.
-    medical_rag = rag_engine.query("medical_protocols", rag_query_text, k=3)
-    if medical_rag:
-        has_rag = True
-        # Promote to MEDICAL_SYSTEM if no crew/component context already
-        # pushed us there — RAG matches mean the user is asking medical.
-        if not payload.crew_id and not payload.component_id:
-            system = MEDICAL_SYSTEM
-            is_medical_turn = True
-        if payload.crew_id and not payload.component_id:
-            is_medical_turn = True
-        context_lines.append("\nRelevant WHO IMGS Excerpts:")
-        for r in medical_rag:
-            source = r['metadata'].get('source', 'WHO IMGS')
-            page = r['metadata'].get('page', '?')
-            context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
+    # Routing default: this is a maritime medical assistant first, so chat
+    # turns route to the Vessel Ops Medical fine-tune unless we see a clear
+    # non-medical signal. This catches clinical typos ("anhednoia"), unusual
+    # phrasings, and questions where the BM25 retriever doesn't fire but the
+    # context is still medical.
+    is_medical_turn = not payload.component_id  # component context always means engine
 
-    # Keyword fallback: clinical terms the WHO IMGS doesn't index (e.g.
-    # "anhedonia") still belong on the medical fine-tune. Only triggers
-    # when we're not already in an engine/maintenance context.
-    if not is_medical_turn and not payload.component_id and _has_medical_intent(rag_query_text):
+    # Demote to general if the user is clearly asking about engineering,
+    # regulations, navigation, or trivia. The fine-tune would regress on
+    # those domains since it was scoped to WHO IMGS prose.
+    if is_medical_turn and _has_general_intent(rag_query_text):
+        is_medical_turn = False
+
+    # Apply the right system prompt now that routing is decided
+    if is_medical_turn and not payload.crew_id and not payload.component_id:
         system = MEDICAL_SYSTEM
-        is_medical_turn = True
+
+    # Pull medical RAG for any medical-routed turn — sailors at sea may not
+    # have a crew member "selected" but still need grounded answers. The
+    # FTS5 query is ~5ms and BM25 ranks irrelevant chunks low.
+    if is_medical_turn:
+        medical_rag = rag_engine.query("medical_protocols", rag_query_text, k=3)
+        if medical_rag:
+            has_rag = True
+            context_lines.append("\nRelevant WHO IMGS Excerpts:")
+            for r in medical_rag:
+                source = r['metadata'].get('source', 'WHO IMGS')
+                page = r['metadata'].get('page', '?')
+                context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
 
     if payload.component_id:
         engine_rag = rag_engine.query("engine_manuals", rag_query_text, k=2)
