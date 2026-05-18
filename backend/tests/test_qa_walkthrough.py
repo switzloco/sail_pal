@@ -28,16 +28,18 @@ class TestWalkthroughLogic:
     @patch("backend.routers.setup._is_ollama_installed", return_value=False)
     @patch("backend.routers.setup._check_ollama_running", new_callable=AsyncMock, return_value=False)
     @patch("backend.routers.setup._check_model_ready", new_callable=AsyncMock, return_value=False)
-    def test_setup_status_cloud_mode_returns_real_checks(self, mock_ready, mock_running, mock_installed, client):
-        # Even in cloud mode, status endpoint returns actual Ollama state (not bypassed)
+    def test_setup_status_cloud_mode_bypasses_ollama_checks(self, mock_ready, mock_running, mock_installed, client):
+        # In cloud mode the app uses Gemini, not Ollama, so the status endpoint
+        # short-circuits all Ollama checks and reports the app ready.
         client.post("/api/setup/mode", json={"mode": "cloud"})
 
         r = client.get("/api/setup/status")
         assert r.status_code == 200
         data = r.json()
         assert data["mode"] == "cloud"
-        assert data["ollama_installed"] is False
-        assert data["model_ready"] is False
+        assert data["ollama_installed"] is True
+        assert data["ollama_running"] is True
+        assert data["model_ready"] is True
 
         client.post("/api/setup/mode", json={"mode": "local"})
 
