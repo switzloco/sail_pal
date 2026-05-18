@@ -79,9 +79,14 @@ class TestAIResponseQuality:
         # We use a stream, so we need to iterate it
         with client.stream("POST", "/api/ai/medical-query", json=payload) as r:
             assert r.status_code == 200
-            # Read first chunk
-            line = next(r.iter_lines())
-            assert "token" in line
+            # Stream may emit a leading "model" badge event before tokens —
+            # consume events until we see at least one token.
+            saw_token = False
+            for line in r.iter_lines():
+                if "token" in line:
+                    saw_token = True
+                    break
+            assert saw_token, "expected at least one token event in stream"
             
         # Verify the prompt construction (internal check of call args)
         call_args = mock_llm.call_args

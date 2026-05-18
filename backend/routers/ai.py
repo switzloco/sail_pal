@@ -41,10 +41,55 @@ class ChatRequest(BaseModel):
     succinct: bool = True
 
 
-async def _tokens_to_sse(token_iter: AsyncIterator[str]):
+async def _tokens_to_sse(token_iter: AsyncIterator[str], model_label: Optional[str] = None):
+    if model_label:
+        yield f"data: {json.dumps({'model': model_label})}\n\n"
     async for token in token_iter:
         yield f"data: {json.dumps({'token': token})}\n\n"
     yield f"data: {json.dumps({'done': True})}\n\n"
+
+
+# Clinical / medical-intent keywords that should route chat to the medical
+# fine-tune even when the WHO IMGS BM25 retriever doesn't match. The IMGS
+# uses plain language ("loss of interest") so clinical terms like "anhedonia"
+# fall through unless we catch them here.
+_MEDICAL_INTENT_KEYWORDS = {
+    # Mental health
+    "anhedonia", "depression", "depressed", "suicidal", "suicide", "anxiety",
+    "psychosis", "psychotic", "panic", "mania", "bipolar", "ptsd",
+    # Common symptoms
+    "pain", "fever", "vomit", "vomiting", "nausea", "diarrhea", "diarrhoea",
+    "bleeding", "wound", "laceration", "fracture", "burn", "rash", "infection",
+    "headache", "dizzy", "dizziness", "unconscious", "seizure", "shock",
+    "chest pain", "shortness of breath", "swelling", "abscess", "toothache",
+    # Body systems / domains
+    "asthma", "diabetes", "hypothermia", "hyperthermia", "heatstroke",
+    "drowning", "poisoning", "overdose", "allergy", "allergic", "anaphylaxis",
+    # Care actions
+    "first aid", "cpr", "resuscitate", "triage", "medication", "antibiotic",
+    "dosage", "dose", "injection", "suture",
+}
+
+
+def _has_medical_intent(text: str) -> bool:
+    """Cheap keyword pass to catch medical queries the BM25 retriever misses."""
+    if not text:
+        return False
+    lowered = text.lower()
+    return any(kw in lowered for kw in _MEDICAL_INTENT_KEYWORDS)
+
+
+def _model_label(model_override: Optional[str]) -> str:
+    """Friendly badge text for the chat UI.
+
+    Returns "Vessel Ops Medical" when the medical fine-tune is selected and
+    is actually a distinct model from the primary; otherwise "Gemma · General".
+    """
+    if mode_state.is_cloud():
+        return "Gemini (Cloud)"
+    if model_override and model_override != settings.model_primary:
+        return "Vessel Ops Medical"
+    return "Gemma · General"
 
 
 async def _llm_tokens(
@@ -128,13 +173,17 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
     if payload.succinct:
         system += SUCCINCT_MODIFIER
 
+    medical_override = settings.effective_medical_model
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(
-            system,
-            user_prompt,
-            severity=payload.severity,
-            model_override=settings.effective_medical_model,
-        )),
+        _tokens_to_sse(
+            _llm_tokens(
+                system,
+                user_prompt,
+                severity=payload.severity,
+                model_override=medical_override,
+            ),
+            model_label=_model_label(medical_override),
+        ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -196,7 +245,10 @@ async def analyze_component(
         system += CITATION_INSTRUCTIONS
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(system, user_prompt, images=image_bytes, severity=severity)),
+        _tokens_to_sse(
+            _llm_tokens(system, user_prompt, images=image_bytes, severity=severity),
+            model_label=_model_label(None),
+        ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -261,6 +313,13 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             page = r['metadata'].get('page', '?')
             context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
 
+    # Keyword fallback: clinical terms the WHO IMGS doesn't index (e.g.
+    # "anhedonia") still belong on the medical fine-tune. Only triggers
+    # when we're not already in an engine/maintenance context.
+    if not is_medical_turn and not payload.component_id and _has_medical_intent(rag_query_text):
+        system = MEDICAL_SYSTEM
+        is_medical_turn = True
+
     if payload.component_id:
         engine_rag = rag_engine.query("engine_manuals", rag_query_text, k=2)
         if engine_rag:
@@ -290,9 +349,10 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     chat_model_override = settings.effective_medical_model if is_medical_turn else None
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(
-            system, transcript, model_override=chat_model_override,
-        )),
+        _tokens_to_sse(
+            _llm_tokens(system, transcript, model_override=chat_model_override),
+            model_label=_model_label(chat_model_override),
+        ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -314,7 +374,7 @@ async def trivia(payload: ChatRequest):
         transcript += "\n\nAssistant:"
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(system, transcript)),
+        _tokens_to_sse(_llm_tokens(system, transcript), model_label=_model_label(None)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -335,7 +395,7 @@ async def study(payload: ChatRequest):
         transcript += "\n\nAssistant:"
 
     return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(system, transcript)),
+        _tokens_to_sse(_llm_tokens(system, transcript), model_label=_model_label(None)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
