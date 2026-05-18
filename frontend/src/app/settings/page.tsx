@@ -3,19 +3,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
-import { 
-  Settings as SettingsIcon, 
-  Ship, 
-  Trash2, 
-  Cpu, 
-  Database, 
-  FileText, 
-  Save, 
+import {
+  Settings as SettingsIcon,
+  Ship,
+  Trash2,
+  Cpu,
+  Database,
+  FileText,
+  Save,
   RotateCcw,
   Cloud,
   HardDrive,
   ExternalLink,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  FlaskConical
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -42,6 +44,7 @@ export default function SettingsPage() {
   const [vesselName, setVesselName] = useState("");
   const [imo, setImo] = useState("");
   const [showGuide, setShowGuide] = useState(false);
+  const [showNerdInfo, setShowNerdInfo] = useState(false);
 
   const { data: status } = useQuery({ 
     queryKey: ["setup-status"], 
@@ -169,6 +172,130 @@ export default function SettingsPage() {
             status={status} 
           />
         )}
+
+        {/* Under the Hood */}
+        <section className="bg-white rounded-2xl border border-slate-200 shadow-sm md:col-span-2">
+          <button
+            onClick={() => setShowNerdInfo(v => !v)}
+            className="w-full flex items-center justify-between p-6 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <FlaskConical className="text-violet-500" size={20} />
+              <h2 className="font-bold text-slate-800">Under the Hood</h2>
+              <span className="text-[10px] font-bold bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full uppercase tracking-wide">for nerds</span>
+            </div>
+            <ChevronDown
+              size={18}
+              className={`text-slate-400 transition-transform duration-200 ${showNerdInfo ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {showNerdInfo && (
+            <div className="px-6 pb-6 space-y-6 border-t border-slate-100 pt-5">
+
+              {/* FAQ grid */}
+              <div className="grid md:grid-cols-2 gap-4">
+
+                <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Why Gemma 4?</p>
+                  <p className="text-sm text-slate-700">
+                    Gemma 4 2B hits the sweet spot for 8&ndash;16 GB laptops: fast enough to be useful in an
+                    emergency (&lt;15s responses), small enough to co-exist with the OS, and capable enough
+                    to follow complex clinical protocols. The 4B variant is available for 32 GB+ hardware.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Why a maritime-specific fine-tune?</p>
+                  <p className="text-sm text-slate-700">
+                    The base Gemma model has never seen the WHO <em>International Medical Guide for Ships</em>
+                    in depth. The fine-tune trains it on ~1,400 clinical Q&amp;A pairs drawn directly from the
+                    IMGS, so it internalises the drug names, dosage patterns, and protocol structure used by
+                    maritime medicine &mdash; reducing hallucination on specific dosages before RAG even kicks in.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Two models — why not one?</p>
+                  <p className="text-sm text-slate-700">
+                    The WHO fine-tune is laser-focused on medical prose. Asking it about engine diagnostics
+                    or SOLAS regulations would degrade its answers. So medical routes
+                    (injury triage, drug queries, WHO protocols) use the fine-tune; everything else &mdash;
+                    engine fault analysis, maintenance, MPIC study, trivia &mdash; stays on vanilla Gemma 4.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">What is RAG?</p>
+                  <p className="text-sm text-slate-700">
+                    Retrieval-Augmented Generation. Every medical query retrieves the top 3 most relevant
+                    passages from the 938-chunk WHO IMGS index (SQLite FTS5, BM25 ranking) and injects them
+                    into the prompt with page citations. The AI must answer from those passages and cite the
+                    page &mdash; dramatically cutting hallucination on dosages and protocols.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">What is GGUF / Q4_K_M?</p>
+                  <p className="text-sm text-slate-700">
+                    GGUF is the file format used by Ollama and llama.cpp for local inference. Q4_K_M means
+                    the model weights are quantised to ~4 bits using a K-quant scheme &mdash; roughly 3&times;
+                    smaller than the full 16-bit model (~1.3 GB vs ~5 GB) with minimal quality loss.
+                    That&apos;s what lets the medical fine-tune fit on the same laptop as the base model.
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 rounded-xl p-4 space-y-1">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">What is Unsloth?</p>
+                  <p className="text-sm text-slate-700">
+                    Unsloth is a fine-tuning library that makes training large language models 2&times; faster
+                    with ~70% less GPU memory than standard HuggingFace Trainer. That&apos;s what made it
+                    possible to fine-tune Gemma 4 on a free Kaggle T4 GPU in ~3 hours &mdash; the same class
+                    of hardware found on many modern vessels.
+                  </p>
+                </div>
+
+              </div>
+
+              {/* Stack summary */}
+              <div className="bg-slate-900 rounded-xl p-4 text-xs font-mono space-y-1 text-slate-300">
+                <p className="text-slate-500 mb-2"># model routing</p>
+                <p><span className="text-violet-400">medical routes</span>  →  <span className="text-green-400">hf.co/nswitzer/gemma4-maritime-medical-GGUF</span>  <span className="text-slate-500">(Unsloth WHO fine-tune, Q4_K_M)</span></p>
+                <p><span className="text-violet-400">everything else</span>  →  <span className="text-green-400">gemma4:e2b</span>  <span className="text-slate-500">(vanilla Gemma 4, general purpose)</span></p>
+                <p className="text-slate-500 mt-2"># retrieval</p>
+                <p><span className="text-blue-400">RAG</span>  →  <span className="text-slate-300">SQLite FTS5 · BM25 · 938 WHO IMGS chunks · top-3 per query</span></p>
+                <p className="text-slate-500 mt-2"># inference</p>
+                <p><span className="text-yellow-400">runtime</span>  →  <span className="text-slate-300">Ollama · llama.cpp · 100% local · no internet required</span></p>
+              </div>
+
+              {/* Links */}
+              <div className="flex flex-wrap gap-3 text-xs">
+                <a
+                  href="https://huggingface.co/nswitzer/gemma4-maritime-medical-GGUF"
+                  target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1 text-violet-600 font-bold hover:underline"
+                >
+                  <ExternalLink size={11} /> Fine-tune on HuggingFace
+                </a>
+                <a
+                  href="https://www.kaggle.com/code/nswitzer/vessel-ops-extra-credit"
+                  target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1 text-violet-600 font-bold hover:underline"
+                >
+                  <ExternalLink size={11} /> Training notebook (Kaggle)
+                </a>
+                <a
+                  href="https://github.com/switzloco/sail_pal"
+                  target="_blank" rel="noreferrer"
+                  className="flex items-center gap-1 text-violet-600 font-bold hover:underline"
+                >
+                  <ExternalLink size={11} /> Source on GitHub
+                </a>
+              </div>
+
+            </div>
+          )}
+        </section>
 
         {/* Knowledge Base Card */}
         <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
