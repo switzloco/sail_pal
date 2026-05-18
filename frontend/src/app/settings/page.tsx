@@ -294,19 +294,33 @@ export default function SettingsPage() {
               </div>
 
               {/* Inspiration */}
-              <div className="bg-gradient-to-r from-ocean-50 to-violet-50 rounded-xl p-4 text-xs text-slate-700 leading-relaxed">
-                <p className="font-bold text-slate-800 mb-1">Built for real voyages.</p>
+              <div className="bg-gradient-to-r from-ocean-50 to-violet-50 rounded-xl p-4 text-xs text-slate-700 leading-relaxed space-y-2">
+                <p className="font-bold text-slate-800">Built by the people who sail it.</p>
                 <p>
-                  Inspired by sailors like Dr. Michael, whose{" "}
+                  <span className="font-semibold text-slate-800">Capt. Chris Oprzadek</span>{" "}
+                  brought the brief: eight years as a Navy Nuclear Submarine Officer, two Atlantic
+                  crossings, and now heading offshore with{" "}
+                  <a
+                    href="https://www.seamester.com/"
+                    target="_blank" rel="noreferrer"
+                    className="text-ocean-600 font-bold hover:underline inline-flex items-center gap-1"
+                  >
+                    Seamester <ExternalLink size={10} />
+                  </a>{" "}
+                  to teach long-passage sailing.
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-800">Dr. Michael Switzer</span>{" "}
+                  is our medical advisor &mdash; a physician who refits and maintains his own boat
+                  out of Port Townsend, WA. His{" "}
                   <a
                     href="https://www.youtube.com/playlist?list=PLAo18mQiH8HZomYH0nXURxcgQ5NnNvRB5"
                     target="_blank" rel="noreferrer"
                     className="text-ocean-600 font-bold hover:underline inline-flex items-center gap-1"
                   >
-                    deep-water sailing series <ExternalLink size={10} />
+                    YouTube channel <ExternalLink size={10} />
                   </a>{" "}
-                  captures exactly the kind of long passages, equipment failures, and quiet
-                  self-reliance this app was designed to support.
+                  captures the practitioner-meets-boat-owner reality this app is built around.
                 </p>
               </div>
 
