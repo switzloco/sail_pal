@@ -30,7 +30,7 @@ MODEL="gemma4:e2b"
 # Unsloth-finetuned Gemma 4 on the WHO International Medical Guide for Ships
 # (Q4_K_M GGUF, served via Ollama's HuggingFace passthrough). This is the
 # preferred default; vanilla Gemma 4 above is always pulled as a fallback.
-UNSLOTH_MODEL="hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF"
+UNSLOTH_MODEL="hf.co/nswitzer/gemma4-maritime-medical-GGUF"
 
 # ── curl ──────────────────────────────────────────────────────────────────────
 if ! command -v curl &>/dev/null; then
