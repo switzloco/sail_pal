@@ -36,6 +36,7 @@ There's also a hosted cloud preview if you want to try it without installing any
 A few things I think this sub will appreciate:
 
 - **RAG via SQLite FTS5, not embeddings.** Started with ChromaDB + sentence-transformers; the embedding model alone added ~1 GB to the installer. Replaced the whole RAG layer with SQLite FTS5 (built into stock Python) using BM25 ranking and a porter stemmer. 938 chunks of the WHO International Medical Guide for Ships ship as a 1.3 MB JSON that bootstraps into FTS5 on first launch. Bundle dropped ~99% with no measurable retrieval-quality loss — medical vocabulary is consistent enough that lexical search beats dense retrieval here.
+- **Eval shows the fine-tune is doing real work.** Ran a 30-question bake-off against vanilla `gemma4:e2b` on held-out WHO IMGS medical questions + general maritime regression check; Gemma-26B-as-judge scored the fine-tune around `<MED_FT>/10` vs `<MED_BASE>/10` on the medical set with no general-domain regression. Single-judge, small N, but the directional signal is large. Eval notebook in the repo for anyone who wants to reproduce or critique.
 - **Tauri 2 + PyInstaller in one installer.** Single 75 MB NSIS `.exe`, installs to `%LOCALAPPDATA%` per-user (no admin). Backend is uvicorn bound to `127.0.0.1` so Windows Firewall never prompts.
 - **Citations every time.** Every medical chat hits the FTS5 index regardless of which screen you're on, and Gemma is prompted to cite `[WHO IMGS, p. XX]` inline.
 - **Bundled the PDF too.** 2.2 MB for the full WHO manual so the crew can browse the source, not just the AI excerpts.
@@ -64,6 +65,7 @@ Everything runs locally on the ship's laptop via Ollama. The hackathon angle is 
 A few engineering choices that might be interesting:
 
 - **SQLite FTS5 for RAG.** We started with ChromaDB + sentence-transformers, then realized the embedding model added a gigabyte to the installer. Switched to FTS5 with BM25 — built into stock Python, no new deps, and on the WHO medical corpus the lexical search is competitive with dense retrieval. 938 chunks ship as 1.3 MB.
+- **Unsloth fine-tune for the medical route only.** Two Gemmas in one installer: vanilla for engine/maintenance/trivia, an Unsloth-trained Q4_K_M GGUF on the WHO IMGS for medical. Same env-var flag flips between them. A 30-question internal eval (LLM-as-judge, single judge — caveats apply) put the fine-tune at roughly `<MED_FT>/10` vs `<MED_BASE>/10` for the base on held-out medical Qs.
 - **Tauri 2 + PyInstaller sidecar in a single NSIS installer.** Per-user install, no admin required, no network at install time. Backend is uvicorn bound to loopback so Windows Firewall never prompts.
 - **Bundled the WHO PDF (2.2 MB).** The RAG queries chunks, but crew can also open the full source document from the sidebar. Offline-first means everything is local.
 
@@ -80,7 +82,7 @@ This is currently v0.1.0-rc7, Windows-only unsigned. Mac is in flight. Feedback 
 Built an offline AI medical assistant for crews at sea — would love feedback from sailors
 
 **Body:**
-I'm a son of a Captain and we built Vessel Ops AI — an offline-first app for crews operating without internet. Runs entirely on your laptop, no Wi-Fi or sat link needed once it's installed.
+I'm a software engineer; the project came from my friend Chris — Navy submariner, two Atlantic crossings, headed out with Seamester next. We built Vessel Ops AI — an offline-first app for crews operating without internet. Runs entirely on your laptop, no Wi-Fi or sat link needed once it's installed.
 
 The core idea: a vessel's MPIC shouldn't have to flip through a 400-page reference book in an emergency. The app is grounded in the WHO International Medical Guide for Ships (3rd Edition) — every answer cites a specific page in the WHO manual, and the full PDF is bundled so you can open it on the spot. It also helps the Chief Engineer with component troubleshooting and maintenance logs.
 
