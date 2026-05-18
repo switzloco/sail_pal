@@ -82,7 +82,7 @@ This is currently v0.1.0-rc7, Windows-only unsigned. Mac is in flight. Feedback 
 Built an offline AI medical assistant for crews at sea — would love feedback from sailors
 
 **Body:**
-I'm a son of a Captain and we built Vessel Ops AI — an offline-first app for crews operating without internet. Runs entirely on your laptop, no Wi-Fi or sat link needed once it's installed.
+I'm a software engineer; the project came from my friend Chris — Navy submariner, two Atlantic crossings, headed out with Seamester next. We built Vessel Ops AI — an offline-first app for crews operating without internet. Runs entirely on your laptop, no Wi-Fi or sat link needed once it's installed.
 
 The core idea: a vessel's MPIC shouldn't have to flip through a 400-page reference book in an emergency. The app is grounded in the WHO International Medical Guide for Ships (3rd Edition) — every answer cites a specific page in the WHO manual, and the full PDF is bundled so you can open it on the spot. It also helps the Chief Engineer with component troubleshooting and maintenance logs.
 
