@@ -20,7 +20,7 @@ The `server_is_local` flag (`not settings.cloud_mode`) controls which UI paths a
 
 - **Backend:** FastAPI · SQLite (WAL) · SQLAlchemy · Alembic · httpx · uvicorn
 - **Frontend:** Next.js 14 (App Router) · TypeScript · Tailwind CSS
-- **AI:** Ollama for local mode — `gemma4:e2b` for general/engine/maintenance/trivia, `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF` (Unsloth WHO fine-tune, `MODEL_MEDICAL` env) for medical routes · Google Gemini via API for cloud mode
+- **AI:** Ollama for local mode — `gemma4:e2b` for general/engine/maintenance/trivia, `hf.co/nswitzer/gemma4-maritime-medical-GGUF` (Unsloth WHO fine-tune, `MODEL_MEDICAL` env) for medical routes · Google Gemini via API for cloud mode
 - **Infra:** Cloud Run (backend) · Firebase Hosting (frontend) · GCP Cloud Build · Container Registry
 
 ---
@@ -80,7 +80,7 @@ The installer copies `DESKTOP_QUICKSTART.md` to the user's Desktop. Keep that fi
 ## Common Gotchas
 
 - **ESLint kills the build**: Next.js runs ESLint during `npm run build`. Unused imports, unescaped `"` in JSX (`&ldquo;`/`&rdquo;`), and `<img>` instead of `<Image />` are all hard errors.
-- **Ollama model names**: UI should say "Gemma 4". Technical identifiers (`gemma4:e2b`, `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF`) belong only in scripts and backend config. The split-routing pattern is: `model_primary` for general routes, `effective_medical_model` (→ `model_medical` or `model_primary`) for medical routes.
+- **Ollama model names**: UI should say "Gemma 4". Technical identifiers (`gemma4:e2b`, `hf.co/nswitzer/gemma4-maritime-medical-GGUF`) belong only in scripts and backend config. The split-routing pattern is: `model_primary` for general routes, `effective_medical_model` (→ `model_medical` or `model_primary`) for medical routes.
 - **Mac Ollama detection**: Use `ollama --version` not `which ollama` — macOS can have a stub in PATH that doesn't actually work.
 - **MS Store Python**: `Get-Command python` on Windows may return a Store stub. Check if the path contains `WindowsApps` and fail with a clear message.
 - **`/welcome/setup` vs `/setup`**: The setup page lives at `/welcome/setup`. Any link to `/setup` is a 404.

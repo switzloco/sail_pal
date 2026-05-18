@@ -24,7 +24,7 @@ $Model = "gemma4:e2b"
 # Unsloth-finetuned Gemma 4 on the WHO International Medical Guide for Ships
 # (Q4_K_M GGUF, served via Ollama's HuggingFace passthrough). Preferred default;
 # vanilla Gemma 4 above is always pulled as a fallback.
-$UnslothModel = "hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF"
+$UnslothModel = "hf.co/nswitzer/gemma4-maritime-medical-GGUF"
 
 # ── Python ────────────────────────────────────────────────────────────────────
 Info "Checking Python..."
