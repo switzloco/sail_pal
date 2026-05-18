@@ -288,7 +288,7 @@ export default function ChatPage() {
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
                         m.model.includes("Medical")
                           ? "bg-violet-100 text-violet-700"
-                          : m.model.includes("Cloud")
+                          : m.model === "Gemma · Cloud"
                             ? "bg-sky-100 text-sky-700"
                             : "bg-slate-100 text-slate-500"
                       }`}
