@@ -12,6 +12,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") +
 interface Message {
   role: "user" | "assistant";
   content: string;
+  model?: string;
 }
 
 const QUICK_PROMPTS = [
@@ -136,12 +137,22 @@ export default function ChatPage() {
           const json = line.slice(5).trim();
           try {
             const parsed = JSON.parse(json);
+            if (parsed.model) {
+              setMessages((prev) => {
+                const copy = [...prev];
+                const last = copy[copy.length - 1];
+                copy[copy.length - 1] = { ...last, model: parsed.model };
+                return copy;
+              });
+            }
             if (parsed.token) {
               setMessages((prev) => {
                 const copy = [...prev];
+                const last = copy[copy.length - 1];
                 copy[copy.length - 1] = {
+                  ...last,
                   role: "assistant",
-                  content: copy[copy.length - 1].content + parsed.token,
+                  content: last.content + parsed.token,
                 };
                 return copy;
               });
@@ -268,9 +279,25 @@ export default function ChatPage() {
                 {m.role === "user" ? <User size={16} /> : <Bot size={16} />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-slate-500 mb-1">
-                  {m.role === "user" ? "You" : "Gemma"}
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs font-semibold text-slate-500">
+                    {m.role === "user" ? "You" : "Gemma"}
+                  </p>
+                  {m.role === "assistant" && m.model && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                        m.model.includes("Medical")
+                          ? "bg-violet-100 text-violet-700"
+                          : m.model.includes("Cloud")
+                            ? "bg-sky-100 text-sky-700"
+                            : "bg-slate-100 text-slate-500"
+                      }`}
+                      title={`Response served by ${m.model}`}
+                    >
+                      {m.model}
+                    </span>
+                  )}
+                </div>
                 <div className="text-sm text-slate-800 markdown-content">
                   <ReactMarkdown>
                     {m.content}
