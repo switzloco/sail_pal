@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     model_scale: str = "gemma4:e4b"
     # Unsloth-finetuned Gemma 4 for medical routes. Empty string means "same
     # as model_primary" so the app works out-of-the-box with no .env entry.
-    # The installer writes MODEL_MEDICAL=hf.co/vessel-ops-ai/... when the
+    # The installer writes MODEL_MEDICAL=hf.co/nswitzer/gemma4-maritime-medical-GGUF when the
     # Unsloth GGUF pull succeeds.
     model_medical: str = ""
     cors_origins: List[str] = ["*"]
