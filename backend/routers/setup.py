@@ -3,7 +3,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
-from typing import AsyncIterator
+from typing import AsyncIterator, Optional
 
 import httpx
 from fastapi import APIRouter, HTTPException, Depends
@@ -27,6 +27,9 @@ class SetupStatus(BaseModel):
     ollama_running: bool
     model_ready: bool
     model_name: str
+    # Medical fine-tune — optional bonus; None means MODEL_MEDICAL not configured
+    medical_model_ready: Optional[bool] = None
+    medical_model_name: Optional[str] = None
     install_url: str = "https://ollama.com/download"
     mode: str = "local"  # "local" | "cloud"
     data_dir: str = ""
@@ -102,11 +105,17 @@ async def setup_status():
     running = await _check_ollama_running() if installed else False
     model_ready = await _check_model_ready(settings.model_primary) if running else False
 
+    # Check medical fine-tune only when MODEL_MEDICAL is explicitly configured
+    med_name = settings.model_medical or None
+    med_ready = await _check_model_ready(med_name) if (running and med_name) else None
+
     return SetupStatus(
         ollama_installed=installed,
         ollama_running=running,
         model_ready=model_ready,
         model_name=settings.model_primary,
+        medical_model_ready=med_ready,
+        medical_model_name=med_name,
         mode=current_mode,
         data_dir=settings.data_dir,
         server_is_local=not settings.cloud_mode,  # False on Cloud Run (CLOUD_MODE=true)

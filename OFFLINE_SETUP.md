@@ -19,17 +19,19 @@ laptop (the "Hub"):
 
 ### Hardware Requirements
 
-| Laptop RAM | Model to pull | Expected response time |
-|-----------|--------------|----------------------|
-| 8–16 GB | `gemma4:e2b` | 5–15 seconds per response |
+| Laptop RAM | Model | Expected response time |
+|-----------|-------|----------------------|
+| 8–16 GB | `gemma4:e2b` (general) + WHO fine-tune (medical) | 5–15 seconds per response |
 | 32 GB+ | `gemma4:e4b` | 3–8 seconds, stronger reasoning |
 
-> **Verify the model is fully cached before departure:**
+> **Verify both models are cached before departure:**
 > ```
 > ollama list
 > ```
-> You should see `gemma4:e2b` (or `e4b`) in the output. If not, run
-> `ollama pull gemma4:e2b` again.
+> You should see `gemma4:e2b` **and** `hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF`
+> in the output. If `gemma4:e2b` is missing, run `ollama pull gemma4:e2b` again.
+> If the medical model is missing, run:
+> `ollama pull hf.co/vessel-ops-ai/gemma4-maritime-medical-GGUF`
 
 ---
 
