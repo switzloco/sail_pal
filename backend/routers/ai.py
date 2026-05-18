@@ -86,7 +86,7 @@ def _model_label(model_override: Optional[str]) -> str:
     is actually a distinct model from the primary; otherwise "Gemma · General".
     """
     if mode_state.is_cloud():
-        return "Gemini (Cloud)"
+        return "Gemma · Cloud"
     if model_override and model_override != settings.model_primary:
         return "Vessel Ops Medical"
     return "Gemma · General"
