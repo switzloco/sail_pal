@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
-import { Send, Sparkles, User, Bot, Mic, MicOff } from "lucide-react";
+import { Send, Sparkles, User, Bot, Mic, MicOff, Trash2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
@@ -81,6 +81,12 @@ export default function ChatPage() {
       recognitionRef.current?.start();
       setIsListening(true);
     }
+  };
+
+  const clearHistory = () => {
+    if (messages.length === 0) return;
+    if (!window.confirm("Clear chat history? This can't be undone.")) return;
+    setMessages([]);
   };
 
   const crew = useQuery({ queryKey: ["crew"], queryFn: () => apiFetch<CrewMember[]>("/crew") });
@@ -240,14 +246,24 @@ export default function ChatPage() {
           </span>
         )}
         <label className="flex items-center gap-2 ml-auto cursor-pointer" title="Enable more detailed, conversational responses">
-          <input 
-            type="checkbox" 
-            checked={verbose} 
+          <input
+            type="checkbox"
+            checked={verbose}
             onChange={(e) => setVerbose(e.target.checked)}
             className="w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500"
           />
           <span className="text-xs font-semibold text-slate-600">Verbose Mode</span>
         </label>
+        <button
+          type="button"
+          onClick={clearHistory}
+          disabled={messages.length === 0 || streaming}
+          className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-red-600 disabled:text-slate-300 disabled:cursor-not-allowed transition-colors"
+          title="Clear chat history"
+        >
+          <Trash2 size={14} />
+          Clear
+        </button>
       </div>
 
       {/* Messages */}
