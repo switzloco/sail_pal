@@ -1,0 +1,13 @@
+# Fleet Mechanic — dockside-only dependencies.
+#
+# These are NOT installed on the offline vessel / edge build. They are only
+# needed by the cloud agent that ingests traces into Arize and runs the Gemini
+# eval. Install with:  pip install -r backend/requirements-fleet.txt
+#
+# Trace capture and the eval orchestration degrade gracefully without them
+# (arize_client.is_available() returns False), so the backend imports fine on
+# the boat with just backend/requirements.txt.
+arize-otel>=0.7
+openinference-semantic-conventions>=0.1
+opentelemetry-sdk>=1.27
+opentelemetry-exporter-otlp>=1.27

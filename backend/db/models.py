@@ -135,6 +135,94 @@ class MaintenanceLog(Base):
     logged_by_crew = relationship("CrewMember", foreign_keys=[logged_by], back_populates="logged_maintenance")
 
 
+class AITrace(Base):
+    """A single offline AI inference, captured for dockside evaluation.
+
+    Every medical/engine inference the vessel makes while offline is recorded
+    here in an OpenInference-shaped row: the exact prompt the model received,
+    the retrieval context it was grounded on, and the diagnostic it produced.
+    When the vessel reaches the marina, the Fleet Mechanic agent replays these
+    into Arize, runs a hallucination eval, and writes the verdict back onto the
+    same row (eval_label / eval_score / eval_explanation).
+    """
+    __tablename__ = "ai_traces"
+    __table_args__ = (
+        CheckConstraint(
+            "eval_label IN ('correct','hallucinated','unsupported','unsafe','unevaluated')",
+            name="ck_trace_eval_label",
+        ),
+    )
+    # NOTE: vessel_id is intentionally not a ForeignKey — see field comment below.
+
+    trace_id = Column(String, primary_key=True, default=_uuid)
+    # OpenInference span identity — stable across re-ingestion into Arize.
+    span_id = Column(String, default=_uuid)
+    # vessel_id / crew_id are plain identifiers, NOT foreign keys: traces are
+    # portable observability records uploaded from a boat the cloud may not have
+    # a relational row for. Keeping them FK-free lets ingest accept any vessel.
+    vessel_id = Column(String, nullable=True)
+    crew_id = Column(String, nullable=True)        # patient, when medical
+    # Which endpoint produced this: medical_query | chat | analyze_component
+    route = Column(String, nullable=False)
+    # general | medical | engine — drives which eval rubric is applied
+    model_role = Column(String, nullable=False, default="general")
+    model_name = Column(String, nullable=False)    # gemma4:e2b, hf.co/..., etc.
+
+    system_prompt = Column(Text)
+    user_prompt = Column(Text)                     # the fully-assembled prompt
+    input_data = Column(Text)                      # JSON: symptoms, vitals, issue
+    rag_sources = Column(Text)                      # JSON array of grounding chunks
+    output_text = Column(Text)                     # the model's diagnostic
+    severity = Column(String)
+
+    latency_ms = Column(String)                    # stringified int, kept simple
+    token_count = Column(String)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    ended_at = Column(DateTime)
+
+    # Sync / evaluation lifecycle
+    synced = Column(Boolean, default=False)        # uploaded off the boat
+    uploaded_to_arize = Column(Boolean, default=False)
+    eval_label = Column(String, default="unevaluated")
+    eval_score = Column(String)                    # 0.0-1.0 groundedness, as str
+    eval_explanation = Column(Text)
+    evaluated_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    patches = relationship("PromptPatch", back_populates="trace")
+
+
+class PromptPatch(Base):
+    """A system-instruction fix drafted by the Fleet Mechanic for a bad trace.
+
+    When the eval flags a hallucination or unsafe inference, the Gemini agent
+    drafts a patch to the offending route's system prompt and queues it. On the
+    vessel's next dock visit it pulls any 'queued' patches and applies them
+    before departing — closing the offline→eval→correct loop.
+    """
+    __tablename__ = "prompt_patches"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('drafted','queued','pushed','rejected')",
+            name="ck_patch_status",
+        ),
+    )
+
+    patch_id = Column(String, primary_key=True, default=_uuid)
+    trace_id = Column(String, ForeignKey("ai_traces.trace_id"), nullable=False)
+    target_route = Column(String, nullable=False)  # which route's prompt to patch
+    target_model_role = Column(String, nullable=False)
+    failure_summary = Column(Text)                 # what the eval caught
+    proposed_patch = Column(Text, nullable=False)  # appended to the system prompt
+    rationale = Column(Text)
+    status = Column(String, nullable=False, default="drafted")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    queued_at = Column(DateTime)
+    pushed_at = Column(DateTime)
+
+    trace = relationship("AITrace", back_populates="patches")
+
+
 class SyncQueue(Base):
     __tablename__ = "sync_queue"
     __table_args__ = (

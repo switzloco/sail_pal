@@ -91,6 +91,41 @@ class Settings(BaseSettings):
                 pass
         return v
 
+    # ── Fleet Mechanic / Arize observability ──────────────────────────────────
+    # The "Fleet Mechanic" is the cloud-side agent that ingests offline medical
+    # inference traces into Arize, runs an LLM-as-judge hallucination eval, and
+    # drafts prompt patches to push back to the vessel before it leaves the dock.
+    #
+    # Traces are ALWAYS captured locally (offline, into SQLite). Arize upload and
+    # Gemini evaluation only run dockside, when these credentials are present.
+    arize_space_id: str = ""
+    arize_api_key: str = ""
+    arize_project_name: str = "vessel-ops-medical"
+    # Model the Fleet Mechanic uses as the LLM judge / patch author (cloud only).
+    fleet_mechanic_model: str = "gemini-2.0-flash"
+
+    @field_validator("arize_space_id", "arize_api_key", mode="before")
+    @classmethod
+    def load_arize_secret(cls, v, info):
+        if v:
+            return v
+        # Cloud Run volume mount fallback, mirroring GOOGLE_API_KEY handling.
+        secret_path = f"/secrets/{info.field_name.upper()}"
+        if os.path.exists(secret_path):
+            try:
+                with open(secret_path, "r") as f:
+                    val = f.read().strip()
+                    if val:
+                        return val
+            except Exception:
+                pass
+        return v
+
+    @property
+    def arize_enabled(self) -> bool:
+        """True when both Arize credentials are present (dockside / cloud)."""
+        return bool(self.arize_space_id and self.arize_api_key)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):

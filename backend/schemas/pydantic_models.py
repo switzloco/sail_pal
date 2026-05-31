@@ -286,3 +286,75 @@ class ComponentAnalysisRequest(BaseModel):
     component_id: str
     issue_description: str
     severity: str
+
+
+# ── Fleet Mechanic: traces & patches ──────────────────────────────────────────
+
+class AITraceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
+
+    trace_id: str
+    span_id: Optional[str] = None
+    vessel_id: Optional[str] = None
+    crew_id: Optional[str] = None
+    route: str
+    model_role: str
+    model_name: str
+    severity: Optional[str] = None
+    output_text: Optional[str] = None
+    latency_ms: Optional[str] = None
+    synced: bool = False
+    uploaded_to_arize: bool = False
+    eval_label: Optional[str] = None
+    eval_score: Optional[str] = None
+    eval_explanation: Optional[str] = None
+    evaluated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+
+class AITraceIngest(BaseModel):
+    """One trace uploaded from a vessel at the dock (OpenInference-derived)."""
+    model_config = ConfigDict(protected_namespaces=())
+
+    trace_id: Optional[str] = None
+    span_id: Optional[str] = None
+    vessel_id: Optional[str] = None
+    crew_id: Optional[str] = None
+    route: str
+    model_role: str = "general"
+    model_name: str
+    system_prompt: Optional[str] = None
+    user_prompt: Optional[str] = None
+    input_data: Optional[Dict[str, Any]] = None
+    rag_sources: Optional[List[Dict[str, Any]]] = None
+    output_text: Optional[str] = None
+    severity: Optional[str] = None
+    latency_ms: Optional[str] = None
+
+
+class TraceUploadBatch(BaseModel):
+    traces: List[AITraceIngest]
+
+
+class PromptPatchRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True, protected_namespaces=())
+
+    patch_id: str
+    trace_id: str
+    target_route: str
+    target_model_role: str
+    failure_summary: Optional[str] = None
+    proposed_patch: str
+    rationale: Optional[str] = None
+    status: str
+    created_at: Optional[datetime] = None
+    queued_at: Optional[datetime] = None
+    pushed_at: Optional[datetime] = None
+
+
+class FleetMechanicRunResult(BaseModel):
+    evaluated: int
+    labels: Dict[str, int]
+    patches_queued: int
+    uploaded_to_arize: int
+    patch_ids: List[str]

@@ -15,6 +15,7 @@ from backend.ai.prompt_templates import (
 )
 from backend.ai.rag_engine import RAGEngine
 from backend.ai.image_parser import parse_component_image
+from backend.ai.trace import traced_llm_tokens
 
 _rag_engine = None
 
@@ -129,6 +130,17 @@ def _model_label(model_override: Optional[str]) -> str:
     return "Gemma · General"
 
 
+def _effective_model_name(model_override: Optional[str]) -> str:
+    """The concrete model identifier that will actually serve this turn.
+
+    Used for trace capture so the dockside eval knows whether a bad answer came
+    from the cloud sim, the WHO fine-tune, or vanilla Gemma.
+    """
+    if mode_state.is_cloud():
+        return settings.cloud_model
+    return model_override or settings.model_primary
+
+
 async def _llm_tokens(
     system: str,
     user_prompt: str,
@@ -213,11 +225,23 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
     medical_override = settings.effective_medical_model
     return StreamingResponse(
         _tokens_to_sse(
-            _llm_tokens(
-                system,
-                user_prompt,
+            traced_llm_tokens(
+                _llm_tokens(
+                    system,
+                    user_prompt,
+                    severity=payload.severity,
+                    model_override=medical_override,
+                ),
+                route="medical_query",
+                model_role="medical",
+                model_name=_effective_model_name(medical_override),
+                system_prompt=system,
+                user_prompt=user_prompt,
+                input_data={"symptoms": payload.symptoms, "vitals": payload.vitals},
+                rag_sources=rag_results or [],
                 severity=payload.severity,
-                model_override=medical_override,
+                crew_id=payload.crew_id,
+                vessel_id=crew.vessel_id,
             ),
             model_label=_model_label(medical_override),
         ),
@@ -283,7 +307,24 @@ async def analyze_component(
 
     return StreamingResponse(
         _tokens_to_sse(
-            _llm_tokens(system, user_prompt, images=image_bytes, severity=severity),
+            traced_llm_tokens(
+                _llm_tokens(system, user_prompt, images=image_bytes, severity=severity),
+                route="analyze_component",
+                model_role="engine",
+                model_name=_effective_model_name(None),
+                system_prompt=system,
+                user_prompt=user_prompt,
+                input_data={
+                    "component_id": component_id,
+                    "component_name": component.name,
+                    "system": component.system,
+                    "issue_description": issue_description,
+                    "image_analysis": image_analysis,
+                },
+                rag_sources=rag_results or [],
+                severity=severity,
+                vessel_id=component.vessel_id,
+            ),
             model_label=_model_label(None),
         ),
         media_type="text/event-stream",
@@ -327,6 +368,7 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             system = ENGINE_SYSTEM
 
     has_rag = False
+    trace_rag_sources: list = []
     rag_query_text = payload.messages[-1].content
 
     # Routing default: this is a maritime medical assistant first, so chat
@@ -353,6 +395,7 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         medical_rag = rag_engine.query("medical_protocols", rag_query_text, k=3)
         if medical_rag:
             has_rag = True
+            trace_rag_sources.extend(medical_rag)
             context_lines.append("\nRelevant WHO IMGS Excerpts:")
             for r in medical_rag:
                 source = r['metadata'].get('source', 'WHO IMGS')
@@ -363,6 +406,7 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         engine_rag = rag_engine.query("engine_manuals", rag_query_text, k=2)
         if engine_rag:
             has_rag = True
+            trace_rag_sources.extend(engine_rag)
             context_lines.append("\nRelevant Manual Excerpts:")
             for r in engine_rag:
                 source = r['metadata'].get('source', 'Unknown Manual')
@@ -386,10 +430,21 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     transcript += "\n\nAssistant:"
 
     chat_model_override = settings.effective_medical_model if is_medical_turn else None
+    chat_model_role = "medical" if is_medical_turn else ("engine" if payload.component_id else "general")
 
     return StreamingResponse(
         _tokens_to_sse(
-            _llm_tokens(system, transcript, model_override=chat_model_override),
+            traced_llm_tokens(
+                _llm_tokens(system, transcript, model_override=chat_model_override),
+                route="chat",
+                model_role=chat_model_role,
+                model_name=_effective_model_name(chat_model_override),
+                system_prompt=system,
+                user_prompt=transcript,
+                input_data={"latest_message": rag_query_text},
+                rag_sources=trace_rag_sources,
+                crew_id=payload.crew_id,
+            ),
             model_label=_model_label(chat_model_override),
         ),
         media_type="text/event-stream",

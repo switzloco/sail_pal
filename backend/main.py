@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.db.database import Base, engine
-from backend.routers import crew, health, vessel, maintenance, ai, sync, setup, uploads
+from backend.routers import crew, health, vessel, maintenance, ai, sync, setup, uploads, traces
 from backend.logger import logger
 import time
 from fastapi import Request
@@ -68,6 +68,7 @@ app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
 app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 app.include_router(setup.router, prefix="/api/setup", tags=["setup"])
 app.include_router(uploads.router, prefix="/api/uploads", tags=["uploads"])
+app.include_router(traces.router, prefix="/api/traces", tags=["fleet-mechanic"])
 
 
 # Serve the embedded Next.js static export when present (Docker / local dev).

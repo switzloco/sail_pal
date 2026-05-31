@@ -32,6 +32,17 @@ The `server_is_local` flag (`not settings.cloud_mode`) controls which UI paths a
 3. **`frontend_out/`** is the pre-built Next.js static export used by the desktop companion. The hosted web version is built separately in Cloud Build and deployed to Firebase.
 4. **mode_state is in-memory** on Cloud Run — it resets on cold start. This is a known limitation. Don't persist mode in the DB without careful thought.
 5. **Service worker** (`frontend/public/sw.js`) must skip cross-origin requests: `if (url.origin !== self.location.origin) return;` — without this it crashes on Cloud Run API calls.
+6. **Fleet Mechanic is cloud-only**: Trace *capture* (`backend/ai/trace.py`) runs everywhere, offline, with zero new deps — never break this. The Arize upload + Gemini eval (`backend/eval/`) only run dockside when `ARIZE_*` / `GOOGLE_API_KEY` are set; the optional SDK lives in `backend/requirements-fleet.txt` and must stay out of the edge build. Trace capture failures are swallowed by design — observability must never break a medical answer at sea.
+
+---
+
+## Fleet Mechanic (offline trace eval)
+
+Catches medical hallucinations in the offline model before the vessel sails again. Full architecture in `FLEET_MECHANIC.md`. The loop: every offline inference is captured as an `ai_traces` row → on dock sync the `run_fleet_mechanic` agent replays them into Arize, runs a Gemini LLM-as-judge eval (`correct`/`unsupported`/`hallucinated`/`unsafe`), and queues a `prompt_patches` row for any failure → the vessel pulls queued patches via `GET /api/traces/patches/pending` before departure.
+
+- **Demo:** `python scripts/fleet_mechanic_demo.py --simulate` (self-contained, no keys needed).
+- **Fail closed:** off-rubric judge responses default to `unsupported` so a human reviews — never silently trust a trace.
+- **Portable traces:** `ai_traces.vessel_id`/`crew_id` are plain strings (not FKs) so the cloud can ingest a boat it has no relational row for.
 
 ---
 
