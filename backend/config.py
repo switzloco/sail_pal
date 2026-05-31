@@ -69,11 +69,18 @@ class Settings(BaseSettings):
     # ── Cloud simulation mode ─────────────────────────────────────────────────
     # When True, all LLM calls go to Google AI Studio instead of local Ollama.
     cloud_mode: bool = False
-    
+
     # Turn this on to enable verbose debug logging to backend/data/logs/vessel_debug.log
     debug_mode: bool = True
     google_api_key: str = ""
     cloud_model: str = "gemma-4-26b-a4b-it"
+
+    # ── Fleet Mechanic / Arize Phoenix ───────────────────────────────────────────
+    # Self-hosted or Arize cloud Phoenix instance. The Fleet Mechanic agent uses
+    # this for trace ingestion and eval recording. Gracefully skipped if unreachable.
+    phoenix_host: str = "http://localhost:6006"
+    arize_api_key: str = ""
+    fleet_mechanic_model: str = "gemini-2.0-flash"
 
     @field_validator("google_api_key", mode="before")
     @classmethod

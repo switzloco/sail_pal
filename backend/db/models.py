@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, DateTime, Date,
-    ForeignKey, String, Text
+    Float, ForeignKey, String, Text
 )
 from sqlalchemy.orm import relationship
 from backend.db.database import Base
@@ -133,6 +133,69 @@ class MaintenanceLog(Base):
     vessel = relationship("Vessel", back_populates="maintenance_logs")
     component = relationship("Component", back_populates="maintenance_logs")
     logged_by_crew = relationship("CrewMember", foreign_keys=[logged_by], back_populates="logged_maintenance")
+
+
+class EngineTrace(Base):
+    """Offline Gemma inference trace recorded on the vessel's edge device."""
+    __tablename__ = "engine_traces"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    vessel_id = Column(String, nullable=False)
+    component_name = Column(String, nullable=False)
+    sensor_data_json = Column(Text, nullable=False)
+    model_prompt = Column(Text, nullable=False)
+    model_response = Column(Text, nullable=False)
+    reasoning_steps_json = Column(Text, default="[]")
+    diagnosis = Column(Text, nullable=False)
+    model_name = Column(String, default="gemma4:e2b")
+    recorded_at = Column(DateTime, nullable=False)
+    upload_status = Column(String, default="pending")
+    phoenix_trace_id = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    evaluations = relationship("FleetEvaluation", back_populates="trace", cascade="all, delete-orphan")
+    patches = relationship("PromptPatch", back_populates="trace", cascade="all, delete-orphan")
+
+
+class FleetEvaluation(Base):
+    """Gemini evaluation result for an offline engine trace."""
+    __tablename__ = "fleet_evaluations"
+
+    id = Column(String, primary_key=True, default=_uuid)
+    trace_id = Column(String, ForeignKey("engine_traces.id"), nullable=False)
+    evaluation_type = Column(String, nullable=False)
+    score = Column(Float, nullable=False)
+    label = Column(String, nullable=False)
+    explanation = Column(Text, default="")
+    evaluator = Column(String, default="gemini-fleet-mechanic")
+    flagged = Column(Boolean, default=False)
+    evaluated_at = Column(DateTime, default=datetime.utcnow)
+
+    trace = relationship("EngineTrace", back_populates="evaluations")
+
+
+class PromptPatch(Base):
+    """Prompt patch drafted by the Fleet Mechanic agent to fix a bad inference."""
+    __tablename__ = "prompt_patches"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending','approved','deployed','rejected')",
+            name="ck_patch_status",
+        ),
+    )
+
+    id = Column(String, primary_key=True, default=_uuid)
+    trace_id = Column(String, ForeignKey("engine_traces.id"), nullable=False)
+    evaluation_id = Column(String, ForeignKey("fleet_evaluations.id"), nullable=True)
+    patch_type = Column(String, nullable=False)
+    original_prompt_section = Column(Text, default="")
+    patched_prompt_section = Column(Text, nullable=False)
+    rationale = Column(Text, default="")
+    agent_reasoning = Column(Text, default="")
+    status = Column(String, default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    trace = relationship("EngineTrace", back_populates="patches")
 
 
 class SyncQueue(Base):

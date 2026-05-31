@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen, Share2 } from "lucide-react";
+import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen, Share2, Bot } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, getApiBase } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
@@ -102,6 +102,29 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
             {[
               { href: "/study", label: "MPIC Study", icon: GraduationCap },
               { href: "/trivia", label: "Trivia", icon: Gamepad2 },
+            ].map(({ href, label, icon: Icon }) => {
+              const active = path.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-indigo-600/50 text-white"
+                      : "text-ocean-100 hover:bg-ocean-800 hover:text-white"
+                  }`}
+                >
+                  <Icon size={18} className={active ? "text-indigo-300" : ""} />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div>
+            <p className="px-5 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Fleet Intelligence</p>
+            {[
+              { href: "/fleet-mechanic", label: "Fleet Mechanic", icon: Bot },
             ].map(({ href, label, icon: Icon }) => {
               const active = path.startsWith(href);
               return (
