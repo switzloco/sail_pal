@@ -30,6 +30,15 @@ if _MANUALS_DIR.is_dir():
 # Create tables on startup (Alembic handles migrations in production)
 Base.metadata.create_all(bind=engine)
 
+
+@app.on_event("startup")
+async def _init_observability():
+    """Wire up Arize/Phoenix tracing for the medical triage agent (no-op if
+    disabled or the observability extras aren't installed)."""
+    from backend.ai import tracing
+
+    tracing.init_tracing()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,

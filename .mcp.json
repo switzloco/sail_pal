@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "arize-phoenix": {
+      "command": "npx",
+      "args": ["-y", "@arizeai/phoenix-mcp@latest"],
+      "env": {
+        "PHOENIX_BASE_URL": "http://localhost:6006"
+      }
+    }
+  }
+}

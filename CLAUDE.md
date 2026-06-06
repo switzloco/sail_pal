@@ -20,7 +20,8 @@ The `server_is_local` flag (`not settings.cloud_mode`) controls which UI paths a
 
 - **Backend:** FastAPI · SQLite (WAL) · SQLAlchemy · Alembic · httpx · uvicorn
 - **Frontend:** Next.js 14 (App Router) · TypeScript · Tailwind CSS
-- **AI:** Ollama for local mode — `gemma4:e2b` for general/engine/maintenance/trivia, `hf.co/nswitzer/gemma4-maritime-medical-GGUF` (Unsloth WHO fine-tune, `MODEL_MEDICAL` env) for medical routes · Google Gemini via API for cloud mode
+- **AI:** Ollama for local mode — `gemma4:e2b` for general/engine/maintenance, `hf.co/nswitzer/gemma4-maritime-medical-GGUF` (Unsloth WHO fine-tune, `MODEL_MEDICAL` env) for medical routes · Google Gemini via API for cloud mode
+- **Observability:** Arize AX / Phoenix via OpenInference for the medical triage agent (optional extras, no-op when absent — see `ARIZE_INTEGRATION.md`)
 - **Infra:** Cloud Run (backend) · Firebase Hosting (frontend) · GCP Cloud Build · Container Registry
 
 ---
@@ -32,6 +33,8 @@ The `server_is_local` flag (`not settings.cloud_mode`) controls which UI paths a
 3. **`frontend_out/`** is the pre-built Next.js static export used by the desktop companion. The hosted web version is built separately in Cloud Build and deployed to Firebase.
 4. **mode_state is in-memory** on Cloud Run — it resets on cold start. This is a known limitation. Don't persist mode in the DB without careful thought.
 5. **Service worker** (`frontend/public/sw.js`) must skip cross-origin requests: `if (url.origin !== self.location.origin) return;` — without this it crashes on Cloud Run API calls.
+6. **Medical triage agent is the agentic surface**: `POST /api/ai/medical-agent` (`backend/ai/agent.py`) plans → tools (patient lookup, WHO RAG retrieval, assessment, **Arize groundedness eval guardrail**, health-event logging), streaming a structured SSE event per step. All LLM calls route through `backend/ai/llm.py`. Keep `/api/ai/medical-query` (single completion) for back-compat.
+7. **Tracing is optional and must stay no-op-safe**: `backend/ai/tracing.py` and `backend/ai/evals.py` guard every Arize/Phoenix/OpenInference import. The lean offline desktop bundle does NOT ship the observability extras (`backend/requirements-observability.txt`); the hosted image does. Never make a code path hard-depend on tracing being initialised.
 
 ---
 
@@ -57,7 +60,7 @@ Runs on every push to `main`. Steps:
 ```bash
 # Backend (from repo root)
 python -m pytest backend/tests/ -q
-# Must pass: 113 tests, ≥60% coverage
+# Must pass: 130 tests, ≥60% coverage
 ```
 
 Frontend has no automated tests — verify manually after UI changes.

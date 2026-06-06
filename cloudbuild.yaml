@@ -42,8 +42,12 @@ steps:
       - --min-instances=0
       - --max-instances=5
       # Map the GOOGLE_API_KEY secret to an environment variable.
-      - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data
+      # ARIZE_PROJECT_NAME is harmless to set always; to ship traces to Arize AX
+      # add ARIZE_API_KEY + ARIZE_SPACE_ID secrets and uncomment the line below
+      # (otherwise tracing falls back to a Phoenix collector — see ARIZE_INTEGRATION.md).
+      - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data,ARIZE_PROJECT_NAME=vessel-ops-medical
       - --set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest
+      # - --set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest,ARIZE_API_KEY=ARIZE_API_KEY:latest,ARIZE_SPACE_ID=ARIZE_SPACE_ID:latest
 
   # Capture the live Cloud Run URL so the frontend bakes in the exact right base.
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk

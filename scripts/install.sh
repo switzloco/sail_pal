@@ -140,7 +140,7 @@ fi
 
 # ── Pin the Unsloth model for medical routes when available ─────────────────
 # Only medical traffic (medical-query + chat turns that hit WHO RAG) uses the
-# fine-tune. Engine, maintenance, trivia, and MPIC study keep using vanilla
+# fine-tune. Engine, maintenance, and MPIC study keep using vanilla
 # gemma4:e2b — the fine-tune is specialised for the WHO IMGS and would
 # regress on those domains.
 if [ "${UNSLOTH_OK:-false}" = "true" ]; then
@@ -153,7 +153,7 @@ if [ "${UNSLOTH_OK:-false}" = "true" ]; then
   else
     printf 'MODEL_MEDICAL=%s\n' "${UNSLOTH_MODEL}" >> "$ENV_FILE"
   fi
-  info "Medical routes pinned to ${UNSLOTH_MODEL}; engine/maintenance/trivia keep ${MODEL}"
+  info "Medical routes pinned to ${UNSLOTH_MODEL}; engine/maintenance keep ${MODEL}"
 fi
 
 # ── Frontend build ───────────────────────────────────────────────────────────

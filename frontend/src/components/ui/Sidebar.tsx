@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen, Share2 } from "lucide-react";
+import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, GraduationCap, BookOpen, Share2, Stethoscope } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, getApiBase } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
@@ -76,6 +76,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
               { href: "/", label: "Dashboard", icon: Anchor },
               { href: "/chat", label: "Ask Gemma", icon: Sparkles },
               { href: "/crew", label: "Crew", icon: Users },
+              { href: "/triage", label: "Triage Agent", icon: Stethoscope },
               { href: "/health", label: "Health Log", icon: HeartPulse },
               { href: "/vessel", label: "Components", icon: Wrench },
             ].map(({ href, label, icon: Icon }) => {
@@ -98,10 +99,9 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           </div>
 
           <div>
-            <p className="px-5 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Training & Morale</p>
+            <p className="px-5 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Training</p>
             {[
               { href: "/study", label: "MPIC Study", icon: GraduationCap },
-              { href: "/trivia", label: "Trivia", icon: Gamepad2 },
             ].map(({ href, label, icon: Icon }) => {
               const active = path.startsWith(href);
               return (

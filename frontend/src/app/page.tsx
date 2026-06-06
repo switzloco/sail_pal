@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import type { Vessel, CrewMember, Component, HealthEvent, MaintenanceLog } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles, Gamepad2, GraduationCap } from "lucide-react";
+import { Users, Wrench, HeartPulse, AlertTriangle, Sparkles, Stethoscope, GraduationCap } from "lucide-react";
 
 function StatCard({
   label,
@@ -161,22 +161,22 @@ export default function Dashboard() {
         </Link>
 
         <Link
-          href="/trivia"
-          className="p-6 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden group"
+          href="/triage"
+          className="p-6 bg-gradient-to-br from-rose-600 to-rose-800 rounded-2xl text-white hover:shadow-xl transition-all hover:-translate-y-1 relative overflow-hidden group"
         >
           <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:scale-110 transition-transform">
-            <Gamepad2 size={80} />
+            <Stethoscope size={80} />
           </div>
-          
+
           <div className="relative z-10 h-full flex flex-col justify-between">
             <div>
               <div className="bg-white/20 p-2 rounded-lg backdrop-blur-md w-fit mb-4">
-                <Gamepad2 size={24} />
+                <Stethoscope size={24} />
               </div>
-              <h2 className="text-xl font-bold">Trivia</h2>
-              <p className="text-xs text-amber-50 mt-1">Break Time</p>
+              <h2 className="text-xl font-bold">Triage Agent</h2>
+              <p className="text-xs text-rose-50 mt-1">Multi-step · Arize-traced</p>
             </div>
-            <p className="text-xs font-bold uppercase tracking-widest mt-4">Play &rarr;</p>
+            <p className="text-xs font-bold uppercase tracking-widest mt-4">Run Triage &rarr;</p>
           </div>
         </Link>
       </div>

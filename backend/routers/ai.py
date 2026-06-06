@@ -11,10 +11,11 @@ from backend.config import settings
 from backend.db.database import get_db
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
-    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, TRIVIA_SYSTEM, MPIC_STUDY_SYSTEM, DISCLAIMER, SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS
+    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, MPIC_STUDY_SYSTEM, DISCLAIMER, SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS
 )
 from backend.ai.rag_engine import RAGEngine
 from backend.ai.image_parser import parse_component_image
+from backend.ai.llm import llm_tokens as _llm_tokens, llm_complete as _llm_full_response
 
 _rag_engine = None
 
@@ -129,54 +130,6 @@ def _model_label(model_override: Optional[str]) -> str:
     return "Gemma · General"
 
 
-async def _llm_tokens(
-    system: str,
-    user_prompt: str,
-    images: Optional[list[bytes]] = None,
-    severity: str = "minor",
-    model_override: Optional[str] = None,
-) -> AsyncIterator[str]:
-    """Route to cloud (Google) or local (Ollama) depending on runtime mode.
-
-    `model_override` lets medical routes pin to the Unsloth WHO fine-tune
-    without affecting engine/maintenance/trivia traffic.
-    """
-    if mode_state.is_cloud():
-        from backend.ai.google_client import GoogleSimulationClient
-        client = GoogleSimulationClient(
-            api_key=settings.google_api_key,
-            model=settings.cloud_model,
-        )
-        async for token in client.chat_stream(system, user_prompt, images=images):
-            yield token
-    else:
-        from backend.ai.ollama_client import OllamaRouter
-        router = OllamaRouter(
-            host=settings.ollama_host,
-            model_primary=settings.model_primary,
-            model_scale=settings.model_scale,
-        )
-        async for token in router.chat_stream(
-            system,
-            user_prompt,
-            severity=severity,
-            images=images,
-            model_override=model_override,
-        ):
-            yield token
-
-
-async def _llm_full_response(
-    system: str,
-    user_prompt: str,
-) -> str:
-    """Get the full response from the LLM (non-streaming)."""
-    full_text = ""
-    async for token in _llm_tokens(system, user_prompt):
-        full_text += token
-    return full_text
-
-
 @router.post("/medical-query")
 async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_db)):
     """Stream an AI medical guidance response (cloud or local)."""
@@ -221,6 +174,54 @@ async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_
             ),
             model_label=_model_label(medical_override),
         ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+class MedicalAgentRequest(BaseModel):
+    crew_id: str
+    symptoms: List[str]
+    vitals: Optional[dict] = None
+    severity: str = "moderate"
+    logged_by: Optional[str] = None
+    succinct: bool = True
+    auto_log: bool = True
+
+
+@router.post("/medical-agent")
+async def medical_agent(payload: MedicalAgentRequest, db: Session = Depends(get_db)):
+    """Run the multi-step medical triage agent and stream its progress.
+
+    Unlike /medical-query (a single grounded completion), this plans and
+    executes tools — patient lookup, WHO protocol retrieval, assessment, an
+    Arize groundedness guardrail, and health-record logging — emitting a
+    structured SSE event per step. The full reasoning trace is sent to Arize.
+    """
+    from backend.db.models import CrewMember
+    from backend.ai.agent import MedicalTriageAgent
+
+    crew = db.query(CrewMember).filter(CrewMember.crew_id == payload.crew_id).first()
+    if not crew:
+        raise HTTPException(status_code=404, detail="Crew member not found")
+
+    agent = MedicalTriageAgent(db)
+
+    async def event_stream():
+        yield f"data: {json.dumps({'model': _model_label(settings.effective_medical_model)})}\n\n"
+        async for event in agent.run(
+            crew_id=payload.crew_id,
+            symptoms=payload.symptoms,
+            severity=payload.severity,
+            vitals=payload.vitals,
+            logged_by=payload.logged_by,
+            succinct=payload.succinct,
+            auto_log=payload.auto_log,
+        ):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -392,28 +393,6 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
             _llm_tokens(system, transcript, model_override=chat_model_override),
             model_label=_model_label(chat_model_override),
         ),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
-@router.post("/trivia")
-async def trivia(payload: ChatRequest):
-    """Trivia game stream with Captain Sparky."""
-    system = TRIVIA_SYSTEM
-    
-    # If no messages, start with a welcome
-    if not payload.messages:
-        transcript = "User: Let's play trivia!\n\nAssistant:"
-    else:
-        transcript = "\n\n".join(
-            f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}"
-            for m in payload.messages
-        )
-        transcript += "\n\nAssistant:"
-
-    return StreamingResponse(
-        _tokens_to_sse(_llm_tokens(system, transcript), model_label=_model_label(None)),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

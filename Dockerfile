@@ -13,9 +13,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install deps first so this layer is cached across code changes
+# Install deps first so this layer is cached across code changes.
+# The hosted image includes the Arize observability extras; the lean offline
+# desktop bundle omits them (tracing degrades to a no-op — see ai/tracing.py).
 COPY backend/requirements.txt ./backend/requirements.txt
-RUN pip install --no-cache-dir -r backend/requirements.txt
+COPY backend/requirements-observability.txt ./backend/requirements-observability.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt \
+    && pip install --no-cache-dir -r backend/requirements-observability.txt
 
 # Copy source (alembic.ini lives at repo root)
 COPY alembic.ini .

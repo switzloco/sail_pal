@@ -91,6 +91,17 @@ class Settings(BaseSettings):
                 pass
         return v
 
+    # ── Observability (Arize AX / Phoenix) ───────────────────────────────────
+    # Tracing for the medical triage agent. When ARIZE_API_KEY + ARIZE_SPACE_ID
+    # are set, traces go to Arize AX (cloud); otherwise they fall back to a
+    # Phoenix collector (PHOENIX_COLLECTOR_ENDPOINT, default local localhost:6006).
+    # All observability deps are optional — if absent, tracing is a no-op.
+    arize_tracing_enabled: bool = True
+    arize_api_key: str = ""
+    arize_space_id: str = ""
+    arize_project_name: str = "vessel-ops-medical"
+    phoenix_collector_endpoint: str = ""
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):

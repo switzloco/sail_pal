@@ -233,7 +233,7 @@ if ($tags -match [regex]::Escape($UnslothModel)) {
 
 # ── Pin the Unsloth model for medical routes when available ─────────────────
 # Only medical traffic (medical-query + chat turns that hit WHO RAG) uses the
-# fine-tune. Engine, maintenance, trivia, and MPIC study keep using vanilla
+# fine-tune. Engine, maintenance, and MPIC study keep using vanilla
 # gemma4:e2b — the fine-tune is specialised for the WHO IMGS and would
 # regress on those domains.
 if ($UnslothOk) {
@@ -246,7 +246,7 @@ if ($UnslothOk) {
   } else {
     Add-Content -Path $EnvFile -Value "MODEL_MEDICAL=$UnslothModel"
   }
-  Info "Medical routes pinned to $UnslothModel; engine/maintenance/trivia keep $Model"
+  Info "Medical routes pinned to $UnslothModel; engine/maintenance keep $Model"
 }
 
 # ── Frontend build ───────────────────────────────────────────────────────────

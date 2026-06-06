@@ -13,6 +13,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 os.environ["DATABASE_URL"] = "sqlite:///./test_vessel.db"
 os.environ["CLOUD_MODE"] = "false"
 os.environ["GOOGLE_API_KEY"] = "test-key-not-real"
+# Keep the test suite hermetic: never try to ship traces to Arize/Phoenix.
+os.environ["ARIZE_TRACING_ENABLED"] = "false"
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event, text

@@ -221,7 +221,7 @@ export default function SettingsPage() {
                     The WHO fine-tune is laser-focused on medical prose. Asking it about engine diagnostics
                     or SOLAS regulations would degrade its answers. So medical routes
                     (injury triage, drug queries, WHO protocols) use the fine-tune; everything else &mdash;
-                    engine fault analysis, maintenance, MPIC study, trivia &mdash; stays on vanilla Gemma 4.
+                    engine fault analysis, maintenance, MPIC study &mdash; stays on vanilla Gemma 4.
                   </p>
                 </div>
 

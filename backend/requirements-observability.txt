@@ -1,0 +1,13 @@
+# Optional observability extras for the medical triage agent (Arize track).
+#
+# Installed in the hosted/Cloud Run image and CI, but intentionally NOT part of
+# the lean offline desktop bundle — a laptop at sea has nothing to phone home
+# to. All imports in backend/ai/tracing.py are guarded, so the app runs fine
+# whether or not these are present.
+#
+# Arize AX (cloud SaaS): set ARIZE_API_KEY + ARIZE_SPACE_ID.
+# Phoenix (self-hosted / local default): runs without keys.
+arize-otel>=0.7
+arize-phoenix-otel>=0.6
+openinference-instrumentation>=0.1.18
+openinference-instrumentation-google-genai>=0.1
