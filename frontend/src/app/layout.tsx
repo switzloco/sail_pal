@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/ui/Sidebar";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { CloudBanner } from "@/components/ui/CloudBanner";
 import { SetupGate } from "@/components/setup/SetupGate";
+import { AuthGate } from "@/components/auth/AuthGate";
 import { isTauri } from "@/lib/platform";
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <QueryProvider>
           <ToastProvider>
+            <AuthGate>
             <SetupGate>
             {isWelcomePage ? (
               <main className="min-h-screen bg-slate-50">{children}</main>
@@ -83,6 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </>
             )}
             </SetupGate>
+            </AuthGate>
           </ToastProvider>
         </QueryProvider>
       </body>

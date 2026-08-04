@@ -91,6 +91,36 @@ class Settings(BaseSettings):
                 pass
         return v
 
+    # ── Firestore + Firebase Auth (hosted deployment) ─────────────────────────
+    # The hosted backend runs on Cloud Run with a container-local /tmp, so
+    # SQLite there is wiped on every cold start. Anything a user records from a
+    # phone has to land in Firestore instead.
+    firebase_project_id: str = ""
+
+    # Storage follows the deployment, not the runtime AI-mode toggle. Defaults
+    # to on wherever CLOUD_MODE is set; override to test Firestore locally.
+    use_firestore: bool = False
+
+    # Require a verified Firebase ID token on data routes. Defaults to on
+    # wherever Firestore is on — real crew medical records must not be readable
+    # by anyone who finds the URL. Local/desktop mode stays open: that database
+    # is already scoped to whoever can open the laptop.
+    require_auth: bool = False
+
+    @field_validator("use_firestore", mode="before")
+    @classmethod
+    def default_use_firestore(cls, v):
+        if v is not None and v != "":
+            return v
+        return os.getenv("CLOUD_MODE", "").lower() in ("1", "true", "yes")
+
+    @field_validator("require_auth", mode="before")
+    @classmethod
+    def default_require_auth(cls, v):
+        if v is not None and v != "":
+            return v
+        return os.getenv("CLOUD_MODE", "").lower() in ("1", "true", "yes")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):

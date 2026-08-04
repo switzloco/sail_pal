@@ -3,12 +3,12 @@ import json
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Body
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from typing import AsyncIterator, List, Optional
 
 from backend.ai import mode_state
+from backend.auth import VesselAccess, active_vessel
 from backend.config import settings
-from backend.db.database import get_db
+from backend.store import VesselStore, get_store
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
     MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, TRIVIA_SYSTEM, MPIC_STUDY_SYSTEM, DISCLAIMER,
@@ -157,34 +157,30 @@ def _spare_parts_list(raw) -> list[str]:
     return [str(p) for p in parsed] if isinstance(parsed, list) else []
 
 
-def _inventory_context(db: Session, limit: int = _INVENTORY_PROMPT_LIMIT) -> list[str]:
+def _inventory_context(
+    store: VesselStore,
+    vessel_id: str,
+    limit: int = _INVENTORY_PROMPT_LIMIT,
+) -> list[str]:
     """Compact, authoritative summary of what the vessel actually has aboard.
 
     Inlined into every chat turn so the assistant can answer "do we have a
     spare impeller?" without a tool call, and so repair guidance is written
     against the spares actually held.
     """
-    from backend.db.models import Component
-
-    components = (
-        db.query(Component)
-        .filter(Component.is_active == True)  # noqa: E712 — SQLAlchemy column comparison
-        .order_by(Component.system, Component.name)
-        .limit(limit)
-        .all()
-    )
+    components = store.list_docs(vessel_id, "components", where=[("is_active", True)])
     if not components:
         return []
 
     lines = ["\nVessel inventory on board (components and spares held):"]
-    for c in components:
-        parts = [f"- {c.name} ({c.system})"]
-        ident = f"{c.manufacturer or ''} {c.model_number or ''}".strip()
+    for c in components[:limit]:
+        parts = [f"- {c.get('name')} ({c.get('system')})"]
+        ident = f"{c.get('manufacturer') or ''} {c.get('model_number') or ''}".strip()
         if ident:
             parts.append(ident)
-        if c.location:
-            parts.append(f"stowed {c.location}")
-        spares = _spare_parts_list(c.spare_parts)
+        if c.get("location"):
+            parts.append(f"stowed {c['location']}")
+        spares = _spare_parts_list(c.get("spare_parts"))
         parts.append(f"spares: {', '.join(spares)}" if spares else "no spares recorded")
         lines.append(" · ".join(parts))
     return lines
@@ -252,15 +248,18 @@ async def _llm_full_response(
 
 
 @router.post("/medical-query")
-async def medical_query(payload: MedicalQueryRequest, db: Session = Depends(get_db)):
+async def medical_query(
+    payload: MedicalQueryRequest,
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
     """Stream an AI medical guidance response (cloud or local)."""
-    from backend.db.models import CrewMember
-    crew = db.query(CrewMember).filter(CrewMember.crew_id == payload.crew_id).first()
+    crew = store.get_doc(access.vessel_id, "crew", payload.crew_id)
     if not crew:
         raise HTTPException(status_code=404, detail="Crew member not found")
 
     user_prompt = (
-        f"Patient: {crew.full_name}, {crew.role}\n"
+        f"Patient: {crew['full_name']}, {crew['role']}\n"
         f"Severity: {payload.severity.upper()}\n"
         f"Symptoms: {', '.join(payload.symptoms)}\n"
         + (f"Vitals: {payload.vitals}\n" if payload.vitals else "")
@@ -306,11 +305,11 @@ async def analyze_component(
     issue_description: str = Form(...),
     severity: str = Form(...),
     image: Optional[UploadFile] = File(None),
-    db: Session = Depends(get_db),
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
 ):
     """Stream an AI component fault analysis (cloud with vision, or local)."""
-    from backend.db.models import Component
-    component = db.query(Component).filter(Component.component_id == component_id).first()
+    component = store.get_doc(access.vessel_id, "components", component_id)
     if not component:
         raise HTTPException(status_code=404, detail="Component not found")
 
@@ -318,10 +317,10 @@ async def analyze_component(
     image_analysis = None
     if image:
         image_bytes = [await image.read()]
-        image_analysis = await parse_component_image(image_bytes[0], component.name)
+        image_analysis = await parse_component_image(image_bytes[0], component["name"])
 
     user_prompt = (
-        f"Component: {component.name} ({component.system})\n"
+        f"Component: {component['name']} ({component['system']})\n"
         f"Issue: {issue_description}\n"
         f"Severity: {severity.upper()}\n"
     )
@@ -335,7 +334,7 @@ async def analyze_component(
     elif image_bytes:
         user_prompt += "An image of the component has been attached.\n"
 
-    rag_query = f"{component.name} {component.model_number or ''} {issue_description}"
+    rag_query = f"{component['name']} {component.get('model_number') or ''} {issue_description}"
     if image_analysis:
         rag_query += f" {image_analysis.get('fault_type', '')}"
 
@@ -366,38 +365,46 @@ async def analyze_component(
 
 
 @router.post("/chat")
-async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+async def chat(
+    payload: ChatRequest,
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
     """Multi-turn chat with Gemma, optionally grounded in a crew member or component."""
-    from backend.db.models import CrewMember, Component
     rag_engine = get_rag_engine()
 
     context_lines: list[str] = []
     system = GENERAL_SYSTEM
 
     if payload.crew_id:
-        crew = db.query(CrewMember).filter(CrewMember.crew_id == payload.crew_id).first()
+        crew = store.get_doc(access.vessel_id, "crew", payload.crew_id)
         if crew:
-            context_lines.append(f"Patient under discussion: {crew.full_name} ({crew.role})")
-            if crew.blood_type:
-                context_lines.append(f"  Blood type: {crew.blood_type}")
-            if crew.allergies:
-                allergies = crew.allergies if isinstance(crew.allergies, list) else json.loads(crew.allergies or "[]")
-                if allergies:
-                    context_lines.append(f"  Allergies: {', '.join(allergies)}")
-            if crew.medical_notes:
-                context_lines.append(f"  Medical notes: {crew.medical_notes}")
+            context_lines.append(
+                f"Patient under discussion: {crew['full_name']} ({crew['role']})"
+            )
+            if crew.get("blood_type"):
+                context_lines.append(f"  Blood type: {crew['blood_type']}")
+            allergies = _spare_parts_list(crew.get("allergies"))
+            if allergies:
+                context_lines.append(f"  Allergies: {', '.join(allergies)}")
+            if crew.get("medical_notes"):
+                context_lines.append(f"  Medical notes: {crew['medical_notes']}")
             system = MEDICAL_SYSTEM
 
     if payload.component_id:
-        comp = db.query(Component).filter(Component.component_id == payload.component_id).first()
+        comp = store.get_doc(access.vessel_id, "components", payload.component_id)
         if comp:
-            context_lines.append(f"Component under discussion: {comp.name} ({comp.system})")
-            if comp.manufacturer:
-                context_lines.append(f"  Manufacturer: {comp.manufacturer} {comp.model_number or ''}")
-            if comp.location:
-                context_lines.append(f"  Location: {comp.location}")
-            if comp.notes:
-                context_lines.append(f"  Notes: {comp.notes}")
+            context_lines.append(
+                f"Component under discussion: {comp['name']} ({comp['system']})"
+            )
+            if comp.get("manufacturer"):
+                context_lines.append(
+                    f"  Manufacturer: {comp['manufacturer']} {comp.get('model_number') or ''}"
+                )
+            if comp.get("location"):
+                context_lines.append(f"  Location: {comp['location']}")
+            if comp.get("notes"):
+                context_lines.append(f"  Notes: {comp['notes']}")
             system = ENGINE_SYSTEM
 
     has_rag = False
@@ -470,7 +477,7 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     # The vessel's own component/spares record goes into every turn — it is
     # cheap, and "what do we actually have on board" changes both medical and
     # engineering advice.
-    inventory_lines = _inventory_context(db)
+    inventory_lines = _inventory_context(store, access.vessel_id)
     if inventory_lines:
         context_lines.extend(inventory_lines)
 

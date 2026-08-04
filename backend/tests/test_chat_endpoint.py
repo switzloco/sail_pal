@@ -25,6 +25,16 @@ class _FakeRAG:
         return self.results
 
 
+@pytest.fixture(autouse=True)
+def _vessel(seed_vessel):
+    """Every chat turn resolves against a vessel; give the suite a real one.
+
+    Without this the request would mint an empty vessel on the fly, which is
+    correct behaviour but hides the seeded crew and components these tests need.
+    """
+    return seed_vessel
+
+
 @pytest.fixture()
 def captured():
     """Run a chat turn against a stubbed LLM and capture the prompt it got."""

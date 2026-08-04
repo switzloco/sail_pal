@@ -1,3 +1,5 @@
+import { getIdToken } from "@/lib/firebase";
+
 export const getApiBase = () => {
   if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
   if (typeof window !== "undefined") {
@@ -21,9 +23,38 @@ export const getUploadUrl = (path: string) => {
   return `${getApiBase()}/uploads/${path}`;
 };
 
+/** Vessel the UI is currently acting on. Only needed once a user has more
+ *  than one boat — otherwise the backend falls back to their only vessel. */
+const VESSEL_KEY = "vessel_ops_active_vessel";
+
+export function getActiveVesselId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(VESSEL_KEY);
+}
+
+export function setActiveVesselId(vesselId: string | null) {
+  if (typeof window === "undefined") return;
+  if (vesselId) localStorage.setItem(VESSEL_KEY, vesselId);
+  else localStorage.removeItem(VESSEL_KEY);
+}
+
+/** Auth + vessel headers every API call needs. Exported so the SSE streams,
+ *  which use bare fetch rather than apiFetch, can send the same thing. */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {};
+  const token = await getIdToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const vesselId = getActiveVesselId();
+  if (vesselId) headers["X-Vessel-Id"] = vesselId;
+  return headers;
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = { ...init?.headers } as Record<string, string>;
-  
+  const headers: Record<string, string> = {
+    ...(await authHeaders()),
+    ...(init?.headers as Record<string, string>),
+  };
+
   if (!(init?.body instanceof FormData) && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }

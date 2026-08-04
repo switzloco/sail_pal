@@ -1,66 +1,75 @@
-import json
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from typing import List
 
-from backend.db.database import get_db
-from backend.db.models import CrewMember
+from backend.auth import VesselAccess, active_vessel
 from backend.schemas.pydantic_models import CrewMemberRead, CrewMemberCreate, CrewMemberUpdate
+from backend.store import VesselStore, get_store
 
 router = APIRouter()
 
+COLLECTION = "crew"
+
 
 @router.get("", response_model=List[CrewMemberRead])
-def list_crew(db: Session = Depends(get_db)):
-    return db.query(CrewMember).filter(CrewMember.is_active == True).all()
+def list_crew(
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
+    return store.list_docs(access.vessel_id, COLLECTION, where=[("is_active", True)])
 
 
 @router.get("/{crew_id}", response_model=CrewMemberRead)
-def get_crew_member(crew_id: str, db: Session = Depends(get_db)):
-    member = db.query(CrewMember).filter(CrewMember.crew_id == crew_id).first()
+def get_crew_member(
+    crew_id: str,
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
+    member = store.get_doc(access.vessel_id, COLLECTION, crew_id)
     if not member:
         raise HTTPException(status_code=404, detail="Crew member not found")
     return member
 
 
 @router.post("", response_model=CrewMemberRead, status_code=201)
-def create_crew_member(payload: CrewMemberCreate, db: Session = Depends(get_db)):
-    member = CrewMember(
-        vessel_id=payload.vessel_id,
-        full_name=payload.full_name,
-        role=payload.role,
-        date_of_birth=payload.date_of_birth,
-        blood_type=payload.blood_type,
-        allergies=json.dumps(payload.allergies or []),
-        medical_notes=payload.medical_notes,
-        emergency_contact=json.dumps(payload.emergency_contact or {}),
-    )
-    db.add(member)
-    db.commit()
-    db.refresh(member)
-    return member
+def create_crew_member(
+    payload: CrewMemberCreate,
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
+    access.require_write()
+    data = payload.model_dump(exclude_unset=True)
+    # The vessel comes from the authenticated request, never the body — a
+    # client must not be able to write into someone else's boat by id.
+    data.pop("vessel_id", None)
+    data.setdefault("allergies", [])
+    data.setdefault("emergency_contact", {})
+    data["is_active"] = True
+    return store.create_doc(access.vessel_id, COLLECTION, data)
 
 
 @router.patch("/{crew_id}", response_model=CrewMemberRead)
-def update_crew_member(crew_id: str, payload: CrewMemberUpdate, db: Session = Depends(get_db)):
-    member = db.query(CrewMember).filter(CrewMember.crew_id == crew_id).first()
-    if not member:
+def update_crew_member(
+    crew_id: str,
+    payload: CrewMemberUpdate,
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
+    access.require_write()
+    updated = store.update_doc(
+        access.vessel_id, COLLECTION, crew_id, payload.model_dump(exclude_unset=True)
+    )
+    if not updated:
         raise HTTPException(status_code=404, detail="Crew member not found")
-    update_data = payload.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        if field in ("allergies", "emergency_contact") and value is not None:
-            value = json.dumps(value)
-        setattr(member, field, value)
-    db.commit()
-    db.refresh(member)
-    return member
+    return updated
 
 
 @router.delete("/{crew_id}", status_code=204)
-def delete_crew_member(crew_id: str, db: Session = Depends(get_db)):
-    member = db.query(CrewMember).filter(CrewMember.crew_id == crew_id).first()
-    if not member:
+def delete_crew_member(
+    crew_id: str,
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
+    access.require_write()
+    if not store.delete_doc(access.vessel_id, COLLECTION, crew_id):
         raise HTTPException(status_code=404, detail="Crew member not found")
-    db.delete(member)
-    db.commit()
     return None

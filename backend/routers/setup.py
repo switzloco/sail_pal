@@ -12,10 +12,14 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.ai import mode_state
+from backend.auth import (
+    CurrentUser, VesselAccess, active_vessel, current_user, ensure_vessel_for_user,
+)
 from backend.config import settings
 from backend.db.database import get_db
-from backend.db.models import Vessel, CrewMember, HealthEvent, Component, MaintenanceLog
 from backend.schemas.pydantic_models import VesselRead, VesselUpdate
+from backend.store import COLLECTIONS, VesselStore, get_store
+from backend.store.base import ROLE_OWNER, can_write
 
 router = APIRouter()
 
@@ -255,48 +259,50 @@ async def pull_model():
 
 
 @router.post("/reset-demo-data")
-async def reset_demo_data(db: Session = Depends(get_db)):
-    """Wipe all user-generated data to start fresh."""
-    try:
-        db.query(MaintenanceLog).delete()
-        db.query(HealthEvent).delete()
-        db.query(Component).delete()
-        db.query(CrewMember).delete()
-        # We keep the Vessel record but reset its name if needed? 
-        # Or just leave it for the user to rename.
-        db.commit()
-        return {"status": "success", "message": "Demo data cleared."}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+async def reset_demo_data(
+    access: VesselAccess = Depends(active_vessel),
+    store: VesselStore = Depends(get_store),
+):
+    """Wipe this vessel's records to start fresh.
+
+    Scoped to the caller's vessel — on the hosted deployment this must never
+    reach across into another user's boat.
+    """
+    access.require_write()
+    cleared = 0
+    for collection in ("maintenance_logs", "health_events", "components", "crew"):
+        for doc in store.list_docs(access.vessel_id, collection):
+            spec_id = COLLECTIONS[collection].id_field
+            if store.delete_doc(access.vessel_id, collection, doc[spec_id]):
+                cleared += 1
+    # The vessel record itself survives so the user keeps their boat's identity.
+    return {"status": "success", "message": "Demo data cleared.", "records_cleared": cleared}
 
 
 @router.get("/vessel-info", response_model=VesselRead)
-async def get_vessel_info(db: Session = Depends(get_db)):
-    vessel = db.query(Vessel).first()
-    if not vessel:
-        # Create a default one if missing
-        vessel = Vessel(name="My Vessel", imo_number="0000000")
-        db.add(vessel)
-        db.commit()
-        db.refresh(vessel)
-    return vessel
+async def get_vessel_info(
+    store: VesselStore = Depends(get_store),
+    user: CurrentUser = Depends(current_user),
+):
+    return ensure_vessel_for_user(store, user).as_dict()
 
 
 @router.post("/vessel-info", response_model=VesselRead)
-async def update_vessel_info(payload: VesselUpdate, db: Session = Depends(get_db)):
-    vessel = db.query(Vessel).first()
-    if not vessel:
-        vessel = Vessel(name="My Vessel", imo_number="0000000")
-        db.add(vessel)
-        db.commit()
-        db.refresh(vessel)
-    
+async def update_vessel_info(
+    payload: VesselUpdate,
+    store: VesselStore = Depends(get_store),
+    user: CurrentUser = Depends(current_user),
+):
+    vessel = ensure_vessel_for_user(store, user)
+    role = ROLE_OWNER if user.is_local else vessel.role_for(user.uid)
+    if not can_write(role):
+        raise HTTPException(status_code=403, detail="You have read-only access to this vessel.")
+
+    patch = {}
     if payload.name:
-        vessel.name = payload.name
+        patch["name"] = payload.name
     if payload.imo_number is not None:
-        vessel.imo_number = payload.imo_number
-        
-    db.commit()
-    db.refresh(vessel)
-    return vessel
+        patch["imo_number"] = payload.imo_number
+    if patch:
+        vessel = store.update_vessel(vessel.vessel_id, patch)
+    return vessel.as_dict()

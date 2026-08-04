@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.db.database import Base, engine
-from backend.routers import crew, health, vessel, maintenance, ai, sync, setup, uploads
+from backend.routers import crew, health, vessel, vessels, maintenance, ai, sync, setup, uploads
 from backend.logger import logger
 import time
 from fastapi import Request
@@ -63,6 +63,7 @@ def healthcheck():
 app.include_router(crew.router, prefix="/api/crew", tags=["crew"])
 app.include_router(health.router, prefix="/api/health", tags=["health"])
 app.include_router(vessel.router, prefix="/api/components", tags=["vessel"])
+app.include_router(vessels.router, prefix="/api/vessels", tags=["vessels"])
 app.include_router(maintenance.router, prefix="/api/maintenance", tags=["maintenance"])
 app.include_router(ai.router, prefix="/api/ai", tags=["ai"])
 app.include_router(sync.router, prefix="/api/sync", tags=["sync"])

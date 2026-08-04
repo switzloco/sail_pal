@@ -127,7 +127,7 @@
       "anonymous": true,
       "emailPassword": true,
       "googleSignIn": {
-        "oAuthBrandDisplayName": "CFO Fitness",
+        "oAuthBrandDisplayName": "Vessel Ops AI",
         "supportEmail": "nswitzer@gmail.com"
       }
     }

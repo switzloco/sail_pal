@@ -38,10 +38,12 @@ The `server_is_local` flag (`not settings.cloud_mode`) controls which UI paths a
 1. **`server_is_local` everywhere**: When `server_is_local=false`, the backend cannot reach the user's Ollama. Web UI must show desktop companion install instructions, not a server-side status checklist.
 2. **Port 8000 only** for the desktop companion. `scripts/start.sh` runs uvicorn on 8000; it serves `frontend_out/` as static files. Do NOT start a separate npm dev server.
 3. **`frontend_out/`** is the pre-built Next.js static export used by the desktop companion. The hosted web version is built separately in Cloud Build and deployed to Firebase.
-4. **mode_state is in-memory** on Cloud Run — it resets on cold start. This is a known limitation. Don't persist mode in the DB without careful thought.
+4. **mode_state is in-memory** on Cloud Run — it resets on cold start. This is a known limitation. Don't persist mode in the DB without careful thought. Note this applies to the *AI mode* only; vessel records are durable in Firestore (rule 7).
 5. **Service worker** (`frontend/public/sw.js`) must skip cross-origin requests: `if (url.origin !== self.location.origin) return;` — without this it crashes on Cloud Run API calls.
 6. **RAG grounds, it never gates.** `CITATION_INSTRUCTIONS` must never tell the model to refuse when the excerpts don't match. The old wording ("say 'I do not have information on that in my current library'") made BM25 near-misses produce a dead-end refusal on ordinary clinical questions — the single worst bug this app has had. Retrieval is keyword-based and *will* miss; the model must fall back to general knowledge and say so. The one hard limit that stays: never state a dosage or torque value that isn't in an excerpt. Guarded by `backend/tests/test_ai_routing.py` and `test_chat_endpoint.py`.
-7. **Inventory is injected into every chat turn.** `_inventory_context()` in `backend/routers/ai.py` inlines the vessel's components and spares from the ship's own DB, and `INVENTORY_GROUNDING` marks it authoritative. This is what lets the assistant answer "do we have a spare impeller?" and write repair steps against spares actually held. Capped at `_INVENTORY_PROMPT_LIMIT`.
+7. **Storage follows the deployment, not the AI-mode toggle.** `backend/store/` has two backends behind one interface: `SqlStore` (desktop, offline) and `FirestoreStore` (hosted). The choice comes from `settings.use_firestore`, which defaults to `CLOUD_MODE` — **never** from `mode_state`. A user switching the hosted app to "local" AI mode is choosing a model, and must not silently move their vessel records onto the ephemeral `/tmp` SQLite that Cloud Run erases on cold start. Both backends are held to the same behaviour by `backend/tests/test_store_parity.py`, which runs every test twice.
+8. **Authorization lives in `backend/auth.py`, not in Firestore rules.** The backend uses the Admin SDK, which bypasses security rules by design, so `firestore.rules` denies all direct client access and the API is the only way in. `require_auth` defaults to `CLOUD_MODE`: hosted requires a verified Firebase ID token, desktop doesn't (that database is already scoped by physical access to the laptop). A caller who isn't a member of a vessel gets **404, not 403** — probing must not distinguish a real boat from a fake one. Never trust `vessel_id` from a request body; scope writes to `access.vessel_id`.
+9. **Inventory is injected into every chat turn.** `_inventory_context()` in `backend/routers/ai.py` inlines the vessel's components and spares from the ship's own DB, and `INVENTORY_GROUNDING` marks it authoritative. This is what lets the assistant answer "do we have a spare impeller?" and write repair steps against spares actually held. Capped at `_INVENTORY_PROMPT_LIMIT`.
 
 ---
 
@@ -67,7 +69,7 @@ Runs on every push to `main`. Steps:
 ```bash
 # Backend (from repo root)
 python -m pytest backend/tests/ -q
-# Must pass: 159 tests, ≥60% coverage
+# Must pass: 231 tests, ≥60% coverage
 ```
 
 Frontend has no automated tests — verify manually after UI changes.

@@ -23,6 +23,10 @@ from backend.routers.ai import (
     _inventory_context,
     _spare_parts_list,
 )
+from backend.store.sql_store import SqlStore
+
+# Matches the id the `seed_vessel` fixture uses.
+VESSEL_ID = "test-vessel-1"
 
 
 # ── Prompt hygiene ───────────────────────────────────────────────────────────
@@ -102,14 +106,14 @@ def test_spare_parts_list_handles_garbage(raw):
 # ── Inventory context ────────────────────────────────────────────────────────
 
 def test_inventory_context_empty_without_components(db):
-    assert _inventory_context(db) == []
+    assert _inventory_context(SqlStore(db), VESSEL_ID) == []
 
 
 def test_inventory_context_lists_component_and_spares(db, seed_component):
     seed_component.spare_parts = json.dumps(["fuel filter", "impeller"])
     db.commit()
 
-    lines = _inventory_context(db)
+    lines = _inventory_context(SqlStore(db), VESSEL_ID)
     body = "\n".join(lines)
 
     assert "Vessel inventory on board" in lines[0]
@@ -120,14 +124,14 @@ def test_inventory_context_lists_component_and_spares(db, seed_component):
 
 
 def test_inventory_context_marks_missing_spares(db, seed_component):
-    body = "\n".join(_inventory_context(db))
+    body = "\n".join(_inventory_context(SqlStore(db), VESSEL_ID))
     assert "no spares recorded" in body
 
 
 def test_inventory_context_skips_inactive_components(db, seed_component):
     seed_component.is_active = False
     db.commit()
-    assert _inventory_context(db) == []
+    assert _inventory_context(SqlStore(db), VESSEL_ID) == []
 
 
 def test_inventory_context_respects_limit(db, seed_vessel):
@@ -144,7 +148,7 @@ def test_inventory_context_respects_limit(db, seed_vessel):
     ])
     db.commit()
 
-    lines = _inventory_context(db, limit=3)
+    lines = _inventory_context(SqlStore(db), VESSEL_ID, limit=3)
     assert len(lines) == 4  # header + 3 components
 
 

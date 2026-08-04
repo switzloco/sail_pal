@@ -41,8 +41,11 @@ steps:
       - --cpu=1
       - --min-instances=0
       - --max-instances=5
-      # Map the GOOGLE_API_KEY secret to an environment variable.
-      - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data
+      # CLOUD_MODE turns on Firestore storage and required auth (see
+      # backend/config.py). VESSEL_OPS_DATA_DIR is still set because the RAG
+      # index and uploads use it — but vessel records no longer live there,
+      # since /tmp is wiped on every cold start.
+      - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data,FIREBASE_PROJECT_ID=$PROJECT_ID
       - --set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest
 
   # Capture the live Cloud Run URL so the frontend bakes in the exact right base.
@@ -69,7 +72,16 @@ steps:
         echo "Building frontend with NEXT_PUBLIC_API_BASE=$$BACKEND_URL"
         cd frontend
         npm ci --cache /workspace/.npm-cache
-        NEXT_PUBLIC_API_BASE="$$BACKEND_URL" WEB_EXPORT=1 npm run build
+        # Firebase web config is public by design — it identifies the project,
+        # it does not grant access. Authorization is enforced by the API against
+        # each vessel's membership. Without these the hosted app builds
+        # unauthenticated, so set them as substitutions on the trigger.
+        NEXT_PUBLIC_API_BASE="$$BACKEND_URL" \
+        NEXT_PUBLIC_FIREBASE_API_KEY="${_FIREBASE_API_KEY}" \
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${_FIREBASE_AUTH_DOMAIN}" \
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID="$PROJECT_ID" \
+        NEXT_PUBLIC_FIREBASE_APP_ID="${_FIREBASE_APP_ID}" \
+        WEB_EXPORT=1 npm run build
     waitFor: [get-backend-url]
 
   # Deploy the static export to Firebase Hosting.
@@ -88,5 +100,16 @@ steps:
 images:
   - gcr.io/$PROJECT_ID/vessel-ops-backend
 
+# Firebase web config, from Firebase Console → Project settings → Your apps.
+# Public values — they identify the project, they do not grant access. Set them
+# as substitution variables on the Cloud Build trigger. Left empty, the hosted
+# app builds without sign-in and every visitor shares one vessel.
+substitutions:
+  _FIREBASE_API_KEY: ""
+  _FIREBASE_AUTH_DOMAIN: ""
+  _FIREBASE_APP_ID: ""
+
 options:
   logging: CLOUD_LOGGING_ONLY
+  # Empty substitutions above are intentional defaults, not typos.
+  substitution_option: ALLOW_LOOSE

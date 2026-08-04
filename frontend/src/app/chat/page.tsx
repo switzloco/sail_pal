@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, authHeaders } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
 import { Send, Sparkles, User, Bot, Mic, MicOff, HeartPulse, Package, Wand2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
@@ -167,7 +167,9 @@ export default function ChatPage() {
 
       const res = await fetch(`${API_BASE}/ai/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // Streams use bare fetch rather than apiFetch, so the auth and vessel
+        // headers have to be attached explicitly.
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
         body: JSON.stringify(body),
       });
 

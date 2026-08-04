@@ -135,12 +135,22 @@ real answer, not a guess.
 ## Hosted web version
 
 A hosted build runs the app in **cloud mode**: Google AI Studio serves Gemma, so there's
-no Ollama install. It's a preview for evaluating the app before committing to the desktop
-install — **not** the way to use this at sea, since it needs connectivity. A banner in the
-UI makes the mode obvious.
+no Ollama install, and records live in **Firestore** rather than on your laptop. Useful for
+keeping a boat's log from a phone; **not** the way to use this at sea, since it needs
+connectivity. A banner in the UI makes the mode obvious.
 
-Stack: **Cloud Run** (backend) + **Firebase Hosting** (frontend), built by `cloudbuild.yaml`
-on every push to `main`.
+Hosted mode requires a sign-in. A vessel's records — crew, medical history, inventory —
+are private to the accounts on that boat's membership list, and the owner can share access
+with other crew. Enforcement is server-side in `backend/auth.py`; `firestore.rules` denies
+all direct client access.
+
+Stack: **Cloud Run** (backend) + **Firestore** (data) + **Firebase Auth** + **Firebase
+Hosting** (frontend), built by `cloudbuild.yaml` on every push to `main`.
+
+> **Setting this up yourself?** [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md) has the
+> console steps — provisioning Firestore, granting the Cloud Run service account access,
+> enabling sign-in providers. Skip it and the hosted app builds with no sign-in, where
+> every visitor shares one vessel.
 
 <details>
 <summary>Deployment setup</summary>
@@ -168,8 +178,10 @@ NEXT_PUBLIC_API_BASE=https://<your-cloud-run-url> WEB_EXPORT=1 npm run build
 firebase deploy --only hosting
 ```
 
-Cloud Run containers are stateless, so demo data re-seeds on cold start and the
-selected AI mode resets. Both are expected.
+**Firestore + Auth** — see [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md).
+
+Cloud Run containers are stateless, so the selected AI mode resets on cold start.
+Vessel records are not affected — those live in Firestore.
 
 </details>
 
@@ -186,7 +198,7 @@ selected AI mode resets. Both are expected.
 ### Tests
 
 ```bash
-python -m pytest backend/tests/ -q      # 159 tests, ≥60% coverage
+python -m pytest backend/tests/ -q      # 231 tests, ≥60% coverage
 ```
 
 The frontend has no automated tests — verify UI changes manually.
@@ -220,9 +232,11 @@ you change anything.
 | Model routing + in-chat model picker | Shipping |
 | Health & maintenance logs | Shipping |
 | Multimodal image analysis | Shipping |
+| Hosted mode: Firestore persistence + sign-in | Shipping |
+| Boat sharing between accounts | API only — no UI yet |
 | Desktop installers (macOS, Windows) | Beta — unsigned |
 | Spare quantities & expiry tracking | Planned |
-| Firebase sync when back in port | Planned |
+| Desktop ↔ hosted sync when back in port | Planned — the two stores are independent today |
 
 MPIC study drills and trivia were built earlier and still work at `/study` and `/trivia`,
 but they're no longer part of the main navigation — the app is focused on medical and

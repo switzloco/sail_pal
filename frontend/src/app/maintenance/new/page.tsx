@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, authHeaders } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -55,7 +55,11 @@ export default function NewMaintenanceLogPage() {
       if (form.follow_up) fd.append("follow_up", form.follow_up);
       if (photo) fd.append("photos", photo);
 
-      const res = await fetch(`${API_BASE}/maintenance/logs`, { method: "POST", body: fd });
+      const res = await fetch(`${API_BASE}/maintenance/logs`, {
+        method: "POST",
+        headers: await authHeaders(),
+        body: fd,
+      });
       if (!res.ok) throw new Error((await res.json()).detail ?? "Request failed");
       router.push("/maintenance");
     } catch (err) {
