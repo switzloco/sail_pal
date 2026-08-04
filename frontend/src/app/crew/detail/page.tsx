@@ -8,7 +8,8 @@ import type { CrewMember, HealthEvent } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import Link from "next/link";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Sparkles } from "lucide-react";
+import { CHAT_CREW_KEY, handOffToChat } from "@/lib/chatContext";
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -48,7 +49,17 @@ function CrewDetail() {
       </Link>
 
       <h1 className="text-2xl font-bold text-slate-900">{member.full_name}</h1>
-      <p className="text-slate-500 mb-6">{member.role}</p>
+      <p className="text-slate-500 mb-4">{member.role}</p>
+
+      <button
+        onClick={() => {
+          handOffToChat(CHAT_CREW_KEY, member.crew_id);
+          router.push("/chat");
+        }}
+        className="inline-flex items-center gap-2 bg-ocean-600 hover:bg-ocean-700 text-white text-sm font-medium px-3 py-2 rounded-lg mb-6"
+      >
+        <Sparkles size={16} /> Ask Gemma about {member.full_name.split(" ")[0]}
+      </button>
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
         <h2 className="font-semibold text-slate-700 mb-3">Medical Profile</h2>

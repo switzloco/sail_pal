@@ -11,7 +11,8 @@ from backend.config import settings
 from backend.db.database import get_db
 from backend.schemas.pydantic_models import MedicalQueryRequest, ComponentAnalysisRequest
 from backend.ai.prompt_templates import (
-    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, TRIVIA_SYSTEM, MPIC_STUDY_SYSTEM, DISCLAIMER, SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS
+    MEDICAL_SYSTEM, ENGINE_SYSTEM, GENERAL_SYSTEM, TRIVIA_SYSTEM, MPIC_STUDY_SYSTEM, DISCLAIMER,
+    SUCCINCT_MODIFIER, CITATION_INSTRUCTIONS, INVENTORY_GROUNDING
 )
 from backend.ai.rag_engine import RAGEngine
 from backend.ai.image_parser import parse_component_image
@@ -34,16 +35,35 @@ class ChatMessage(BaseModel):
     content: str
 
 
+# Explicit model routing choices the chat UI can send. "auto" keeps the
+# keyword-based routing below; "medical" and "general" pin the turn so the
+# crew can override a bad auto-route mid-conversation.
+MODEL_CHOICES = ("auto", "medical", "general")
+
+
 class ChatRequest(BaseModel):
+    # `model_choice` collides with pydantic's protected "model_" namespace.
+    model_config = {"protected_namespaces": ()}
+
     messages: List[ChatMessage]
     crew_id: Optional[str] = None
     component_id: Optional[str] = None
     succinct: bool = True
+    model_choice: str = "auto"
 
 
-async def _tokens_to_sse(token_iter: AsyncIterator[str], model_label: Optional[str] = None):
-    if model_label:
-        yield f"data: {json.dumps({'model': model_label})}\n\n"
+async def _tokens_to_sse(
+    token_iter: AsyncIterator[str],
+    model_label: Optional[str] = None,
+    route: Optional[str] = None,
+):
+    if model_label or route:
+        meta = {}
+        if model_label:
+            meta["model"] = model_label
+        if route:
+            meta["route"] = route
+        yield f"data: {json.dumps(meta)}\n\n"
     async for token in token_iter:
         yield f"data: {json.dumps({'token': token})}\n\n"
     yield f"data: {json.dumps({'done': True})}\n\n"
@@ -94,6 +114,10 @@ _GENERAL_INTENT_KEYWORDS = {
     # Maintenance / inspection
     "maintenance", "overhaul", "service interval", "inspection",
     "preventative", "preventive", "replace the", "rebuild",
+    # Inventory / spares / stores. Deliberately excludes generic words like
+    # "on board", which appear constantly in medical questions too.
+    "inventory", "spare", "spares", "in stock", "restock", "part number",
+    "serial number", "stowed", "storeroom", "consumable", "order more",
     # Regulations / compliance
     "solas", "ism code", "marpol", "stcw", "colreg", "regulation",
     "compliance", "flag state", "port state",
@@ -114,6 +138,56 @@ def _has_general_intent(text: str) -> bool:
         return False
     lowered = text.lower()
     return any(kw in lowered for kw in _GENERAL_INTENT_KEYWORDS)
+
+
+# Cap on how many components get inlined into the system prompt. A working
+# vessel carries far fewer than this; the limit just stops a pathological
+# inventory from crowding out the conversation.
+_INVENTORY_PROMPT_LIMIT = 40
+
+
+def _spare_parts_list(raw) -> list[str]:
+    """Component.spare_parts is a JSON array column that may already be decoded."""
+    if isinstance(raw, list):
+        return [str(p) for p in raw]
+    try:
+        parsed = json.loads(raw or "[]")
+    except (ValueError, TypeError):
+        return []
+    return [str(p) for p in parsed] if isinstance(parsed, list) else []
+
+
+def _inventory_context(db: Session, limit: int = _INVENTORY_PROMPT_LIMIT) -> list[str]:
+    """Compact, authoritative summary of what the vessel actually has aboard.
+
+    Inlined into every chat turn so the assistant can answer "do we have a
+    spare impeller?" without a tool call, and so repair guidance is written
+    against the spares actually held.
+    """
+    from backend.db.models import Component
+
+    components = (
+        db.query(Component)
+        .filter(Component.is_active == True)  # noqa: E712 — SQLAlchemy column comparison
+        .order_by(Component.system, Component.name)
+        .limit(limit)
+        .all()
+    )
+    if not components:
+        return []
+
+    lines = ["\nVessel inventory on board (components and spares held):"]
+    for c in components:
+        parts = [f"- {c.name} ({c.system})"]
+        ident = f"{c.manufacturer or ''} {c.model_number or ''}".strip()
+        if ident:
+            parts.append(ident)
+        if c.location:
+            parts.append(f"stowed {c.location}")
+        spares = _spare_parts_list(c.spare_parts)
+        parts.append(f"spares: {', '.join(spares)}" if spares else "no spares recorded")
+        lines.append(" · ".join(parts))
+    return lines
 
 
 def _model_label(model_override: Optional[str]) -> str:
@@ -329,22 +403,43 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     has_rag = False
     rag_query_text = payload.messages[-1].content
 
-    # Routing default: this is a maritime medical assistant first, so chat
-    # turns route to the Vessel Ops Medical fine-tune unless we see a clear
-    # non-medical signal. This catches clinical typos ("anhednoia"), unusual
-    # phrasings, and questions where the BM25 retriever doesn't fire but the
-    # context is still medical.
-    is_medical_turn = not payload.component_id  # component context always means engine
+    model_choice = payload.model_choice if payload.model_choice in MODEL_CHOICES else "auto"
 
-    # Demote to general if the user is clearly asking about engineering,
-    # regulations, navigation, or trivia. The fine-tune would regress on
-    # those domains since it was scoped to WHO IMGS prose.
-    if is_medical_turn and _has_general_intent(rag_query_text):
+    if model_choice == "medical":
+        # Crew overrode the router — pin the medical fine-tune for this turn.
+        is_medical_turn = True
+    elif model_choice == "general":
         is_medical_turn = False
+    else:
+        # Routing default: this is a maritime medical assistant first, so chat
+        # turns route to the Vessel Ops Medical fine-tune unless we see a clear
+        # non-medical signal. This catches clinical typos ("anhednoia"), unusual
+        # phrasings, and questions where the BM25 retriever doesn't fire but the
+        # context is still medical.
+        is_medical_turn = not payload.component_id  # component context always means engine
 
-    # Apply the right system prompt now that routing is decided
-    if is_medical_turn and not payload.crew_id and not payload.component_id:
+        # Demote to general if the user is clearly asking about engineering,
+        # regulations, navigation, or inventory. The fine-tune would regress on
+        # those domains since it was scoped to WHO IMGS prose.
+        #
+        # A clinical signal vetoes the demotion: "what's in the medical locker
+        # for a crew member with chest pain" is a medical turn that happens to
+        # mention stores, and on a medical app the tie goes to medicine.
+        if (
+            is_medical_turn
+            and _has_general_intent(rag_query_text)
+            and not _has_medical_intent(rag_query_text)
+        ):
+            is_medical_turn = False
+
+    # Apply the right system prompt now that routing is decided. An explicit
+    # model choice wins over the crew/component context that seeded `system`.
+    if is_medical_turn:
         system = MEDICAL_SYSTEM
+    elif payload.component_id:
+        system = ENGINE_SYSTEM
+    else:
+        system = GENERAL_SYSTEM
 
     # Pull medical RAG for any medical-routed turn — sailors at sea may not
     # have a crew member "selected" but still need grounded answers. The
@@ -359,7 +454,10 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
                 page = r['metadata'].get('page', '?')
                 context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
 
-    if payload.component_id:
+    # Pull technical manuals for any non-medical turn, not just when a
+    # component is selected — inventory and troubleshooting questions are the
+    # other half of the app and deserve the same grounding.
+    if not is_medical_turn:
         engine_rag = rag_engine.query("engine_manuals", rag_query_text, k=2)
         if engine_rag:
             has_rag = True
@@ -369,12 +467,21 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
                 page = r['metadata'].get('page', '?')
                 context_lines.append(f"- {r['text']} (Source: {source}, Page: {page})")
 
+    # The vessel's own component/spares record goes into every turn — it is
+    # cheap, and "what do we actually have on board" changes both medical and
+    # engineering advice.
+    inventory_lines = _inventory_context(db)
+    if inventory_lines:
+        context_lines.extend(inventory_lines)
 
     if context_lines:
         system = system + "\n\nContext for this conversation:\n" + "\n".join(context_lines)
 
     if has_rag:
         system += CITATION_INSTRUCTIONS
+
+    if inventory_lines:
+        system += INVENTORY_GROUNDING
 
     if payload.succinct:
         system += SUCCINCT_MODIFIER
@@ -391,10 +498,63 @@ async def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         _tokens_to_sse(
             _llm_tokens(system, transcript, model_override=chat_model_override),
             model_label=_model_label(chat_model_override),
+            route="medical" if is_medical_turn else "general",
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/models")
+async def list_models():
+    """Describe the routing options the chat UI can offer.
+
+    In cloud mode every route is served by the same Google-hosted Gemma, so
+    the choice only changes the system prompt and retrieval — we say so
+    rather than implying two models are loaded.
+    """
+    cloud = mode_state.is_cloud()
+    fine_tune_installed = bool(settings.model_medical) and settings.model_medical != settings.model_primary
+
+    if cloud:
+        medical_model = general_model = settings.cloud_model
+        medical_hint = "Cloud Gemma with WHO protocol retrieval and medical prompting."
+        general_hint = "Cloud Gemma with technical manual retrieval and vessel inventory."
+    else:
+        medical_model = settings.effective_medical_model
+        general_model = settings.model_primary
+        medical_hint = (
+            "Unsloth WHO IMGS fine-tune — tuned on maritime clinical protocols."
+            if fine_tune_installed
+            else "Gemma 4 with WHO protocol retrieval. Install the fine-tune for better clinical answers."
+        )
+        general_hint = "Gemma 4 — engineering, inventory, spares, and vessel operations."
+
+    return {
+        "mode": "cloud" if cloud else "local",
+        "fine_tune_installed": fine_tune_installed,
+        "options": [
+            {
+                "id": "auto",
+                "label": "Auto",
+                "hint": "Routes each question to the medical or general model automatically.",
+                "model": None,
+            },
+            {
+                "id": "medical",
+                "label": "Medical",
+                "hint": medical_hint,
+                "model": medical_model,
+            },
+            {
+                "id": "general",
+                # Kept short so it doesn't truncate in the phone-width picker.
+                "label": "Inventory",
+                "hint": general_hint,
+                "model": general_model,
+            },
+        ],
+    }
 
 
 @router.post("/trivia")

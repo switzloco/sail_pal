@@ -219,9 +219,10 @@ export default function SettingsPage() {
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Two models — why not one?</p>
                   <p className="text-sm text-slate-700">
                     The WHO fine-tune is laser-focused on medical prose. Asking it about engine diagnostics
-                    or SOLAS regulations would degrade its answers. So medical routes
-                    (injury triage, drug queries, WHO protocols) use the fine-tune; everything else &mdash;
-                    engine fault analysis, maintenance, MPIC study, trivia &mdash; stays on vanilla Gemma 4.
+                    or spares holdings would degrade its answers. So medical routes
+                    (injury triage, drug queries, WHO protocols) use the fine-tune; the ship and inventory
+                    side &mdash; components, spares, fault analysis, maintenance &mdash; stays on vanilla
+                    Gemma 4. You can override the router per-question from the model picker in chat.
                   </p>
                 </div>
 
@@ -261,7 +262,9 @@ export default function SettingsPage() {
               <div className="bg-slate-900 rounded-xl p-4 text-xs font-mono space-y-1 text-slate-300">
                 <p className="text-slate-500 mb-2"># model routing</p>
                 <p><span className="text-violet-400">medical routes</span>  →  <span className="text-green-400">hf.co/nswitzer/gemma4-maritime-medical-GGUF</span>  <span className="text-slate-500">(Unsloth WHO fine-tune, Q4_K_M)</span></p>
-                <p><span className="text-violet-400">everything else</span>  →  <span className="text-green-400">gemma4:e2b</span>  <span className="text-slate-500">(vanilla Gemma 4, general purpose)</span></p>
+                <p><span className="text-violet-400">ship &amp; inventory</span>  →  <span className="text-green-400">gemma4:e2b</span>  <span className="text-slate-500">(vanilla Gemma 4, general purpose)</span></p>
+                <p className="text-slate-500 mt-2"># grounding</p>
+                <p><span className="text-blue-400">inventory</span>  →  <span className="text-slate-300">components + spares injected into every chat turn from the ship&apos;s own DB</span></p>
                 <p className="text-slate-500 mt-2"># retrieval</p>
                 <p><span className="text-blue-400">RAG</span>  →  <span className="text-slate-300">SQLite FTS5 · BM25 · 938 WHO IMGS chunks · top-3 per query</span></p>
                 <p className="text-slate-500 mt-2"># inference</p>

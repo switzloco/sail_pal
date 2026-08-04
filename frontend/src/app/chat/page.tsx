@@ -4,22 +4,47 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { CrewMember, Component } from "@/lib/types";
-import { Send, Sparkles, User, Bot, Mic, MicOff } from "lucide-react";
+import { Send, Sparkles, User, Bot, Mic, MicOff, HeartPulse, Package, Wand2 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
+import { CHAT_COMPONENT_KEY, CHAT_CREW_KEY, consumeChatHandOff } from "@/lib/chatContext";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000") + "/api";
+
+type ModelChoice = "auto" | "medical" | "general";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   model?: string;
+  route?: "medical" | "general";
 }
 
-const QUICK_PROMPTS = [
-  "A crew member has chest pain and shortness of breath. What should I do?",
-  "How do I treat a deep laceration to the forearm at sea?",
-  "The main engine cooling water temperature is climbing. What should I check first?",
-  "What's the right protocol for suspected heat stroke in the engine room?",
+interface ModelOption {
+  id: ModelChoice;
+  label: string;
+  hint: string;
+  model: string | null;
+}
+
+interface ModelsResponse {
+  mode: "cloud" | "local";
+  fine_tune_installed: boolean;
+  options: ModelOption[];
+}
+
+const CHOICE_ICONS: Record<ModelChoice, React.ElementType> = {
+  auto: Wand2,
+  medical: HeartPulse,
+  general: Package,
+};
+
+const MODEL_CHOICE_KEY = "vessel_ops_model_choice";
+
+const QUICK_PROMPTS: { text: string; kind: "medical" | "inventory" }[] = [
+  { text: "A crew member has chest pain and shortness of breath. What should I do?", kind: "medical" },
+  { text: "How do I treat a deep laceration to the forearm at sea?", kind: "medical" },
+  { text: "What spares do we carry for the main engine?", kind: "inventory" },
+  { text: "The cooling water temperature is climbing — do we have the parts to fix it?", kind: "inventory" },
 ];
 
 export default function ChatPage() {
@@ -48,8 +73,34 @@ export default function ChatPage() {
   const [componentContext, setComponentContext] = useState<string>("");
   const [isListening, setIsListening] = useState(false);
   const [verbose, setVerbose] = useState(false);
+  const [modelChoice, setModelChoice] = useState<ModelChoice>("auto");
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  const models = useQuery({
+    queryKey: ["ai-models"],
+    queryFn: () => apiFetch<ModelsResponse>("/ai/models"),
+  });
+
+  // Remember the crew's pick across sessions — if they've learned the router
+  // gets a certain question wrong, they shouldn't have to re-select every time.
+  useEffect(() => {
+    const saved = localStorage.getItem(MODEL_CHOICE_KEY);
+    if (saved === "auto" || saved === "medical" || saved === "general") {
+      setModelChoice(saved);
+    }
+
+    // Arriving from a component or crew detail page? Preselect that context.
+    const component = consumeChatHandOff(CHAT_COMPONENT_KEY);
+    if (component) setComponentContext(component);
+    const crewMember = consumeChatHandOff(CHAT_CREW_KEY);
+    if (crewMember) setCrewContext(crewMember);
+  }, []);
+
+  const chooseModel = (choice: ModelChoice) => {
+    setModelChoice(choice);
+    localStorage.setItem(MODEL_CHOICE_KEY, choice);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -106,7 +157,11 @@ export default function ChatPage() {
     setMessages((m) => [...m, { role: "assistant", content: "" }]);
 
     try {
-      const body: Record<string, unknown> = { messages: next, succinct: !verbose };
+      const body: Record<string, unknown> = {
+        messages: next,
+        succinct: !verbose,
+        model_choice: modelChoice,
+      };
       if (crewContext) body.crew_id = crewContext;
       if (componentContext) body.component_id = componentContext;
 
@@ -137,11 +192,15 @@ export default function ChatPage() {
           const json = line.slice(5).trim();
           try {
             const parsed = JSON.parse(json);
-            if (parsed.model) {
+            if (parsed.model || parsed.route) {
               setMessages((prev) => {
                 const copy = [...prev];
                 const last = copy[copy.length - 1];
-                copy[copy.length - 1] = { ...last, model: parsed.model };
+                copy[copy.length - 1] = {
+                  ...last,
+                  ...(parsed.model ? { model: parsed.model } : {}),
+                  ...(parsed.route ? { route: parsed.route } : {}),
+                };
                 return copy;
               });
             }
@@ -196,9 +255,53 @@ export default function ChatPage() {
           <h1 className="text-2xl font-bold text-slate-900">Ask Gemma</h1>
         </div>
         <p className="text-sm text-slate-500 mt-1">
-          Powered by <span className="font-semibold">Gemma</span> — Google DeepMind&apos;s open-weights model.
-          Ground a question in a specific crew member or component for medical / engineering context.
+          Medical guidance from the WHO ship&apos;s medical guide, and answers grounded in your
+          vessel&apos;s own component and spares inventory.
         </p>
+      </div>
+
+      {/* Model selection — the single most important control on this page. */}
+      <div className="mb-3 p-3 bg-white rounded-xl border border-slate-200">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Model</span>
+          {models.data && (
+            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+              {models.data.mode === "cloud" ? "Cloud · Google AI Studio" : "Local · Ollama"}
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {(models.data?.options ?? []).map((opt) => {
+            const Icon = CHOICE_ICONS[opt.id] ?? Wand2;
+            const active = modelChoice === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => chooseModel(opt.id)}
+                title={opt.model ? `${opt.hint}\n\n${opt.model}` : opt.hint}
+                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold border transition-colors ${
+                  active
+                    ? "bg-ocean-600 border-ocean-600 text-white"
+                    : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                <Icon size={14} />
+                <span className="truncate">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+          {models.data?.options.find((o) => o.id === modelChoice)?.hint ??
+            "Choosing a model lets you override the automatic router when it gets a question wrong."}
+        </p>
+        {models.data && !models.data.fine_tune_installed && models.data.mode === "local" && (
+          <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1.5 mt-2">
+            The maritime medical fine-tune isn&apos;t installed — medical questions are running on
+            base Gemma 4.
+          </p>
+        )}
       </div>
 
       {/* Context selectors */}
@@ -256,16 +359,23 @@ export default function ChatPage() {
           <div>
             <p className="text-sm text-slate-400 mb-3">Try asking:</p>
             <div className="grid gap-2">
-              {QUICK_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => sendMessage(p)}
-                  disabled={streaming}
-                  className="text-left text-sm bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 transition-colors"
-                >
-                  {p}
-                </button>
-              ))}
+              {QUICK_PROMPTS.map(({ text, kind }) => {
+                const Icon = kind === "medical" ? HeartPulse : Package;
+                return (
+                  <button
+                    key={text}
+                    onClick={() => sendMessage(text)}
+                    disabled={streaming}
+                    className="flex items-start gap-2.5 text-left text-sm bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 transition-colors"
+                  >
+                    <Icon
+                      size={15}
+                      className={`mt-0.5 shrink-0 ${kind === "medical" ? "text-green-500" : "text-ocean-500"}`}
+                    />
+                    {text}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -283,15 +393,21 @@ export default function ChatPage() {
                   <p className="text-xs font-semibold text-slate-500">
                     {m.role === "user" ? "You" : "Gemma"}
                   </p>
-                  {m.role === "assistant" && m.model && (
+                  {m.role === "assistant" && m.route && (
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                        m.model.includes("Medical")
+                        m.route === "medical"
                           ? "bg-violet-100 text-violet-700"
-                          : m.model === "Gemma · Cloud"
-                            ? "bg-sky-100 text-sky-700"
-                            : "bg-slate-100 text-slate-500"
+                          : "bg-ocean-100 text-ocean-700"
                       }`}
+                      title={`Routed to the ${m.route === "medical" ? "medical" : "ship & inventory"} model`}
+                    >
+                      {m.route === "medical" ? "Medical" : "Inventory"}
+                    </span>
+                  )}
+                  {m.role === "assistant" && m.model && (
+                    <span
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500"
                       title={`Response served by ${m.model}`}
                     >
                       {m.model}

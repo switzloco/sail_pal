@@ -6,7 +6,15 @@ Agent instructions and project context. Read this before making changes.
 
 ## Project Overview
 
-Vessel Ops AI is an offline-first AI assistant for maritime medical emergencies and engineering ops. It runs on a laptop via Ollama (Gemma 4), with a FastAPI backend and Next.js frontend. There is also a hosted web version on Firebase/Cloud Run.
+Vessel Ops AI is an offline-first AI assistant for maritime medical emergencies and vessel inventory. It runs on a laptop via Ollama (Gemma 4), with a FastAPI backend and Next.js frontend. There is also a hosted web version on Firebase/Cloud Run.
+
+**Scope: two pillars, AI-forward.** The product is deliberately pared back to
+**Medical** (chat guidance, crew records, health log) and **Inventory**
+(components, spares, maintenance log). Chat is the primary surface — the
+dashboard and sidebar lead with it. `/study` (MPIC Study) and `/trivia` still
+build and still work if you navigate to them directly, but they are hidden from
+navigation and must not be re-added to the dashboard or sidebar. Don't add a
+third pillar without a deliberate decision to widen scope.
 
 **Two deployment modes:**
 - **Desktop companion** (`server_is_local=true`): FastAPI + SQLite on the user's laptop, Ollama on the same machine, frontend served statically from `frontend_out/` via uvicorn on port 8000.
@@ -32,6 +40,8 @@ The `server_is_local` flag (`not settings.cloud_mode`) controls which UI paths a
 3. **`frontend_out/`** is the pre-built Next.js static export used by the desktop companion. The hosted web version is built separately in Cloud Build and deployed to Firebase.
 4. **mode_state is in-memory** on Cloud Run — it resets on cold start. This is a known limitation. Don't persist mode in the DB without careful thought.
 5. **Service worker** (`frontend/public/sw.js`) must skip cross-origin requests: `if (url.origin !== self.location.origin) return;` — without this it crashes on Cloud Run API calls.
+6. **RAG grounds, it never gates.** `CITATION_INSTRUCTIONS` must never tell the model to refuse when the excerpts don't match. The old wording ("say 'I do not have information on that in my current library'") made BM25 near-misses produce a dead-end refusal on ordinary clinical questions — the single worst bug this app has had. Retrieval is keyword-based and *will* miss; the model must fall back to general knowledge and say so. The one hard limit that stays: never state a dosage or torque value that isn't in an excerpt. Guarded by `backend/tests/test_ai_routing.py` and `test_chat_endpoint.py`.
+7. **Inventory is injected into every chat turn.** `_inventory_context()` in `backend/routers/ai.py` inlines the vessel's components and spares from the ship's own DB, and `INVENTORY_GROUNDING` marks it authoritative. This is what lets the assistant answer "do we have a spare impeller?" and write repair steps against spares actually held. Capped at `_INVENTORY_PROMPT_LIMIT`.
 
 ---
 
@@ -57,7 +67,7 @@ Runs on every push to `main`. Steps:
 ```bash
 # Backend (from repo root)
 python -m pytest backend/tests/ -q
-# Must pass: 113 tests, ≥60% coverage
+# Must pass: 159 tests, ≥60% coverage
 ```
 
 Frontend has no automated tests — verify manually after UI changes.
@@ -81,6 +91,8 @@ The installer copies `DESKTOP_QUICKSTART.md` to the user's Desktop. Keep that fi
 
 - **ESLint kills the build**: Next.js runs ESLint during `npm run build`. Unused imports, unescaped `"` in JSX (`&ldquo;`/`&rdquo;`), and `<img>` instead of `<Image />` are all hard errors.
 - **Ollama model names**: UI should say "Gemma 4". Technical identifiers (`gemma4:e2b`, `hf.co/nswitzer/gemma4-maritime-medical-GGUF`) belong only in scripts and backend config. The split-routing pattern is: `model_primary` for general routes, `effective_medical_model` (→ `model_medical` or `model_primary`) for medical routes.
+- **Model routing is user-overridable**: `POST /api/ai/chat` takes `model_choice` (`auto` | `medical` | `general`); `GET /api/ai/models` describes the options for the chat picker. Auto-routing is medical-first — a clinical keyword vetoes demotion to general, so "what's in the medical stores for chest pain" stays medical. Keep new inventory keywords in `_GENERAL_INTENT_KEYWORDS` specific; generic phrases like "on board" appear constantly in medical questions and will mis-route them.
+- **Chat context hand-off**: detail pages preselect chat context via `sessionStorage` (`frontend/src/lib/chatContext.ts`), not query params — the frontend is a static export, where `useSearchParams` needs a Suspense boundary on every consuming page.
 - **Mac Ollama detection**: Use `ollama --version` not `which ollama` — macOS can have a stub in PATH that doesn't actually work.
 - **MS Store Python**: `Get-Command python` on Windows may return a Store stub. Check if the path contains `WindowsApps` and fail with a clear message.
 - **`/welcome/setup` vs `/setup`**: The setup page lives at `/welcome/setup`. Any link to `/setup` is a 404.

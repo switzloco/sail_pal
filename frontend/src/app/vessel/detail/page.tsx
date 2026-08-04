@@ -1,13 +1,14 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { Component } from "@/lib/types";
 import { CardSkeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
+import { CHAT_COMPONENT_KEY, handOffToChat } from "@/lib/chatContext";
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -21,6 +22,7 @@ function Row({ label, value }: { label: string; value?: string | null }) {
 
 function ComponentDetail() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get("id") ?? "";
 
   const { data: component, isLoading } = useQuery({
@@ -40,7 +42,17 @@ function ComponentDetail() {
       </Link>
 
       <h1 className="text-2xl font-bold text-slate-900">{component.name}</h1>
-      <p className="text-slate-500 capitalize mb-6">{component.system} system</p>
+      <p className="text-slate-500 capitalize mb-4">{component.system} system</p>
+
+      <button
+        onClick={() => {
+          handOffToChat(CHAT_COMPONENT_KEY, component.component_id);
+          router.push("/chat");
+        }}
+        className="inline-flex items-center gap-2 bg-ocean-600 hover:bg-ocean-700 text-white text-sm font-medium px-3 py-2 rounded-lg mb-6"
+      >
+        <Sparkles size={16} /> Ask Gemma about this
+      </button>
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 mb-5">
         <h2 className="font-semibold text-slate-700 mb-3">Equipment Details</h2>

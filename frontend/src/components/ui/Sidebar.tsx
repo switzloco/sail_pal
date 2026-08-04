@@ -2,11 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Users, HeartPulse, Wrench, Settings, Sparkles, X, Gamepad2, GraduationCap, BookOpen, Share2 } from "lucide-react";
+import { Anchor, Users, HeartPulse, Settings, Sparkles, X, Package, BookOpen, Share2, ClipboardList } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, getApiBase } from "@/lib/api";
 import type { Vessel } from "@/lib/types";
 import Image from "next/image";
+
+// The app is deliberately pared back to two pillars: Medical and Inventory.
+// /study (MPIC Study) and /trivia still exist and still work if you navigate
+// to them directly — they are just no longer part of the primary experience.
+const NAV_SECTIONS = [
+  {
+    title: "Medical",
+    items: [
+      { href: "/health", label: "Health Log", icon: HeartPulse },
+      { href: "/crew", label: "Crew", icon: Users },
+    ],
+  },
+  {
+    title: "Inventory",
+    items: [
+      { href: "/vessel", label: "Components & Spares", icon: Package },
+      { href: "/maintenance", label: "Maintenance Log", icon: ClipboardList },
+    ],
+  },
+] as const;
 
 const SHARE_URL = "https://vessel-ops-494701.web.app/";
 const SHARE_TEXT = "Vessel Ops AI — offline-first maritime medical & engineering assistant, powered by Gemma. Try it free:";
@@ -71,55 +91,50 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
 
         <nav className="flex-1 py-4 space-y-6">
           <div>
-            <p className="px-5 text-[10px] font-bold text-ocean-400 uppercase tracking-widest mb-2">Operations</p>
-            {[
-              { href: "/", label: "Dashboard", icon: Anchor },
-              { href: "/chat", label: "Ask Gemma", icon: Sparkles },
-              { href: "/crew", label: "Crew", icon: Users },
-              { href: "/health", label: "Health Log", icon: HeartPulse },
-              { href: "/vessel", label: "Components", icon: Wrench },
-            ].map(({ href, label, icon: Icon }) => {
-              const active = href === "/" ? path === "/" : path.startsWith(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-ocean-700 text-white"
-                      : "text-ocean-100 hover:bg-ocean-800 hover:text-white"
-                  }`}
-                >
-                  <Icon size={18} />
-                  {label}
-                </Link>
-              );
-            })}
+            <Link
+              href="/chat"
+              className={`flex items-center gap-3 mx-3 mb-4 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                path.startsWith("/chat")
+                  ? "bg-ocean-500 text-white"
+                  : "bg-ocean-700/60 text-white hover:bg-ocean-700"
+              }`}
+            >
+              <Sparkles size={18} />
+              Ask Gemma
+            </Link>
+            <Link
+              href="/"
+              className={`flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
+                path === "/" ? "bg-ocean-700 text-white" : "text-ocean-100 hover:bg-ocean-800 hover:text-white"
+              }`}
+            >
+              <Anchor size={18} />
+              Dashboard
+            </Link>
           </div>
 
-          <div>
-            <p className="px-5 text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-2">Training & Morale</p>
-            {[
-              { href: "/study", label: "MPIC Study", icon: GraduationCap },
-              { href: "/trivia", label: "Trivia", icon: Gamepad2 },
-            ].map(({ href, label, icon: Icon }) => {
-              const active = path.startsWith(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
-                    active
-                      ? "bg-indigo-600/50 text-white"
-                      : "text-ocean-100 hover:bg-ocean-800 hover:text-white"
-                  }`}
-                >
-                  <Icon size={18} className={active ? "text-indigo-300" : ""} />
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
+          {NAV_SECTIONS.map(({ title, items }) => (
+            <div key={title}>
+              <p className="px-5 text-[10px] font-bold text-ocean-400 uppercase tracking-widest mb-2">{title}</p>
+              {items.map(({ href, label, icon: Icon }) => {
+                const active = path.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 px-5 py-3 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-ocean-700 text-white"
+                        : "text-ocean-100 hover:bg-ocean-800 hover:text-white"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
 
           <div>
             <p className="px-5 text-[10px] font-bold text-ocean-400 uppercase tracking-widest mb-2">Reference</p>
