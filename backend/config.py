@@ -97,29 +97,24 @@ class Settings(BaseSettings):
     # phone has to land in Firestore instead.
     firebase_project_id: str = ""
 
-    # Storage follows the deployment, not the runtime AI-mode toggle. Defaults
-    # to on wherever CLOUD_MODE is set; override to test Firestore locally.
+    # Both flags are explicit opt-in, NOT derived from cloud_mode.
+    #
+    # Deliberate: which database holds crew medical records, and whether the
+    # public internet can read them, are too important to infer from another
+    # setting. Deploying the code and switching a live deployment onto Firestore
+    # stay separate events, and a half-provisioned project cannot take the app
+    # down. See docs/FIREBASE_SETUP.md.
+
+    # Store vessel records in Firestore instead of SQLite. Required for any
+    # deployment where SQLite is ephemeral — on Cloud Run the container's /tmp
+    # is erased on every cold start, taking the user's boat with it.
     use_firestore: bool = False
 
-    # Require a verified Firebase ID token on data routes. Defaults to on
-    # wherever Firestore is on — real crew medical records must not be readable
-    # by anyone who finds the URL. Local/desktop mode stays open: that database
-    # is already scoped to whoever can open the laptop.
+    # Require a verified Firebase ID token on data routes. Turn on together with
+    # use_firestore: durable storage without auth would leave real crew medical
+    # records readable by anyone who finds the URL. Desktop stays off — that
+    # database is already scoped to whoever can open the laptop.
     require_auth: bool = False
-
-    @field_validator("use_firestore", mode="before")
-    @classmethod
-    def default_use_firestore(cls, v):
-        if v is not None and v != "":
-            return v
-        return os.getenv("CLOUD_MODE", "").lower() in ("1", "true", "yes")
-
-    @field_validator("require_auth", mode="before")
-    @classmethod
-    def default_require_auth(cls, v):
-        if v is not None and v != "":
-            return v
-        return os.getenv("CLOUD_MODE", "").lower() in ("1", "true", "yes")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

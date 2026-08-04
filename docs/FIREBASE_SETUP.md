@@ -92,8 +92,20 @@ each vessel's membership.
 
 ## 5. Deploy
 
-Push to `main`. Cloud Build sets `CLOUD_MODE=true`, which turns on both Firestore
-storage and required auth (`backend/config.py`).
+Push to `main`. That deploys the code but leaves the app on its current
+behaviour: `_USE_FIRESTORE` and `_REQUIRE_AUTH` default to `false` in
+`cloudbuild.yaml`, so a deploy can never land on a half-provisioned project.
+
+Once steps 1–4 are done, turn both on together — either as trigger substitutions,
+or directly on the running service with no redeploy:
+
+```bash
+gcloud run services update sail-pal --region=us-west1 \
+  --update-env-vars=USE_FIRESTORE=true,REQUIRE_AUTH=true
+```
+
+Turn them on **together**. Firestore without auth would leave real crew medical
+records readable by anyone who finds the URL.
 
 Verify:
 
@@ -102,8 +114,9 @@ curl -s https://<cloud-run-url>/api/crew        # expect 401
 curl -s https://<cloud-run-url>/healthz         # expect 200
 ```
 
-A 200 on `/api/crew` means auth did not engage — check that `CLOUD_MODE=true`
-reached the service.
+A 200 on `/api/crew` means auth did not engage — check `REQUIRE_AUTH=true`
+reached the service. These flags are explicit and are *not* implied by
+`CLOUD_MODE`.
 
 ---
 

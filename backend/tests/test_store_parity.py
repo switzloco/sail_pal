@@ -253,3 +253,40 @@ def test_unknown_collection_is_rejected(store, vessel):
 def test_role_permissions(role, writable, admin):
     assert can_write(role) is writable
     assert can_administer(role) is admin
+
+
+# ── Deployment flags ─────────────────────────────────────────────────────────
+# These decide which database holds crew medical records and whether the public
+# internet can read them. They are explicit opt-in, never inferred: an earlier
+# version derived them from CLOUD_MODE via `mode="before"` validators, which
+# pydantic v2 does not run on field defaults, so they silently stayed off.
+
+def test_storage_flags_are_off_by_default():
+    from backend.config import Settings
+
+    settings = Settings(_env_file=None)
+    assert settings.use_firestore is False
+    assert settings.require_auth is False
+
+
+def test_cloud_mode_alone_does_not_enable_firestore_or_auth(monkeypatch):
+    from backend.config import Settings
+
+    monkeypatch.setenv("CLOUD_MODE", "true")
+    monkeypatch.delenv("USE_FIRESTORE", raising=False)
+    monkeypatch.delenv("REQUIRE_AUTH", raising=False)
+
+    settings = Settings(_env_file=None)
+    assert settings.use_firestore is False, "must be set explicitly, not inferred"
+    assert settings.require_auth is False, "must be set explicitly, not inferred"
+
+
+def test_flags_turn_on_when_set_explicitly(monkeypatch):
+    from backend.config import Settings
+
+    monkeypatch.setenv("USE_FIRESTORE", "true")
+    monkeypatch.setenv("REQUIRE_AUTH", "true")
+
+    settings = Settings(_env_file=None)
+    assert settings.use_firestore is True
+    assert settings.require_auth is True

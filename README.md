@@ -198,7 +198,7 @@ Vessel records are not affected — those live in Firestore.
 ### Tests
 
 ```bash
-python -m pytest backend/tests/ -q      # 231 tests, ≥60% coverage
+python -m pytest backend/tests/ -q      # 234 tests, ≥60% coverage
 ```
 
 The frontend has no automated tests — verify UI changes manually.

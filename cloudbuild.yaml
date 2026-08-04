@@ -41,11 +41,15 @@ steps:
       - --cpu=1
       - --min-instances=0
       - --max-instances=5
-      # CLOUD_MODE turns on Firestore storage and required auth (see
-      # backend/config.py). VESSEL_OPS_DATA_DIR is still set because the RAG
-      # index and uploads use it — but vessel records no longer live there,
-      # since /tmp is wiped on every cold start.
-      - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data,FIREBASE_PROJECT_ID=$PROJECT_ID
+      # USE_FIRESTORE / REQUIRE_AUTH are set explicitly rather than inherited
+      # from CLOUD_MODE so that shipping this code and switching the hosted app
+      # onto Firestore are two separate events. Deploying with them false keeps
+      # the previous behaviour exactly; flip them on the Cloud Run service once
+      # Firestore is provisioned and the Firebase config is in the trigger
+      # (docs/FIREBASE_SETUP.md). No redeploy needed to flip them.
+      #
+      # VESSEL_OPS_DATA_DIR stays because the RAG index and uploads use it.
+      - --set-env-vars=CLOUD_MODE=true,VESSEL_OPS_DATA_DIR=/tmp/data,FIREBASE_PROJECT_ID=$PROJECT_ID,USE_FIRESTORE=${_USE_FIRESTORE},REQUIRE_AUTH=${_REQUIRE_AUTH}
       - --set-secrets=GOOGLE_API_KEY=GOOGLE_API_KEY:latest
 
   # Capture the live Cloud Run URL so the frontend bakes in the exact right base.
@@ -108,6 +112,12 @@ substitutions:
   _FIREBASE_API_KEY: ""
   _FIREBASE_AUTH_DOMAIN: ""
   _FIREBASE_APP_ID: ""
+  # Both default off so a deploy never lands on a half-provisioned project.
+  # Turn on together once Firestore exists and the service account has
+  # roles/datastore.user — Firestore without auth would leave real crew medical
+  # records readable by anyone who finds the URL.
+  _USE_FIRESTORE: "false"
+  _REQUIRE_AUTH: "false"
 
 options:
   logging: CLOUD_LOGGING_ONLY
