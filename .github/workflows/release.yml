@@ -19,8 +19,8 @@ jobs:
           # by default, which matches the dominant install base. The build is
           # UNSIGNED — first launch will hit Gatekeeper and the user has to
           # right-click → Open once. Code signing requires an Apple Developer
-          # cert ($99/yr) which we'll add once we ship to TestFlight / outside
-          # the hackathon. The PyInstaller spec + Tauri config already support
+          # cert ($99/yr) which we'll add before this goes to crew who aren't
+          # willing to do that. The PyInstaller spec + Tauri config already support
           # macOS targets; only the matrix needed re-enabling.
           - os: macos-latest
             target: aarch64-apple-darwin

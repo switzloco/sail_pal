@@ -3,70 +3,35 @@
 > "When a crew member is injured 200 miles offshore, there is no internet, no doctor,
 > and no second opinion. This application is the second opinion."
 
-An offline-first AI assistant for the **Medical Person in Charge (MPIC)** and **Chief Engineer**
-on vessels operating in deep-water environments. Runs entirely on a laptop — no cloud, no connectivity
-required at sea. Powered by **Gemma 4 via Ollama**.
+An offline-first AI assistant for vessels operating beyond the reach of shore support.
+It runs entirely on a laptop — no cloud, no connectivity required at sea — and answers
+from the **WHO International Medical Guide for Ships** plus your own vessel's inventory.
+
+Powered by **Gemma 4 via Ollama**.
 
 ---
 
-## Hackathon Context
+## What it does
 
-Built for the **Gemma 4 Good Hackathon** (Kaggle × Google DeepMind, due May 18, 2026).
+Two jobs, deliberately:
 
-Prize targets:
-- **Ollama Prize** ($10k) — best project using Gemma 4 via Ollama
-- **Global Resilience Prize** ($10k) — offline disaster/emergency response
-- **Health & Sciences Prize** ($10k) — medical decision support
-- **Cactus Prize** ($10k) — local-first app with intelligent model routing
+**Medical.** Describe a symptom and get assessment questions, red flags, immediate care
+steps, and when to escalate to TMAS. Answers are grounded in the WHO IMGS (3rd Edition),
+cited by page, and informed by the crew member's own allergies and medical history.
 
----
+**Inventory.** Every component and spare aboard, searchable by part number, location, or
+spare. The assistant reads this inventory on every question, so it knows what you actually
+carry before it recommends a repair — and says plainly when a job needs a part you don't have.
 
-## Deployment
-
-```
-Laptop (MacBook, Windows, Linux)
-  └── Ollama  →  gemma4:e2b (general / engine / maintenance / trivia)
-              +  nswitzer/gemma4-maritime-medical-GGUF (Unsloth fine-tune,
-                 used automatically for medical routes)
-  └── FastAPI backend  →  SQLite (WAL mode)
-  └── Next.js frontend  →  http://localhost:3000
-
-Other devices on the same LAN (optional):
-  └── Browser  →  http://<laptop-ip>:3000
-```
-
-The laptop is the server. Any other device on the same Wi-Fi network can connect via
-the browser — no installation required.
-
-**Model selection by hardware:**
-
-| RAM | Model | Used for |
-|-----|-------|----------|
-| 8–16 GB | `gemma4:e2b` *(primary, always installed)* | General chat, engine fault analysis, maintenance, MPIC study, trivia |
-| 8–16 GB | `hf.co/nswitzer/gemma4-maritime-medical-GGUF` *(medical, installer pulls)* | `/medical-query` and any chat turn that hits the WHO IMGS RAG index — our Unsloth fine-tune, Q4_K_M (~2 GB) |
-| 32 GB+ | `gemma4:e4b` | Optional scale model for `critical`/`serious` severity escalations |
-
----
-
-## Tech Stack
-
-**Frontend:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · React Query
-
-**Backend:** Python 3.11+ · FastAPI · SQLAlchemy 2.0 · Alembic · Pydantic v2 · SQLite (WAL)
-
-**AI:** Gemma via Ollama (local) or Google AI Studio (cloud preview) · SQLite FTS5 RAG with BM25 ranking
-
-**Knowledge Source:** Full offline integration of the *World Health Organization (WHO) International Medical Guide for Ships (IMGS, 3rd Edition)* for RAG-grounded medical guidance.
-
-**Sync (roadmap):** Firebase Firestore — accumulates locally, pushes when in port
+Chat is the front door. Everything else exists to give it better context.
 
 ---
 
 ## Install
 
-### For end users — download the app
+### For crew — download the app
 
-Download the latest signed installer for your OS from the
+Grab the installer for your OS from the
 [Releases page](https://github.com/switzloco/sail_pal/releases/latest):
 
 | OS | File | Notes |
@@ -76,184 +41,212 @@ Download the latest signed installer for your OS from the
 | Windows 10 / 11 — installer | `Vessel.Ops.AI_<version>_x64-setup.exe` | Per-user install, **no admin rights needed** — lives in `%LOCALAPPDATA%` |
 | Windows 10 / 11 — portable | `Vessel-Ops-AI_<version>_x64_portable.zip` | No install at all. Unzip anywhere (USB stick, Desktop) and double-click `Vessel Ops AI.exe` inside the folder. Keep `vessel-ops-backend.exe` next to it — the launcher spawns it as the local API. |
 
-Double-click to install. On first launch the in-app setup wizard walks you
-through installing Ollama and downloading the Gemma model (~8 GB, one-time).
-No Terminal, no Git, no Python required.
+On first launch the in-app setup wizard walks you through installing Ollama and
+downloading the models (~8 GB, one-time, needs internet). After that the app never
+needs a connection again.
 
-> **Using a locked-down work PC?** The installer does not require admin and
-> makes no system-level changes — it installs to your user profile only.
-> If your IT policy blocks installers entirely, use the portable `.zip`
-> instead: unzip it (right-click → *Extract All*) and run
-> `Vessel Ops AI.exe` from inside the extracted folder. Don't separate the
-> two `.exe` files — the launcher spawns `vessel-ops-backend.exe` as a
-> sibling process and won't find it otherwise. Ollama itself also installs
-> per-user on Windows. The only network access the app needs is the
-> one-time ~8 GB model download from `huggingface.co` — if your corporate
-> firewall blocks that, download on a home network first.
+> **Do the model download in port.** The one-time ~8 GB pull is the only thing that
+> requires internet. Everything after it runs on the laptop.
 
-> **macOS unsigned builds (beta testers):** the current builds are not signed
-> with an Apple Developer certificate. First-launch workflow on macOS:
->
-> 1. Drag `Vessel Ops AI.app` from the `.dmg` to `/Applications`.
-> 2. Right-click the app → *Open* → *Open* in the warning dialog.
->
-> If you instead see *"'Vessel Ops AI' is damaged and can't be opened"*
-> (macOS 13+ quarantine on unsigned apps from the internet), open Terminal
-> and run:
+> **Locked-down work PC?** The installer needs no admin rights and makes no
+> system-level changes. If your IT policy blocks installers entirely, use the
+> portable `.zip`: unzip it (right-click → *Extract All*) and run
+> `Vessel Ops AI.exe` from inside the extracted folder. Don't separate the two
+> `.exe` files — the launcher spawns `vessel-ops-backend.exe` as a sibling process
+> and won't find it otherwise. Ollama also installs per-user on Windows.
+
+> **macOS unsigned builds:** current builds aren't signed with an Apple Developer
+> certificate. Drag the app to `/Applications`, then right-click → *Open* →
+> *Open* in the warning dialog. If you instead see *"'Vessel Ops AI' is damaged
+> and can't be opened"* (macOS 13+ quarantine), run this once:
 >
 > ```bash
 > xattr -cr /Applications/Vessel\ Ops\ AI.app
 > ```
->
-> Then launch normally. This is a one-time step per install.
+
+### Running from source
+
+```bash
+git clone https://github.com/switzloco/sail_pal.git
+cd sail_pal
+cp .env.example .env
+./scripts/start.sh
+```
+
+`start.sh` creates the virtualenv, runs migrations, seeds demo data on first run,
+and starts the app on **port 8000**. Open <http://localhost:8000>.
+
+The laptop is the server. Any device on the same Wi-Fi — a tablet on the bridge, a
+phone in the engine room — reaches it at `http://<laptop-ip>:8000`, no install needed.
+`start.sh` prints that address at startup.
 
 ---
 
-## Web deployment (hackathon demo / judges)
+## How the AI works
 
-A hosted version runs the full app in **cloud mode** — Google AI Studio
-provides Gemma responses, no Ollama install required. MV Resolute demo data
-is seeded automatically on first boot.
+### Two models, and you can override the choice
 
-Stack: **Cloud Run** (backend) + **Firebase Hosting** (frontend) — both
-Google products, which fits the Kaggle × Google DeepMind hackathon context.
+| Route | Model | Used for |
+|-------|-------|----------|
+| Medical | `hf.co/nswitzer/gemma4-maritime-medical-GGUF` | Symptoms, first aid, WHO protocols. Our Unsloth fine-tune on ~1,400 clinical Q&A pairs from the IMGS, Q4_K_M (~2 GB) |
+| Ship & Inventory | `gemma4:e2b` | Components, spares, fault diagnosis, maintenance, regulations |
+| Escalation (optional) | `gemma4:e4b` | 32 GB+ machines, for `critical` / `serious` severity |
 
-### Backend → Google Cloud Run
+Routing is automatic and medical-first — a clinical signal always wins, so
+*"what's in the medical stores for chest pain"* stays on the medical model. When the
+router gets it wrong, the **model picker in chat** overrides it for that turn, and the
+choice sticks. Every answer carries a badge showing which route served it.
 
-**One-time setup (Cloud Console)**
+If the fine-tune isn't installed, the app says so in the picker rather than silently
+falling back.
 
-1. Open [console.cloud.google.com](https://console.cloud.google.com) and
-   create or select a project.
-2. Enable **Cloud Build API** and **Cloud Run API** (search in the top bar).
-3. Go to **Cloud Build → Triggers → Connect repository** → select this repo.
-   Create a trigger on branch `main` pointing at `cloudbuild.yaml`.
-4. Go to **Cloud Run → vessel-ops-backend → Edit & Deploy New Revision →
-   Variables & Secrets** and add:
+### Retrieval grounds answers — it never gates them
+
+Medical questions retrieve the top-3 passages from the WHO IMGS index (SQLite FTS5,
+BM25 ranking) and cite them by page. Engineering questions do the same against uploaded
+technical manuals.
+
+Keyword retrieval misses sometimes. When it does, the assistant answers from general
+maritime medical knowledge and *says* the answer isn't from the onboard library — it
+never returns a bare "I don't have that." The one hard limit: it will not state a drug
+dosage or torque value that isn't in a retrieved passage, and will tell you which
+reference to check instead.
+
+### It knows what's aboard
+
+Your components and spares are injected into every chat turn from the vessel's own
+database and treated as authoritative. Ask "do we have a spare impeller?" and you get a
+real answer, not a guess.
+
+---
+
+## Tech Stack
+
+**Frontend:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · React Query · Tauri (desktop)
+
+**Backend:** Python 3.11+ · FastAPI · SQLAlchemy 2.0 · Alembic · Pydantic v2 · SQLite (WAL)
+
+**AI:** Gemma via Ollama (local) or Google AI Studio (hosted preview) · SQLite FTS5 RAG with BM25 ranking
+
+**Knowledge:** *WHO International Medical Guide for Ships*, 3rd Edition — fully offline
+
+---
+
+## Hosted web version
+
+A hosted build runs the app in **cloud mode**: Google AI Studio serves Gemma, so there's
+no Ollama install. It's a preview for evaluating the app before committing to the desktop
+install — **not** the way to use this at sea, since it needs connectivity. A banner in the
+UI makes the mode obvious.
+
+Stack: **Cloud Run** (backend) + **Firebase Hosting** (frontend), built by `cloudbuild.yaml`
+on every push to `main`.
+
+<details>
+<summary>Deployment setup</summary>
+
+**Backend → Cloud Run**
+
+1. In [Cloud Console](https://console.cloud.google.com), enable the **Cloud Build API**
+   and **Cloud Run API**.
+2. **Cloud Build → Triggers → Connect repository**, then create a trigger on `main`
+   pointing at `cloudbuild.yaml`.
+3. **Cloud Run → vessel-ops-backend → Edit & Deploy New Revision → Variables & Secrets**:
    ```
-   GOOGLE_API_KEY = <your key from aistudio.google.com/apikey>
+   GOOGLE_API_KEY = <key from aistudio.google.com/apikey>
    ```
    (`CLOUD_MODE=true` is already set by `cloudbuild.yaml`.)
 
-Push to `main` — Cloud Build builds the Docker image and deploys it.
-Copy the Cloud Run service URL (looks like
-`https://vessel-ops-backend-xxxx-uc.a.run.app`).
+Push to `main` and Cloud Build handles the rest.
 
-> Demo data (MV Resolute) auto-seeds on every cold start since Cloud Run
-> containers are stateless. This is fine for a judging demo.
-
-### Frontend → Firebase Hosting
+**Frontend → Firebase Hosting**
 
 ```bash
-# Install Firebase CLI once
-npm install -g firebase-tools
-firebase login
-
+npm install -g firebase-tools && firebase login
 cd frontend
-
-# Build the static export pointing at your Cloud Run URL
 NEXT_PUBLIC_API_BASE=https://<your-cloud-run-url> WEB_EXPORT=1 npm run build
-
-# Deploy
-firebase init hosting   # choose your GCP project, say "out" as public dir
 firebase deploy --only hosting
 ```
 
-Firebase gives you a URL like `https://<project>.web.app` to share with judges.
+Cloud Run containers are stateless, so demo data re-seeds on cold start and the
+selected AI mode resets. Both are expected.
 
-> **Cloud mode banner:** a yellow "Cloud preview" banner appears in the UI
-> whenever `CLOUD_MODE=true` so judges know AI responses come from
-> Gemma-4-26b on Google AI Studio, not a local model.
+</details>
 
 ---
 
-## Run Locally (developer setup)
+## Development
 
 ### Prerequisites
 
 - Python 3.11+
 - Node.js 20+
-- [Ollama](https://ollama.com) (optional for Phase 1 — AI returns demo responses without it)
+- [Ollama](https://ollama.com)
 
-### First run
-
-```bash
-git clone https://github.com/switzloco/sail_pal.git
-cd sail_pal
-
-cp .env.example .env
-# Edit .env if needed (model choice, LAN IP for NEXT_PUBLIC_API_BASE)
-
-./scripts/start.sh
-```
-
-That's it. `start.sh` will:
-1. Create a Python virtual environment and install dependencies
-2. Run database migrations (Alembic)
-3. Seed the database with MV Resolute demo data (first run only)
-4. Install frontend dependencies (first run only)
-5. Start the backend on port 8000 and frontend on port 3000
-6. Print your LAN IP for access from other devices
-
-### With Ollama (Phase 2 preview)
+### Tests
 
 ```bash
-# Install Ollama: https://ollama.com
-ollama pull gemma4:e2b   # or gemma4:e4b on 32GB+ machines
-# Then ./scripts/start.sh as normal
+python -m pytest backend/tests/ -q      # 159 tests, ≥60% coverage
 ```
 
----
+The frontend has no automated tests — verify UI changes manually.
 
-### Building the desktop app locally
+### Building the desktop app
 
-Requires **Rust** (`rustup.rs`) and **Node 20+** in addition to the
-Python/Node prereqs above.
+Requires **Rust** (`rustup.rs`) in addition to the above.
 
 ```bash
 cd frontend
 npm install
-
-# Dev (hot reload — backend must be running separately via ./scripts/start.sh)
-npm run tauri:dev
-
-# Production installer for the current OS (output under frontend/src-tauri/target/release/bundle/)
-npm run tauri:build
+npm run tauri:dev      # hot reload; run ./scripts/start.sh separately for the backend
+npm run tauri:build    # installer for the current OS
 ```
 
 The bundled backend is a PyInstaller one-file binary built from
 `backend/pyinstaller.spec` and staged into `frontend/src-tauri/binaries/` before the
-Tauri build — the GitHub Actions `release.yml` workflow automates this for
-CI builds on tag push.
+Tauri build. The `release.yml` workflow automates this on tag push.
+
+See [`CLAUDE.md`](CLAUDE.md) for architecture rules and the gotchas worth knowing before
+you change anything.
 
 ---
 
-## Accessing from Another Device on the Same LAN
+## Status
 
-`start.sh` prints the LAN URL at startup. On the other device:
-1. Open a browser and navigate to `http://<printed-ip>:3000`
-2. You'll see the full Vessel Ops AI interface
+| Area | State |
+|------|-------|
+| Medical chat — WHO IMGS grounding, citations, crew context | Shipping |
+| Inventory — components, spares, search, AI awareness | Shipping |
+| Model routing + in-chat model picker | Shipping |
+| Health & maintenance logs | Shipping |
+| Multimodal image analysis | Shipping |
+| Desktop installers (macOS, Windows) | Beta — unsigned |
+| Spare quantities & expiry tracking | Planned |
+| Firebase sync when back in port | Planned |
 
----
-
-## Project Status
-
-| Feature | Status |
-|---------|--------|
-| Crew roster | ✅ Phase 1 |
-| Health event log | ✅ Phase 1 |
-| Component inventory | ✅ Phase 1 |
-| Maintenance log | ✅ Phase 1 |
-| AI medical query (mock SSE) | ✅ Phase 1 |
-| AI component analysis (mock SSE) | ✅ Phase 1 |
-| Ollama / Gemma 4 integration | ✅ Phase 2 |
-| ChromaDB RAG (WHO IMGS 3rd Ed. + engine manuals) | ✅ Phase 2 |
-| Multimodal image analysis | ✅ Phase 2 |
-| Firebase sync (port-side) | 🔜 Phase 2 |
+MPIC study drills and trivia were built earlier and still work at `/study` and `/trivia`,
+but they're no longer part of the main navigation — the app is focused on medical and
+inventory.
 
 ---
 
-## AI Disclaimer
+## Disclaimer
 
-Every AI response includes:
+Every AI response carries:
 
-> *AI-generated guidance. Verify against physical manuals. Contact rescue services if situation is life-threatening.*
+> *AI-generated guidance. Verify against physical manuals. Contact rescue services if
+> situation is life-threatening.*
+
+This is decision support, not a doctor. Contact TMAS for anything serious.
+
+---
+
+## Origins
+
+Vessel Ops AI began as a submission to the Gemma 4 Good Hackathon (Kaggle × Google
+DeepMind), built by Nick Switzer with Dr. Michael Switzer (medical advisor) and
+Capt. Chris Oprzadek (Navy submarine officer, two Atlantic crossings). Those materials —
+the writeup, video scripts, and launch posts — are archived under
+[`docs/archive/hackathon/`](docs/archive/hackathon/).
+
+The focus now is real use aboard real boats.

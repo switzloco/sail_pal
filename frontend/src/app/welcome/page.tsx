@@ -194,7 +194,7 @@ export default function WelcomePage() {
               </p>
             </div>
             <div className="text-xs text-slate-400 text-center md:text-right">
-              <p>Built for the Gemma 4 Good Hackathon by</p>
+              <p>Built by</p>
               <p className="font-semibold text-slate-600">Nick Switzer · Dr. Michael Switzer · Capt. Chris Oprzadek</p>
             </div>
           </div>

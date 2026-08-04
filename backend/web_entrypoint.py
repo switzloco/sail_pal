@@ -3,7 +3,7 @@
 Distinct from entrypoint.py (PyInstaller desktop) — this one:
  - Listens on 0.0.0.0:$PORT (Railway injects PORT)
  - Runs Alembic migrations before starting
- - Auto-seeds demo data if the DB is empty (so judges see MV Resolute on first visit)
+ - Auto-seeds demo data if the DB is empty (so a fresh deploy isn't a blank app)
  - Never touches sys._MEIPASS or frozen-binary paths
 """
 from __future__ import annotations

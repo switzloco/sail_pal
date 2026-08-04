@@ -3,7 +3,8 @@ Eval: Unsloth fine-tune vs vanilla Gemma 4 on WHO IMGS medical Q&A.
 
 Runs a held-out set of maritime medical questions through both models via the
 local Ollama API, then scores each response with Gemini-as-judge (1–10 rubric).
-Outputs a markdown comparison table suitable for the Kaggle writeup.
+Outputs a markdown comparison table. Re-run this after any change to the
+medical routing or grounding prompts to confirm answer quality hasn't regressed.
 
 Usage:
     GOOGLE_API_KEY=<key> python -m backend.scripts.eval_medical_finetune
@@ -19,7 +20,7 @@ Requirements:
 
 Output files written to backend/data/eval/:
     - eval_results.jsonl      raw per-question scores
-    - eval_report.md          markdown table for the Kaggle writeup
+    - eval_report.md          markdown comparison table
 """
 from __future__ import annotations
 
