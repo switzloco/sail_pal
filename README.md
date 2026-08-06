@@ -147,6 +147,10 @@ all direct client access.
 Stack: **Cloud Run** (backend) + **Firestore** (data) + **Firebase Auth** + **Firebase
 Hosting** (frontend), built by `cloudbuild.yaml` on every push to `main`.
 
+This repo publishes to the Hosting site **`vessel-ops-ai`**, not the project's default
+site — see [`docs/DEPLOY_TARGETS.md`](docs/DEPLOY_TARGETS.md) for why, and for how to
+split the backend too.
+
 > **Setting this up yourself?** [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md) has the
 > console steps — provisioning Firestore, granting the Cloud Run service account access,
 > enabling sign-in providers. Skip it and the hosted app builds with no sign-in, where

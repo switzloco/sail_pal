@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "vessel-ops-ai",
     "public": "out",
     "ignore": [
       "firebase.json",
@@ -7,104 +8,6 @@
       "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "/crew",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/crew/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/health",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/health/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/components",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/components/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/maintenance",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/maintenance/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/ai",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/ai/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/sync",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/sync/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/setup/**",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
-      {
-        "source": "/healthz",
-        "run": {
-          "serviceId": "sail-pal",
-          "region": "us-west1"
-        }
-      },
       {
         "source": "**",
         "destination": "/index.html"
@@ -121,6 +24,9 @@
         ]
       }
     ]
+  },
+  "firestore": {
+    "rules": "../firestore.rules"
   },
   "auth": {
     "providers": {

@@ -55,7 +55,7 @@ Runs on every push to `main`. Steps:
 2. Deploy backend to Cloud Run (us-west1, `--min-instances=0`)
 3. Capture live Cloud Run URL
 4. `npm ci && npm run build` for the frontend (bakes in the Cloud Run URL)
-5. `firebase deploy --only hosting`
+5. `firebase deploy --only hosting` — to the **`vessel-ops-ai`** site named in `frontend/firebase.json`, **not** the project default (`vessel-ops-494701.web.app`). Another branch of this project deploys there; publishing to the same site meant whichever built last silently replaced the other. Don't point this repo back at the default site. See `docs/DEPLOY_TARGETS.md`.
 
 **Build time: ~20 minutes.** This is expensive and slow.
 
@@ -99,4 +99,5 @@ The installer copies `DESKTOP_QUICKSTART.md` to the user's Desktop. Keep that fi
 - **Mac Ollama detection**: Use `ollama --version` not `which ollama` — macOS can have a stub in PATH that doesn't actually work.
 - **MS Store Python**: `Get-Command python` on Windows may return a Store stub. Check if the path contains `WindowsApps` and fail with a clear message.
 - **`/welcome/setup` vs `/setup`**: The setup page lives at `/welcome/setup`. Any link to `/setup` is a 404.
+- **Don't add Hosting → Cloud Run rewrites** for app routes. `firebase.json` used to rewrite `/crew`, `/health`, `/maintenance` etc. to Cloud Run — but those are real SPA routes, so loading one directly 404'd, and the rewrites were never used for API traffic anyway (the frontend calls the absolute Cloud Run URL baked in as `NEXT_PUBLIC_API_BASE`). Only the SPA catch-all belongs there.
 - **Cold start mode reset**: Cloud Run resets `mode_state` in-memory on cold start. If a user set local mode and sees cloud mode again, it's expected behavior — surface this clearly rather than silently re-defaulting.
